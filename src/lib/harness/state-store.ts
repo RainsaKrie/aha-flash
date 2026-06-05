@@ -1,9 +1,16 @@
 import fs from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { nanoid } from "nanoid";
 import type { UserProfile, UserState } from "@/types/state";
 
-const STATES_DIR = path.join(process.cwd(), "data", "states");
+function resolveStatesDir() {
+  if (process.env.AHA_FLASH_STATE_DIR) return process.env.AHA_FLASH_STATE_DIR;
+  if (process.env.VERCEL) return path.join(os.tmpdir(), "aha-flash", "states");
+  return path.join(process.cwd(), "data", "states");
+}
+
+const STATES_DIR = resolveStatesDir();
 const MAX_STATE_BYTES = 5120;
 
 function mergeUnique(current: string[] = [], next: string[] = []) {
