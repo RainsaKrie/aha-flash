@@ -1,0 +1,54 @@
+import type { ToolDefinition } from "@/types/tool";
+import { updateUserState } from "./update-user-state";
+import { webContentExtract } from "./web-extractor";
+import { youtubeTranscriptFetch } from "./youtube-transcript";
+
+export const V1_TOOLS: Record<string, ToolDefinition> = {
+  youtube_transcript_fetch: {
+    description: "抓取 YouTube 视频字幕/转录文本，用于提取播客、访谈等高价值语料。",
+    parameters: {
+      type: "object",
+      properties: {
+        video_url: { type: "string", description: "YouTube 视频 URL" },
+        language: { type: "string", description: "字幕语言代码，默认 zh" },
+      },
+      required: ["video_url"],
+    },
+    execute: youtubeTranscriptFetch,
+  },
+  web_content_extract: {
+    description: "提取网页正文内容，用于抓取长文、博客、访谈记录。",
+    parameters: {
+      type: "object",
+      properties: {
+        url: { type: "string", description: "目标网页 URL" },
+        max_chars: { type: "number", description: "最大提取字符数，默认 3000" },
+      },
+      required: ["url"],
+    },
+    execute: webContentExtract,
+  },
+  update_user_state: {
+    description: "当用户在对话中表达背景、爱好、知识盲区或隐喻偏好时，增量更新 User_State。",
+    parameters: {
+      type: "object",
+      properties: {
+        user_id: { type: "string", description: "服务端注入的用户 ID" },
+        background: { type: "string", description: "用户明确表达的背景，如会计、学生、工程师" },
+        hobbies: { type: "array", items: { type: "string" }, description: "用户明确表达的爱好" },
+        knowledge_blindspots: {
+          type: "array",
+          items: { type: "string" },
+          description: "用户明确表达的不懂或薄弱领域",
+        },
+        metaphor_preferences: {
+          type: "array",
+          items: { type: "string" },
+          description: "用户偏好的讲解隐喻域，如游戏、摄影、钓鱼",
+        },
+      },
+      required: ["user_id"],
+    },
+    execute: updateUserState,
+  },
+};

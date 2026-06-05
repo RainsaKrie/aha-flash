@@ -1,0 +1,32 @@
+import type { UserState } from "@/types/state";
+import { getPreferredMetaphorContext } from "@/lib/metaphor/metaphor-engine";
+import {
+  METAPHOR_GUIDELINES,
+  OUTPUT_FORMAT_RULES,
+  SCHEMA_REFERENCE,
+  SYSTEM_ROLE_PROMPT,
+} from "@/lib/llm/prompt-templates";
+
+export function buildSystemPrompt(state: UserState) {
+  const metaphor = getPreferredMetaphorContext(state);
+  const stateContext = `
+<user_state>
+  <background>${state.profile.background}</background>
+  <hobbies>${state.profile.hobbies.join(", ")}</hobbies>
+  <blindspots>${state.profile.knowledge_blindspots.join(", ")}</blindspots>
+  <metaphor_preferences>${state.profile.metaphor_preferences.join(", ")}</metaphor_preferences>
+  <complexity_tolerance>${state.profile.complexity_tolerance}</complexity_tolerance>
+  <recent_topics>${state.conversation_compressed.recent_topics.join(", ")}</recent_topics>
+  <key_insights>${state.conversation_compressed.key_insights.join("; ")}</key_insights>
+</user_state>
+`.trim();
+
+  return [
+    SYSTEM_ROLE_PROMPT,
+    stateContext,
+    metaphor.promptHint,
+    METAPHOR_GUIDELINES,
+    OUTPUT_FORMAT_RULES,
+    SCHEMA_REFERENCE,
+  ].join("\n\n");
+}
