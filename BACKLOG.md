@@ -15,6 +15,7 @@
 | T05 Prompt 模板重写 | ✅ 已完成 | Prompt 已改为“选模式 → 选骨架 → 填参数”，Schema 参考按 Pattern 分组并包含正反例 |
 | T06 组件注册表升级 | ✅ 已完成 | 注册表按 `PatternType + TemplateId` 查找组件，V1 会自动映射到默认 V2 骨架 |
 | T07 新增 3 种交互模式 | ✅ 已完成 | 已接入 `narrative_branch`、`classification_sort`、`simulation_play`，含类型、Zod、Prompt、注册表、mock 与组件 |
+| T08 现有模式骨架变体 | ✅ 已完成 | 7 个既有 Pattern 已各新增 1 个变体：`spin_wheel`、`dual_slider`、`grid_match`、`vertical_scroll`、`overlay_fade`、`combo_chain`、`flow_connect` |
 
 **最近验收**：
 - 输入“期权是什么”可归类为 `knowledge`
@@ -27,6 +28,9 @@
 - 输入“价值投资和成长投资怎么分？让我做分类。”返回 `classification_sort/category_buckets`
 - 输入“复利怎么滚起来的？做一个模拟推演。”返回 `simulation_play/parameter_simulation`
 - 页面点击“复利”可渲染滚雪球模拟组件，侧栏显示 `simulation_play/parameter_simulation`
+- T08 七个变体输入均能返回对应 template：`spin_wheel`、`dual_slider`、`grid_match`、`vertical_scroll`、`overlay_fade`、`combo_chain`、`flow_connect`
+- 页面输入“股票和期权有什么区别？用叠加淡入对比。”可渲染 `comparison/overlay_fade`
+- 规则路由已收窄，`用叠加淡入对比` 不再误判为用户偏好；`我是会计，爱钓鱼，之后用钓鱼讲金融概念` 仍归类为 `preference`
 
 ---
 

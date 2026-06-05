@@ -166,10 +166,16 @@ export const V1UISchemaZod = z.discriminatedUnion("type", [
   }),
 ]);
 
-export const V2UISchemaZod = z.discriminatedUnion("pattern", [
+export const V2UISchemaZod = z.union([
   z.object({
     pattern: z.literal("probability"),
     template: z.literal("card_flip_reveal"),
+    version: z.string(),
+    payload: GachaConfigZod,
+  }),
+  z.object({
+    pattern: z.literal("probability"),
+    template: z.literal("spin_wheel"),
     version: z.string(),
     payload: GachaConfigZod,
   }),
@@ -180,8 +186,20 @@ export const V2UISchemaZod = z.discriminatedUnion("pattern", [
     payload: SliderConfigZod,
   }),
   z.object({
+    pattern: z.literal("parameter_explore"),
+    template: z.literal("dual_slider"),
+    version: z.string(),
+    payload: SliderConfigZod,
+  }),
+  z.object({
     pattern: z.literal("concept_memory"),
     template: z.literal("term_cards"),
+    version: z.string(),
+    payload: CardFlipConfigZod,
+  }),
+  z.object({
+    pattern: z.literal("concept_memory"),
+    template: z.literal("grid_match"),
     version: z.string(),
     payload: CardFlipConfigZod,
   }),
@@ -192,8 +210,20 @@ export const V2UISchemaZod = z.discriminatedUnion("pattern", [
     payload: TimelineConfigZod,
   }),
   z.object({
+    pattern: z.literal("process_timeline"),
+    template: z.literal("vertical_scroll"),
+    version: z.string(),
+    payload: TimelineConfigZod,
+  }),
+  z.object({
     pattern: z.literal("comparison"),
     template: z.literal("split_panel"),
+    version: z.string(),
+    payload: ComparisonConfigZod,
+  }),
+  z.object({
+    pattern: z.literal("comparison"),
+    template: z.literal("overlay_fade"),
     version: z.string(),
     payload: ComparisonConfigZod,
   }),
@@ -204,8 +234,20 @@ export const V2UISchemaZod = z.discriminatedUnion("pattern", [
     payload: QuizConfigZod,
   }),
   z.object({
+    pattern: z.literal("knowledge_check"),
+    template: z.literal("combo_chain"),
+    version: z.string(),
+    payload: QuizConfigZod,
+  }),
+  z.object({
     pattern: z.literal("system_builder"),
     template: z.literal("module_sandbox"),
+    version: z.string(),
+    payload: SandboxConfigZod,
+  }),
+  z.object({
+    pattern: z.literal("system_builder"),
+    template: z.literal("flow_connect"),
     version: z.string(),
     payload: SandboxConfigZod,
   }),

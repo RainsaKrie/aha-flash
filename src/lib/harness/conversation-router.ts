@@ -34,8 +34,10 @@ const preferenceWords = [
   "我学",
   "我做",
   "换个方式",
-  "用",
-  "讲",
+  "之后用",
+  "以后用",
+  "我想用",
+  "我希望用",
 ];
 
 function parseClassification(text: string): Pick<RouteClassification, "route" | "confidence" | "reason"> | null {
@@ -62,7 +64,7 @@ function parseClassification(text: string): Pick<RouteClassification, "route" | 
 }
 
 export function classifyConversationByRules(input: string): RouteClassification {
-  if (preferenceWords.some((word) => input.includes(word)) && !input.includes("是什么")) {
+  if (preferenceWords.some((word) => input.includes(word))) {
     return { route: "preference", confidence: 0.82, source: "rules", reason: "命中偏好表达关键词" };
   }
 

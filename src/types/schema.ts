@@ -24,12 +24,19 @@ export type PatternType =
 
 export type TemplateId =
   | "card_flip_reveal"
+  | "spin_wheel"
   | "single_slider"
+  | "dual_slider"
   | "term_cards"
+  | "grid_match"
   | "horizontal_timeline"
+  | "vertical_scroll"
   | "split_panel"
+  | "overlay_fade"
   | "single_question"
+  | "combo_chain"
   | "module_sandbox"
+  | "flow_connect"
   | "branch_story"
   | "category_buckets"
   | "parameter_simulation";
