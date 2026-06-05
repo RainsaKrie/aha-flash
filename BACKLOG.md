@@ -14,6 +14,7 @@
 | T04 Schema 三层类型定义 | ✅ 已完成 | `UISchema` 支持 V1 flat 与 V2 `pattern/template/payload`，并通过 `normalizeUISchema()` 兼容渲染 |
 | T05 Prompt 模板重写 | ✅ 已完成 | Prompt 已改为“选模式 → 选骨架 → 填参数”，Schema 参考按 Pattern 分组并包含正反例 |
 | T06 组件注册表升级 | ✅ 已完成 | 注册表按 `PatternType + TemplateId` 查找组件，V1 会自动映射到默认 V2 骨架 |
+| T07 新增 3 种交互模式 | ✅ 已完成 | 已接入 `narrative_branch`、`classification_sort`、`simulation_play`，含类型、Zod、Prompt、注册表、mock 与组件 |
 
 **最近验收**：
 - 输入“期权是什么”可归类为 `knowledge`
@@ -22,6 +23,10 @@
 - `npm run typecheck` 与 `npm run build` 通过
 - 输入“算法复杂度是什么？用滑块让我感受一下。”返回 V2 Schema：`parameter_explore/single_slider`
 - 页面侧栏显示 `parameter_explore/single_slider`，工作台渲染滑块组件
+- 输入“沉没成本是什么意思？用一个分支故事讲。”返回 `narrative_branch/branch_story`
+- 输入“价值投资和成长投资怎么分？让我做分类。”返回 `classification_sort/category_buckets`
+- 输入“复利怎么滚起来的？做一个模拟推演。”返回 `simulation_play/parameter_simulation`
+- 页面点击“复利”可渲染滚雪球模拟组件，侧栏显示 `simulation_play/parameter_simulation`
 
 ---
 

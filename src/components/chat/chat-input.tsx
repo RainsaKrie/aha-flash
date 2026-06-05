@@ -1,6 +1,6 @@
 "use client";
 
-import { Boxes, Columns2, Gauge, History, SendHorizontal, Swords, Ticket } from "lucide-react";
+import { Activity, Boxes, Columns2, Gauge, GitBranch, History, SendHorizontal, Swords, Tags, Ticket } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +20,9 @@ export function ChatInput({
     { label: "对比", icon: Columns2, prompt: "股票和期权有什么区别？做一个对比。" },
     { label: "测验", icon: Swords, prompt: "给我一个期权理解小测验。" },
     { label: "架构", icon: Boxes, prompt: "把趣灵的系统架构做成模块沙盒。" },
+    { label: "分支", icon: GitBranch, prompt: "沉没成本是什么意思？用一个分支故事讲。" },
+    { label: "分类", icon: Tags, prompt: "价值投资和成长投资怎么分？让我做分类。" },
+    { label: "复利", icon: Activity, prompt: "复利怎么滚起来的？做一个模拟推演。" },
   ];
 
   async function submit(event: FormEvent<HTMLFormElement>) {

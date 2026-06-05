@@ -8,9 +8,12 @@ import type {
 import { normalizeUISchema } from "@/types/schema";
 import { BuildSandbox } from "./build-sandbox";
 import { CardFlip } from "./card-flip";
+import { ClassificationSort } from "./classification-sort";
 import { ComparisonSplit } from "./comparison-split";
 import { GachaSimulator } from "./gacha-simulator";
+import { NarrativeBranch } from "./narrative-branch";
 import { QuizBattle } from "./quiz-battle";
+import { SimulationPlay } from "./simulation-play";
 import { SliderExplorer } from "./slider-explorer";
 import { TimelineScrubber } from "./timeline-scrubber";
 
@@ -47,6 +50,18 @@ const patternRegistry: Record<PatternType, PatternRegistry> = {
   system_builder: {
     default: "module_sandbox",
     module_sandbox: BuildSandbox as RegistryComponent,
+  },
+  narrative_branch: {
+    default: "branch_story",
+    branch_story: NarrativeBranch as RegistryComponent,
+  },
+  classification_sort: {
+    default: "category_buckets",
+    category_buckets: ClassificationSort as RegistryComponent,
+  },
+  simulation_play: {
+    default: "parameter_simulation",
+    parameter_simulation: SimulationPlay as RegistryComponent,
   },
 };
 

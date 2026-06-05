@@ -14,7 +14,7 @@ export const OUTPUT_FORMAT_RULES = `
 输出规范:
 1. 必须输出合法 JSON，不要包裹 Markdown 代码块。
 2. 优先输出 V2 三层 Schema: { "pattern": "...", "template": "...", "version": "2.0", "payload": {...} }。
-3. pattern 必须是: probability, parameter_explore, concept_memory, process_timeline, comparison, knowledge_check, system_builder。
+3. pattern 必须是: probability, parameter_explore, concept_memory, process_timeline, comparison, knowledge_check, system_builder, narrative_branch, classification_sort, simulation_play。
 4. template 必须匹配 pattern。不要输出不在参考表里的 template。
 5. payload 必须完整满足对应 template 的字段要求。
 6. V1 flat Schema 仍可兼容，但新输出必须优先使用 V2。
@@ -69,4 +69,25 @@ Pattern: system_builder
 - Payload: { title, target, modules:[{id, label, description}] }
 - 正例: 用户选择输入、规则、反馈模块组成系统。
 - 不要这样: 模块之间没有共同目标。
+
+Pattern: narrative_branch
+- 适用: 沉没成本、商业案例、逻辑谬误、历史选择、人物决策。
+- Template: branch_story。
+- Payload: { title, opening, branches:[{choice_label, outcome_description, insight}] }
+- 正例: 沉没成本用“继续排队/及时离开/换目标”的分支故事揭示成本不可追回。
+- 不要这样: 每个分支结果都一样，用户选择不会改变后果。
+
+Pattern: classification_sort
+- 适用: 分类归因、投资风格、生物分类、逻辑谬误分类、概念边界辨析。
+- Template: category_buckets。
+- Payload: { title, categories:[{id, name}], items:[{label, correct_category, explanation}] }
+- 正例: 把价值投资、成长投资、指数投资案例放入不同分类桶。
+- 不要这样: correct_category 不匹配 categories 里的 id。
+
+Pattern: simulation_play
+- 适用: 复利、供需变化、种群演化、网络效应、滚雪球式反馈。
+- Template: parameter_simulation。
+- Payload: { title, params:[{label, min, max, default, unit?}], compute_formula_description, steps }
+- 正例: 调整增长率和初始加成，播放 8 步看到复利曲线变陡。
+- 不要这样: 只有描述，没有可调参数或时间推进。
 `.trim();

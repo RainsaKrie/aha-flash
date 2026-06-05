@@ -5,7 +5,10 @@ export type UISchemaType =
   | "timeline_scrubber"
   | "comparison_split"
   | "quiz_battle"
-  | "build_sandbox";
+  | "build_sandbox"
+  | "narrative_branch"
+  | "classification_sort"
+  | "simulation_play";
 
 export type PatternType =
   | "probability"
@@ -14,7 +17,10 @@ export type PatternType =
   | "process_timeline"
   | "comparison"
   | "knowledge_check"
-  | "system_builder";
+  | "system_builder"
+  | "narrative_branch"
+  | "classification_sort"
+  | "simulation_play";
 
 export type TemplateId =
   | "card_flip_reveal"
@@ -23,7 +29,10 @@ export type TemplateId =
   | "horizontal_timeline"
   | "split_panel"
   | "single_question"
-  | "module_sandbox";
+  | "module_sandbox"
+  | "branch_story"
+  | "category_buckets"
+  | "parameter_simulation";
 
 export type UIPayload<TPayload = Record<string, unknown>> = TPayload;
 
@@ -66,6 +75,9 @@ export const V1_TO_V2_SCHEMA_MAP: Record<
   comparison_split: { pattern: "comparison", template: "split_panel" },
   quiz_battle: { pattern: "knowledge_check", template: "single_question" },
   build_sandbox: { pattern: "system_builder", template: "module_sandbox" },
+  narrative_branch: { pattern: "narrative_branch", template: "branch_story" },
+  classification_sort: { pattern: "classification_sort", template: "category_buckets" },
+  simulation_play: { pattern: "simulation_play", template: "parameter_simulation" },
 };
 
 export const V2_TO_V1_SCHEMA_MAP: Record<PatternType, { type: UISchemaType; template: TemplateId }> = {
@@ -76,6 +88,9 @@ export const V2_TO_V1_SCHEMA_MAP: Record<PatternType, { type: UISchemaType; temp
   comparison: { type: "comparison_split", template: "split_panel" },
   knowledge_check: { type: "quiz_battle", template: "single_question" },
   system_builder: { type: "build_sandbox", template: "module_sandbox" },
+  narrative_branch: { type: "narrative_branch", template: "branch_story" },
+  classification_sort: { type: "classification_sort", template: "category_buckets" },
+  simulation_play: { type: "simulation_play", template: "parameter_simulation" },
 };
 
 function isV2UISchema(schema: UISchema): schema is V2UISchema {
@@ -174,4 +189,37 @@ export interface BuildSandboxConfig {
   title: string;
   modules: Array<{ id: string; label: string; description: string }>;
   target: string;
+}
+
+export interface NarrativeBranchConfig {
+  title: string;
+  opening: string;
+  branches: Array<{
+    choice_label: string;
+    outcome_description: string;
+    insight: string;
+  }>;
+}
+
+export interface ClassificationSortConfig {
+  title: string;
+  categories: Array<{ id: string; name: string }>;
+  items: Array<{
+    label: string;
+    correct_category: string;
+    explanation: string;
+  }>;
+}
+
+export interface SimulationPlayConfig {
+  title: string;
+  params: Array<{
+    label: string;
+    min: number;
+    max: number;
+    default: number;
+    unit?: string;
+  }>;
+  compute_formula_description: string;
+  steps: number;
 }

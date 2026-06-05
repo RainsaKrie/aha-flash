@@ -74,6 +74,45 @@ const SandboxConfigZod = z.object({
   ),
 });
 
+const NarrativeBranchConfigZod = z.object({
+  title: z.string(),
+  opening: z.string(),
+  branches: z.array(
+    z.object({
+      choice_label: z.string(),
+      outcome_description: z.string(),
+      insight: z.string(),
+    }),
+  ),
+});
+
+const ClassificationSortConfigZod = z.object({
+  title: z.string(),
+  categories: z.array(z.object({ id: z.string(), name: z.string() })),
+  items: z.array(
+    z.object({
+      label: z.string(),
+      correct_category: z.string(),
+      explanation: z.string(),
+    }),
+  ),
+});
+
+const SimulationPlayConfigZod = z.object({
+  title: z.string(),
+  params: z.array(
+    z.object({
+      label: z.string(),
+      min: z.number(),
+      max: z.number(),
+      default: z.number(),
+      unit: z.string().optional(),
+    }),
+  ),
+  compute_formula_description: z.string(),
+  steps: z.number(),
+});
+
 export const V1UISchemaZod = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("gacha_simulator"),
@@ -109,6 +148,21 @@ export const V1UISchemaZod = z.discriminatedUnion("type", [
     type: z.literal("build_sandbox"),
     version: z.string(),
     config: SandboxConfigZod,
+  }),
+  z.object({
+    type: z.literal("narrative_branch"),
+    version: z.string(),
+    config: NarrativeBranchConfigZod,
+  }),
+  z.object({
+    type: z.literal("classification_sort"),
+    version: z.string(),
+    config: ClassificationSortConfigZod,
+  }),
+  z.object({
+    type: z.literal("simulation_play"),
+    version: z.string(),
+    config: SimulationPlayConfigZod,
   }),
 ]);
 
@@ -154,6 +208,24 @@ export const V2UISchemaZod = z.discriminatedUnion("pattern", [
     template: z.literal("module_sandbox"),
     version: z.string(),
     payload: SandboxConfigZod,
+  }),
+  z.object({
+    pattern: z.literal("narrative_branch"),
+    template: z.literal("branch_story"),
+    version: z.string(),
+    payload: NarrativeBranchConfigZod,
+  }),
+  z.object({
+    pattern: z.literal("classification_sort"),
+    template: z.literal("category_buckets"),
+    version: z.string(),
+    payload: ClassificationSortConfigZod,
+  }),
+  z.object({
+    pattern: z.literal("simulation_play"),
+    template: z.literal("parameter_simulation"),
+    version: z.string(),
+    payload: SimulationPlayConfigZod,
   }),
 ]);
 

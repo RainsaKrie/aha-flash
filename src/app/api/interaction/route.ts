@@ -40,6 +40,28 @@ function summarizeInteraction(schemaType: string, eventType: string, payload: Re
     return `用户调整对比视角到 ${payload.ratio ?? ""}%`;
   }
 
+  if (eventType === "narrative_branch_selected") {
+    return `用户选择叙事分支：${payload.choice ?? ""}`;
+  }
+
+  if (eventType === "classification_item_sorted") {
+    return payload.correct
+      ? `用户正确分类：${payload.item ?? ""}`
+      : `用户尝试分类：${payload.item ?? ""}`;
+  }
+
+  if (eventType === "classification_sort_completed") {
+    return `用户完成分类归因，得分 ${payload.score ?? 0}/${payload.total ?? 0}`;
+  }
+
+  if (eventType === "simulation_param_changed") {
+    return `用户调整模拟参数：${payload.label ?? ""}=${payload.value ?? ""}`;
+  }
+
+  if (eventType === "simulation_play_completed") {
+    return `用户完成模拟推演，终值 ${payload.final_value ?? ""}`;
+  }
+
   return `用户触发 ${schemaType} 的 ${eventType} 事件`;
 }
 

@@ -54,6 +54,86 @@ export function createMockSchema(input: string): UISchema {
     };
   }
 
+  if (includesAny(input, ["沉没成本", "后悔", "分支", "选择", "案例"])) {
+    return {
+      pattern: "narrative_branch",
+      template: "branch_story",
+      version: "2.0",
+      payload: {
+        title: "沉没成本 · 分支故事",
+        opening: "你排队 40 分钟买限定甜品，快到你时发现评价很普通。已经花掉的 40 分钟不能退回，现在真正的问题是：下一分钟还值不值得继续投进去？",
+        branches: [
+          {
+            choice_label: "继续排队",
+            outcome_description: "你买到了甜品，但发现味道一般。之前的等待没有变成收益，新的等待反而继续增加成本。",
+            insight: "沉没成本不能决定下一步，下一步只该看未来收益和未来成本。",
+          },
+          {
+            choice_label: "立刻离开",
+            outcome_description: "你损失了已经等待的时间，但把接下来的时间拿去做更有价值的事。",
+            insight: "及时止损不是否定过去，而是保护还没花出去的资源。",
+          },
+          {
+            choice_label: "换一个目标",
+            outcome_description: "你用剩下的时间买了附近更确定好吃的东西，体验反而更稳。",
+            insight: "决策的核心是机会成本：同一段未来时间还能换来什么。",
+          },
+        ],
+      },
+    };
+  }
+
+  if (includesAny(input, ["分类", "归因", "怎么分", "分辨", "价值投资", "成长投资"])) {
+    return {
+      pattern: "classification_sort",
+      template: "category_buckets",
+      version: "2.0",
+      payload: {
+        title: "投资风格 · 分类桶",
+        categories: [
+          { id: "value", name: "价值投资" },
+          { id: "growth", name: "成长投资" },
+          { id: "index", name: "指数投资" },
+        ],
+        items: [
+          {
+            label: "便宜买入现金流稳定但被低估的公司",
+            correct_category: "value",
+            explanation: "核心是价格低于内在价值，像用折扣价买稳定产出。",
+          },
+          {
+            label: "愿意为高速扩张和未来市场空间付更高价格",
+            correct_category: "growth",
+            explanation: "核心是未来增速，像提前押注角色后续会变强。",
+          },
+          {
+            label: "不挑单个公司，长期买入一篮子市场组合",
+            correct_category: "index",
+            explanation: "核心是跟随整体市场，不把胜负押在单点判断上。",
+          },
+        ],
+      },
+    };
+  }
+
+  if (includesAny(input, ["复利", "供需", "模拟", "推演", "网络效应", "滚起来"])) {
+    return {
+      pattern: "simulation_play",
+      template: "parameter_simulation",
+      version: "2.0",
+      payload: {
+        title: "复利 · 滚雪球模拟",
+        params: [
+          { label: "每步增长率", min: 1, max: 30, default: 8, unit: "%" },
+          { label: "初始加成", min: 0, max: 200, default: 20, unit: "" },
+        ],
+        compute_formula_description:
+          "每一步都会把上一步的结果当成新的本金，所以增长率看似只多一点，后面会越滚越快。",
+        steps: 8,
+      },
+    };
+  }
+
   if (includesAny(input, ["历史", "过程", "时间线", "演化", "发展"])) {
     return {
       type: "timeline_scrubber",
