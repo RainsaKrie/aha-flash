@@ -4,6 +4,33 @@
 
 ---
 
+## 2026-06-06
+
+### Phase 4 — 知识沙盒体系
+
+完成 T09：知识资产存储。
+
+新增：
+- `UserState.knowledge_assets`
+- `KnowledgeAsset` 类型
+- `stateStore.addKnowledgeAsset()`
+- `/api/chat` 在知识类对话生成后写入概念资产
+- System Prompt 注入最近知识资产
+- 首页侧栏展示已学概念数量和最近概念
+
+验收：
+- 输入“期权是什么？用我能听懂的方式讲。”后，状态写入 `concept: "期权"`。
+- 重复学习同一概念时，`knowledge_assets` 数量保持 1，旧资产被覆盖。
+- 页面侧栏从“已学 0”更新为“已学 1”，并展示“期权”。
+- 泛化表达“我能听懂的方式”不再被写入 `metaphor_preferences`。
+
+验证：
+- `npm run typecheck`
+- `npm run build`
+- API 复测和 Playwright 页面快照验收
+
+---
+
 ## 2026-06-05
 
 ### 项目命名与仓库
@@ -87,4 +114,3 @@
 注意：
 - `/tmp` 不提供长期持久化。
 - 生产记忆应迁移到 Vercel KV、Postgres、Redis 或其他数据库。
-

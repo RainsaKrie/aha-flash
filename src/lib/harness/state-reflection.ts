@@ -8,6 +8,10 @@ function unique(values: string[]) {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
 }
 
+function isGenericMetaphorPreference(value: string) {
+  return /我能听懂|通俗|简单|方式|方法|一点/.test(value);
+}
+
 function parseJsonObject(text: string) {
   const match = text.match(/\{[\s\S]*\}/);
   if (!match) return null;
@@ -63,7 +67,7 @@ export function reflectTurnByRules({
 
   const metaphorMatches = [...input.matchAll(/用([^，。,.!?！？\s]{2,12})(?:讲|理解|解释)/g)].map(
     (match) => match[1],
-  );
+  ).filter((value) => !isGenericMetaphorPreference(value));
   if (metaphorMatches.length) profile_patch.metaphor_preferences = unique(metaphorMatches);
 
   const blindspotMatches = [...input.matchAll(/(?:不懂|不了解|看不懂)([^，。,.!?！？\s]{2,12})/g)].map(

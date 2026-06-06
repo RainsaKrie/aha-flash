@@ -24,7 +24,6 @@
 
 | 优先级 | 任务 | 原因 |
 |---|---|---|
-| P0 | T09 知识资产存储 | 让一次性交互沉淀为用户已学概念 |
 | P0 | T10 知识链推荐 | 每次学习后给出下一步概念 |
 | P1 | T12 `/sandbox` 页面 | 把已学概念可视化，形成产品粘性 |
 | P1 | T11 深度分级 | 同一概念支持快懂、场景、映射三档 |
@@ -34,33 +33,6 @@
 ---
 
 ## Phase 4 — 知识沙盒体系
-
-### T09 — 知识资产存储
-
-目标：状态文件新增 `knowledge_assets`，记录用户学过的概念。
-
-结构建议：
-
-```ts
-type KnowledgeAsset = {
-  concept: string;
-  pattern: PatternType;
-  template: TemplateId;
-  learned_at: string;
-  understanding: "shallow" | "moderate" | "deep";
-  topic_area?: string;
-};
-```
-
-涉及文件：
-- `src/types/state.ts`
-- `src/lib/harness/state-store.ts`
-- `src/app/api/chat/route.ts`
-
-验收：
-- 学完“期权”后，状态中出现对应 asset。
-- 再学同一 concept 时覆盖旧记录。
-- 状态仍保持轻量，不写入长文本。
 
 ### T10 — 知识链推荐
 
@@ -187,4 +159,3 @@ next_concepts?: Array<{
 | H02 | 选择生产状态存储 | Vercel KV、Postgres、Redis 或其他方案 |
 | H03 | 扩充隐喻域映射表 | 摄影、钓鱼、健身、烘焙等 |
 | H04 | 真实用户测试 | 记录隐喻相关性、交互完成率、卡点 |
-

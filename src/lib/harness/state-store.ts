@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { nanoid } from "nanoid";
-import type { UserProfile, UserState } from "@/types/state";
+import type { KnowledgeAsset, UserProfile, UserState } from "@/types/state";
 
 function resolveStatesDir() {
   if (process.env.AHA_FLASH_STATE_DIR) return process.env.AHA_FLASH_STATE_DIR;
@@ -12,9 +12,14 @@ function resolveStatesDir() {
 
 const STATES_DIR = resolveStatesDir();
 const MAX_STATE_BYTES = 5120;
+const MAX_KNOWLEDGE_ASSETS = 10;
 
 function mergeUnique(current: string[] = [], next: string[] = []) {
   return [...new Set([...current, ...next].map((item) => item.trim()).filter(Boolean))].slice(0, 12);
+}
+
+function normalizeConcept(value: string) {
+  return value.trim().toLowerCase();
 }
 
 export interface StateReflectionPatch {
@@ -29,7 +34,11 @@ export class StateStore {
 
     try {
       const raw = await fs.readFile(path.join(STATES_DIR, `${userId}.json`), "utf-8");
-      return JSON.parse(raw) as UserState;
+      const state = JSON.parse(raw) as UserState;
+      return {
+        ...state,
+        knowledge_assets: state.knowledge_assets || [],
+      };
     } catch {
       return null;
     }
@@ -52,6 +61,7 @@ export class StateStore {
         last_session_summary: "",
         total_interactions: 0,
       },
+      knowledge_assets: [],
       ui_preferences: {
         theme: "cyberpunk_dark",
         interaction_density: "medium",
@@ -86,6 +96,7 @@ export class StateStore {
         ...current.conversation_compressed,
         ...patch.conversation_compressed,
       },
+      knowledge_assets: patch.knowledge_assets || current.knowledge_assets || [],
       ui_preferences: { ...current.ui_preferences, ...patch.ui_preferences },
       updated_at: new Date().toISOString(),
     };
@@ -112,6 +123,25 @@ export class StateStore {
         total_interactions: current.conversation_compressed.total_interactions + 1,
       },
     });
+  }
+
+  async addKnowledgeAsset(userId: string, asset: Omit<KnowledgeAsset, "learned_at">): Promise<UserState> {
+    const current = (await this.get(userId)) ?? (await this.create(userId));
+    const normalizedConcept = normalizeConcept(asset.concept);
+    const nextAsset: KnowledgeAsset = {
+      ...asset,
+      concept: asset.concept.trim().slice(0, 40),
+      topic_area: asset.topic_area?.trim().slice(0, 24) || undefined,
+      learned_at: new Date().toISOString(),
+    };
+    const knowledge_assets = [
+      nextAsset,
+      ...(current.knowledge_assets || []).filter(
+        (item) => normalizeConcept(item.concept) !== normalizedConcept,
+      ),
+    ].slice(0, MAX_KNOWLEDGE_ASSETS);
+
+    return this.update(userId, { knowledge_assets });
   }
 
   async mergeProfilePatch(userId: string, patch: Partial<UserProfile>): Promise<UserState> {

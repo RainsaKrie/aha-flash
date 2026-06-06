@@ -91,6 +91,7 @@ src/
 状态包含：
 - `profile`
 - `conversation_compressed`
+- `knowledge_assets`
 - `ui_preferences`
 - `updated_at`
 
@@ -103,6 +104,8 @@ src/
 重要约束：
 - 不保存全量历史文本。
 - 每轮对话只写入压缩摘要和关键洞察。
+- 每个知识资产只保存概念名、`pattern/template`、理解深度、主题域和学习时间。
+- 同一概念重复学习时覆盖旧资产，避免状态列表膨胀。
 - 状态体积保持小而可读。
 
 ---
@@ -122,6 +125,7 @@ POST /api/chat
   +-- normalizeUISchema(schema)
   +-- reflectTurn(input, route, schemaType, state)
   +-- stateStore.applyTurnReflection()
+  +-- if route is knowledge: stateStore.addKnowledgeAsset()
   +-- return schema + route + userState
 ```
 
@@ -239,5 +243,4 @@ POST /api/chat
 - 当前 mock schema 仍承担较多验收输入路由。
 - 没有自动化测试集和质量评分脚本。
 - 搜索工具尚未接入。
-- 知识资产和沙盒页尚未实现。
-
+- 知识链推荐、深度分级和沙盒页尚未实现。

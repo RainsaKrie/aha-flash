@@ -130,6 +130,7 @@ export default function HomePage() {
 
   const profile = userState?.profile;
   const summary = userState?.conversation_compressed;
+  const knowledgeAssets = userState?.knowledge_assets || [];
   const metaphor = profile?.metaphor_preferences[0] || "抽卡机制";
   const currentRenderableSchema = currentSchema ? normalizeUISchema(currentSchema) : null;
 
@@ -188,6 +189,10 @@ export default function HomePage() {
                 <dt className="text-[var(--muted)]">交互</dt>
                 <dd>{summary?.total_interactions ?? 0}</dd>
               </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-[var(--muted)]">已学</dt>
+                <dd>{knowledgeAssets.length}</dd>
+              </div>
             </dl>
           </Card>
 
@@ -226,6 +231,24 @@ export default function HomePage() {
                   {summary.last_session_summary}
                 </p>
               )}
+              <div>
+                <div className="mb-2 text-xs text-[var(--muted)]">已学概念</div>
+                <div className="flex flex-wrap gap-2">
+                  {knowledgeAssets.length ? (
+                    knowledgeAssets.slice(0, 5).map((asset) => (
+                      <span
+                        key={`${asset.concept}-${asset.learned_at}`}
+                        className="rounded-[8px] border border-[var(--line)] bg-[#07120f] px-2 py-1 text-xs"
+                        title={`${asset.pattern}/${asset.template}`}
+                      >
+                        {asset.concept}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-[var(--muted)]">暂无</span>
+                  )}
+                </div>
+              </div>
             </div>
           </Card>
 

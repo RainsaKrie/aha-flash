@@ -11,6 +11,31 @@ import { extractSchemaFromText, getSchemaFailureReason } from "@/lib/llm/schema-
 import { buildSourcePromptContext, collectSourceContexts } from "@/lib/tools/source-router";
 import { normalizeUISchema, type UISchema } from "@/types/schema";
 
+function inferConcept(input: string) {
+  const withoutUrls = input.replace(/https?:\/\/[^\s)）]+/g, "");
+  const firstSentence = withoutUrls.split(/[。！？!?]/)[0] || withoutUrls;
+  const concept = firstSentence
+    .replace(/请|帮我|给我|一下|一个|做成|做一个/g, "")
+    .replace(/是什么.*$/g, "")
+    .replace(/怎么.*$/g, "")
+    .replace(/为什么.*$/g, "")
+    .replace(/有什么区别.*$/g, "")
+    .replace(/用.*(?:讲|解释|对比|演示|模拟).*$/g, "")
+    .replace(/让我.*$/g, "")
+    .replace(/[，,：:\s]/g, "")
+    .trim();
+
+  return concept.slice(0, 40) || inferTopic(input);
+}
+
+function inferTopicArea(input: string) {
+  if (/[期权股票投资金融保险复利利率通胀]/.test(input)) return "金融";
+  if (/[算法复杂度编程系统架构模块]/.test(input)) return "科技";
+  if (/[历史发展演化时间线]/.test(input)) return "历史";
+  if (/[沉没成本决策逻辑谬误]/.test(input)) return "认知";
+  return "通识";
+}
+
 async function generateSchemaWithLLM({
   model,
   system,
@@ -100,12 +125,22 @@ export async function POST(req: Request) {
     state,
     model,
   });
-  const updatedState = await stateStore.applyTurnReflection(
+  let updatedState = await stateStore.applyTurnReflection(
     state.user_id,
     topic,
     `已生成 ${normalizedSchema.pattern}/${normalizedSchema.template} 互动组件`,
     reflection,
   );
+
+  if (routeInfo.route === "knowledge") {
+    updatedState = await stateStore.addKnowledgeAsset(state.user_id, {
+      concept: inferConcept(input),
+      pattern: normalizedSchema.pattern,
+      template: normalizedSchema.template,
+      understanding: reflection.understanding_level || "shallow",
+      topic_area: inferTopicArea(input),
+    });
+  }
 
   return NextResponse.json({
     id: crypto.randomUUID(),

@@ -12,7 +12,7 @@
 | Phase 1 Stateful Memory | 完成 | 意图分类、用户状态、回合反思、状态增量写入 |
 | Phase 2 Schema 协议重构 | 完成 | V2 `pattern/template/payload`，V1 兼容，注册表升级 |
 | Phase 3 交互模式扩展 | 完成 | 10 个 Pattern，既有 7 个 Pattern 各有 2 个 Template |
-| Phase 4 知识沙盒体系 | 待开发 | 知识资产、推荐链、深度分级、`/sandbox` |
+| Phase 4 知识沙盒体系 | 进行中 | 知识资产已完成；推荐链、深度分级、`/sandbox` 待开发 |
 | Phase 5 外部集成 | 待开发 | 搜索工具、source-router 降级 |
 | Phase 6 质量体系 | 待开发 | 测试用例、评分脚本、Prompt 对比 |
 
@@ -43,6 +43,7 @@ b9876f0 Add template variants for existing patterns
 - `/api/state`
 - `/api/chat`
 - `/api/interaction`
+- `knowledge_assets`
 
 ### 2.3 Schema
 
@@ -83,12 +84,11 @@ b9876f0 Add template variants for existing patterns
 
 优先级建议：
 
-1. T09 知识资产存储
-2. T10 知识链推荐
-3. T12 `/sandbox` 知识沙盒页面
-4. T11 深度分级
-5. T15-T17 质量体系
-6. T13-T14 搜索工具与 source-router 调整
+1. T10 知识链推荐
+2. T12 `/sandbox` 知识沙盒页面
+3. T11 深度分级
+4. T15-T17 质量体系
+5. T13-T14 搜索工具与 source-router 调整
 
 原因：
 - 当前核心体验已能生成组件。
@@ -156,4 +156,3 @@ AHA_FLASH_STATE_DIR=
 - 没有 `DEEPSEEK_API_KEY` 时使用 mock schema fallback。
 - Vercel demo 会默认把状态写到 `/tmp/aha-flash/states`。
 - 生产级状态持久化应迁移到数据库或 KV。
-

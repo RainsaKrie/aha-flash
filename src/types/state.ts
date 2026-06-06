@@ -1,3 +1,5 @@
+import type { PatternType, TemplateId } from "./schema";
+
 export interface UserProfile {
   background: string;
   hobbies: string[];
@@ -21,10 +23,20 @@ export interface UIPreferences {
   animation_speed: "slow" | "normal" | "fast";
 }
 
+export interface KnowledgeAsset {
+  concept: string;
+  pattern: PatternType;
+  template: TemplateId;
+  learned_at: string;
+  understanding: "shallow" | "moderate" | "deep";
+  topic_area?: string;
+}
+
 export interface UserState {
   user_id: string;
   profile: UserProfile;
   conversation_compressed: CompressedSummary;
+  knowledge_assets: KnowledgeAsset[];
   ui_preferences: UIPreferences;
   updated_at: string;
 }
