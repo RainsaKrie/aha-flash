@@ -50,6 +50,28 @@
 - API 复测
 - Playwright 生产服务页面快照验收
 
+完成 T12：`/sandbox` 知识沙盒页面。
+
+新增：
+- `src/app/sandbox/page.tsx`
+- 首页状态面板新增“知识沙盒”入口
+- 沙盒页读取当前匿名用户状态
+- 已学概念按 `topic_area` 分组展示
+- 概念卡片展示 concept、pattern、template、理解深度和学习时间
+- 沙盒页统计已学概念数、覆盖的交互模式数和深入理解数量
+
+验收：
+- 通过 `/api/chat` 生成“期权”“算法复杂度”“沉没成本”三个知识资产。
+- 进入 `/sandbox` 后可看到 3 张概念卡片。
+- 卡片展示 pattern、template、理解深度。
+- 页面按“金融”“认知”等主题分组展示。
+- 首页状态面板可看到并进入“知识沙盒”入口。
+
+验证：
+- `npm run typecheck`
+- `npm run build`
+- Playwright 生产服务页面快照验收
+
 ---
 
 ## 2026-06-05

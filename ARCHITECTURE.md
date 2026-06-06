@@ -66,6 +66,7 @@ src/
       state/route.ts
       tools/route.ts
     onboarding/page.tsx
+    sandbox/page.tsx
     page.tsx
   components/
     chat/
@@ -220,6 +221,8 @@ POST /api/chat
 - `currentSchema`
 - loading/error
 
+`/sandbox` 页面通过同一个 localStorage 用户 ID 读取 `/api/state`，将 `knowledge_assets` 按 `topic_area` 分组，展示概念卡片、`pattern/template`、理解深度和学习时间。
+
 组件交互通过 `/api/interaction` 回写摘要：
 - 抽卡完成
 - 滑块变化
@@ -249,4 +252,4 @@ POST /api/chat
 - 当前 mock schema 仍承担较多验收输入路由。
 - 没有自动化测试集和质量评分脚本。
 - 搜索工具尚未接入。
-- 深度分级和沙盒页尚未实现。
+- 深度分级尚未实现。

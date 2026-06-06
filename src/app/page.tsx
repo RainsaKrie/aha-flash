@@ -1,6 +1,6 @@
 "use client";
 
-import { BrainCircuit, FileJson2, History, Settings2 } from "lucide-react";
+import { BrainCircuit, FileJson2, History, Map, Settings2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
 import { ChatHistory } from "@/components/chat/chat-history";
@@ -161,9 +161,14 @@ export default function HomePage() {
                 <FileJson2 size={16} />
                 当前状态
               </div>
-              <Link href="/onboarding" className="tool-button icon-button" title="偏好设置">
-                <Settings2 size={16} />
-              </Link>
+              <div className="flex gap-2">
+                <Link href="/sandbox" className="tool-button icon-button" title="知识沙盒">
+                  <Map size={16} />
+                </Link>
+                <Link href="/onboarding" className="tool-button icon-button" title="偏好设置">
+                  <Settings2 size={16} />
+                </Link>
+              </div>
             </div>
             <dl className="grid gap-2 text-sm">
               <div className="flex justify-between gap-3">
