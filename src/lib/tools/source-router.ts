@@ -44,6 +44,7 @@ function normalizeToolResult(url: string, result: unknown): SourceContext {
 function normalizeSearchResult(input: string, result: unknown): SourceContext[] {
   const data = result as {
     success?: boolean;
+    provider?: string;
     query?: string;
     answer?: string;
     results?: Array<{ title?: string; url?: string; content?: string }>;
@@ -56,6 +57,7 @@ function normalizeSearchResult(input: string, result: unknown): SourceContext[] 
         type: "search",
         url: "",
         title: data.query || input,
+        provider: data.provider,
         success: false,
         error: data.error || "search failed",
       },
@@ -68,6 +70,7 @@ function normalizeSearchResult(input: string, result: unknown): SourceContext[] 
     title: item.title || `搜索结果 ${index + 1}`,
     excerpt: item.content || data.answer,
     text: [data.answer, item.content].filter(Boolean).join("\n").slice(0, 1200),
+    provider: data.provider,
     success: Boolean(item.url),
   }));
 }

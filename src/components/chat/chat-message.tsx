@@ -28,6 +28,7 @@ export function ChatMessage({ message }: { message: Message }) {
                   {source.success ? "已读取" : "读取失败"}
                 </span>
                 <span> · {sourceTypeLabel[source.type]}</span>
+                {source.provider && <span> · {source.provider}</span>}
                 {source.title && <span> · {source.title}</span>}
               </div>
             ))}

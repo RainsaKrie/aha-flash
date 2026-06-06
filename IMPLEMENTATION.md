@@ -79,7 +79,7 @@
 
 - YouTube transcript fetch
 - Web content extract
-- Tavily web search
+- Web search provider chain: Brave, Google Programmable Search, Tavily
 - Source router for pasted URLs
 - Source router for pure text external-information queries
 - Tool execution API
@@ -155,6 +155,10 @@ npm run build
 ```env
 DEEPSEEK_API_KEY=
 DEEPSEEK_BASE_URL=https://api.deepseek.com
+WEB_SEARCH_PROVIDER=auto
+BRAVE_SEARCH_API_KEY=
+GOOGLE_SEARCH_API_KEY=
+GOOGLE_SEARCH_ENGINE_ID=
 TAVILY_API_KEY=
 NEXT_PUBLIC_APP_NAME=趣灵
 NEXT_PUBLIC_MAX_STEPS=5
@@ -165,5 +169,7 @@ AHA_FLASH_STATE_DIR=
 
 说明：
 - 没有 `DEEPSEEK_API_KEY` 时使用 mock schema fallback。
+- `WEB_SEARCH_PROVIDER=auto` 时按 Brave -> Google -> Tavily 顺序尝试。
+- 推荐优先配置 `BRAVE_SEARCH_API_KEY`；Google 和 Tavily 可作为备选。
 - Vercel demo 会默认把状态写到 `/tmp/aha-flash/states`。
 - 生产级状态持久化应迁移到数据库或 KV。

@@ -36,4 +36,4 @@
 | H02 | 选择生产状态存储 | Vercel KV、Postgres、Redis 或其他方案 |
 | H03 | 扩充隐喻域映射表 | 摄影、钓鱼、健身、烘焙等 |
 | H04 | 真实用户测试 | 记录隐喻相关性、交互完成率、卡点 |
-| H05 | 配置 Tavily API Key | 写入 `TAVILY_API_KEY`，用于真实联网搜索 |
+| H05 | 配置搜索 API Key | 优先写入 `BRAVE_SEARCH_API_KEY`，也可配置 Google 或 Tavily 备用 |

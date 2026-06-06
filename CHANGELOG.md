@@ -12,16 +12,17 @@
 
 新增：
 - `web_search` tool
-- Tavily Search API 集成
-- `TAVILY_API_KEY` 环境变量
+- Brave / Google / Tavily 多 provider 搜索链
+- `WEB_SEARCH_PROVIDER`、`BRAVE_SEARCH_API_KEY`、`GOOGLE_SEARCH_API_KEY`、`GOOGLE_SEARCH_ENGINE_ID`、`TAVILY_API_KEY` 环境变量
 - 纯文本外部信息请求的搜索触发规则
 - 聊天消息来源展示支持“搜索”
 
 行为：
 - 输入包含 URL 时，继续走 `web_content_extract` 或 `youtube_transcript_fetch`。
 - 输入不含 URL、但包含“最新/最近/当前/新闻/看法/观点/价格/政策/巴菲特”等外部信息信号时，触发 `web_search`。
+- 默认 `WEB_SEARCH_PROVIDER=auto`，按 Brave -> Google -> Tavily 顺序尝试，以优先使用免费或便宜渠道。
 - 搜索结果只作为 Prompt 上下文注入，不写入长期状态，不保存全文。
-- 未配置 `TAVILY_API_KEY` 时返回可控失败，并在聊天来源中显示“读取失败 · 搜索”。
+- 未配置搜索 API key 时返回可控失败，并在聊天来源中显示“读取失败 · 搜索”。
 
 验收：
 - `/api/tools` 调用 `web_search` 在无 key 时返回 `TAVILY_API_KEY is not configured`，不报 500。

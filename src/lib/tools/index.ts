@@ -36,6 +36,7 @@ export const V1_TOOLS: Record<string, ToolDefinition> = {
       properties: {
         query: { type: "string", description: "搜索查询" },
         max_results: { type: "number", description: "最大结果数，默认 5，最多 5" },
+        provider: { type: "string", enum: ["auto", "brave", "google", "tavily"], description: "搜索提供商，默认 auto" },
       },
       required: ["query"],
     },

@@ -21,6 +21,7 @@ export interface SourceContext {
   title?: string;
   excerpt?: string;
   text?: string;
+  provider?: string;
   success: boolean;
   error?: string;
 }
