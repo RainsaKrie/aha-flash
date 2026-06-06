@@ -1,0 +1,128 @@
+[
+  {
+    "id": "probability-option-rapid",
+    "input": "期权是什么？用我能听懂的方式讲。",
+    "depth": "rapid",
+    "expected_route": "knowledge",
+    "expected_pattern": "probability",
+    "expected_template": "card_flip_reveal",
+    "required_keywords": ["期权", "选择权", "损失"]
+  },
+  {
+    "id": "probability-option-scenario",
+    "input": "期权是什么？用我能听懂的方式讲。",
+    "depth": "scenario",
+    "expected_route": "knowledge",
+    "expected_pattern": "probability",
+    "expected_template": "card_flip_reveal",
+    "required_keywords": ["到期", "行权", "期权费"]
+  },
+  {
+    "id": "probability-option-mapping",
+    "input": "期权是什么？用我能听懂的方式讲。",
+    "depth": "mapping",
+    "expected_route": "knowledge",
+    "expected_pattern": "probability",
+    "expected_template": "card_flip_reveal",
+    "required_keywords": ["期权费", "行权价", "标的价格"]
+  },
+  {
+    "id": "parameter-complexity",
+    "input": "算法复杂度是什么？用滑块让我感受一下。",
+    "depth": "rapid",
+    "expected_route": "knowledge",
+    "expected_pattern": "parameter_explore",
+    "expected_template": "single_slider",
+    "required_keywords": ["输入数量", "变量"]
+  },
+  {
+    "id": "concept-memory-grid",
+    "input": "帮我把机器学习几个术语做成配对记忆卡。",
+    "depth": "rapid",
+    "expected_route": "knowledge",
+    "expected_pattern": "concept_memory",
+    "expected_template": "grid_match",
+    "required_keywords": ["概念", "记忆"]
+  },
+  {
+    "id": "process-timeline",
+    "input": "人工智能的发展历史，用时间线讲。",
+    "depth": "scenario",
+    "expected_route": "knowledge",
+    "expected_pattern": "process_timeline",
+    "expected_template": "horizontal_timeline",
+    "required_keywords": ["起点", "演化"]
+  },
+  {
+    "id": "comparison-overlay",
+    "input": "股票和期权有什么区别？用叠加淡入对比。",
+    "depth": "mapping",
+    "expected_route": "knowledge",
+    "expected_pattern": "comparison",
+    "expected_template": "overlay_fade",
+    "required_keywords": ["差异", "风险"]
+  },
+  {
+    "id": "knowledge-check-combo",
+    "input": "给我一个期权理解连答 combo。",
+    "depth": "scenario",
+    "expected_route": "knowledge",
+    "expected_pattern": "knowledge_check",
+    "expected_template": "combo_chain",
+    "required_keywords": ["理解", "预测"]
+  },
+  {
+    "id": "system-builder-flow",
+    "input": "把趣灵的系统架构做成流程连线。",
+    "depth": "mapping",
+    "expected_route": "knowledge",
+    "expected_pattern": "system_builder",
+    "expected_template": "flow_connect",
+    "required_keywords": ["输入", "规则", "反馈"]
+  },
+  {
+    "id": "narrative-branch-sunk-cost",
+    "input": "沉没成本是什么意思？用一个分支故事讲。",
+    "depth": "scenario",
+    "expected_route": "knowledge",
+    "expected_pattern": "narrative_branch",
+    "expected_template": "branch_story",
+    "required_keywords": ["未来", "成本"]
+  },
+  {
+    "id": "classification-sort-investing",
+    "input": "价值投资和成长投资怎么分？让我做分类。",
+    "depth": "rapid",
+    "expected_route": "knowledge",
+    "expected_pattern": "classification_sort",
+    "expected_template": "category_buckets",
+    "required_keywords": ["价值投资", "成长投资"]
+  },
+  {
+    "id": "simulation-compound",
+    "input": "复利怎么滚起来的？做一个模拟推演。",
+    "depth": "scenario",
+    "expected_route": "knowledge",
+    "expected_pattern": "simulation_play",
+    "expected_template": "parameter_simulation",
+    "required_keywords": ["复利", "增长"]
+  },
+  {
+    "id": "preference-route",
+    "input": "我是会计，爱钓鱼，之后用钓鱼讲金融概念。",
+    "depth": "rapid",
+    "expected_route": "preference",
+    "expected_pattern": "concept_memory",
+    "expected_template": "term_cards",
+    "required_keywords": ["概念"]
+  },
+  {
+    "id": "casual-route",
+    "input": "今天先不学习，随便聊两句。",
+    "depth": "rapid",
+    "expected_route": "casual",
+    "expected_pattern": "concept_memory",
+    "expected_template": "term_cards",
+    "required_keywords": ["概念"]
+  }
+]

@@ -14,13 +14,13 @@
 | Phase 3 交互模式扩展 | 完成 | 10 个 Pattern，既有 7 个 Pattern 各有 2 个 Template |
 | Phase 4 知识沙盒体系 | 完成 | 知识资产、知识链推荐、`/sandbox`、深度分级已完成 |
 | Phase 5 外部集成 | 待开发 | 搜索工具、source-router 降级 |
-| Phase 6 质量体系 | 待开发 | 测试用例、评分脚本、Prompt 对比 |
+| Phase 6 质量体系 | 完成 | 测试用例、评分脚本、Prompt 对比 |
 
 最近稳定提交：
 
 ```text
+31055af Add learning depth modes
 b0431a3 Add knowledge sandbox page
-602f2df Add knowledge chain recommendations
 ```
 
 ---
@@ -82,20 +82,26 @@ b0431a3 Add knowledge sandbox page
 - Source router for pasted URLs
 - Tool execution API
 
+### 2.6 Quality
+
+- 固定测试用例集：`tests/fixtures/test-cases.json`
+- Schema 评分脚本：`npm run eval:score`
+- Prompt 对比工具：`npm run eval:compare`
+- 覆盖 Pattern、Template、Depth、Route、隐喻关键词和 Payload 完整度
+
 ---
 
 ## 3. 当前待开发路线
 
 优先级建议：
 
-1. T15-T17 质量体系
-2. T13-T14 搜索工具与 source-router 调整
+1. T13-T14 搜索工具与 source-router 调整
 
 原因：
 - 当前核心体验已能生成组件。
 - Phase 4 已形成“学过什么、下一步学什么、怎么调深度”的基础闭环。
-- 下一步应先建立质量评估，让 Prompt 和 Schema 输出变得可回归。
-- 搜索工具涉及外部 API key，可并行但不应阻塞核心产品闭环。
+- 质量体系已能做 Prompt 和 Schema 输出回归。
+- 下一步最能提升信息能力的是搜索工具和 source-router 调整。
 
 ---
 

@@ -81,6 +81,11 @@ src/
     utils/
   stores/
   types/
+tests/
+  fixtures/test-cases.json
+  eval/
+    score.ts
+    compare.ts
 ```
 
 ---
@@ -241,6 +246,32 @@ POST /api/chat
 
 ## 10. 关键决策
 
+## 10. 质量评估
+
+质量体系包含：
+- `tests/fixtures/test-cases.json`：固定输入集合，覆盖全部 Pattern、深度和意图。
+- `tests/eval/score.ts`：评分单个预测文件；无预测文件时使用 mock schema 作为基线。
+- `tests/eval/compare.ts`：对比两个预测文件，输出总分和逐 case 分数差异。
+
+评分维度：
+- JSON 合法率
+- Pattern/Template/Depth 准确率
+- Route 准确率
+- 隐喻关键词贴合度
+- Payload 完整度
+
+命令：
+
+```bash
+npm run eval:score
+npm run eval:score -- --json
+npm run eval:compare -- baseline.json candidate.json
+```
+
+---
+
+## 11. 关键决策
+
 | 决策 | 当前选择 | 原因 |
 |---|---|---|
 | Schema 协议 | V2 `pattern/template/payload` + V1 兼容 | 降低 LLM 输出复杂度，支持骨架复用 |
@@ -251,9 +282,8 @@ POST /api/chat
 
 ---
 
-## 11. 已知技术债
+## 12. 已知技术债
 
 - Vercel `/tmp` 状态不持久，不能作为生产记忆。
 - 当前 mock schema 仍承担较多验收输入路由。
-- 没有自动化测试集和质量评分脚本。
 - 搜索工具尚未接入。

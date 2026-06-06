@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "eval:score": "node --no-warnings --experimental-strip-types tests/eval/score.ts",
+    "eval:compare": "node --no-warnings --experimental-strip-types tests/eval/compare.ts"
   },
   "dependencies": {
     "@ai-sdk/deepseek": "^2.0.35",

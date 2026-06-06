@@ -95,6 +95,45 @@
 - API 三档复测
 - Playwright 生产服务页面快照验收
 
+### Phase 6 — 质量体系
+
+完成 T15-T17：测试用例集、Schema 评分脚本、Prompt 对比工具。
+
+新增：
+- `tests/fixtures/test-cases.json`
+- `tests/eval/lib.ts`
+- `tests/eval/score.ts`
+- `tests/eval/compare.ts`
+- `npm run eval:score`
+- `npm run eval:compare`
+
+覆盖：
+- 14 条固定 case
+- 全部 10 个 Pattern
+- `rapid/scenario/mapping` 三档深度
+- `knowledge/preference/casual` 三类意图
+
+评分维度：
+- JSON 合法率
+- Pattern 准确率
+- Template 准确率
+- Depth 准确率
+- Route 准确率
+- 隐喻关键词贴合度
+- Payload 完整度
+
+验收：
+- `npm run eval:score` 默认输出摘要，mock 基线总分为 1。
+- `npm run eval:score -- --json` 可输出完整逐 case JSON。
+- `npm run eval:compare -- <baseline.json> <candidate.json>` 可比较两个预测文件。
+- compare 工具兼容 Windows UTF-8 BOM 临时文件。
+
+验证：
+- `npm run eval:score`
+- `npm run eval:compare -- <temp-baseline.json> <temp-candidate.json>`
+- `npm run typecheck`
+- `npm run build`
+
 ---
 
 ## 2026-06-05
