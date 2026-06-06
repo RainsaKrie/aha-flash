@@ -58,10 +58,11 @@ Pattern: process_timeline
 
 Pattern: comparison
 - 适用: 对比、辨析、方案权衡。
-- Template: split_panel（默认左右分栏）, overlay_fade（叠加淡入，适合强调视角切换）。
+- Template: split_panel（默认左右分栏，适合逐项辨析）, overlay_fade（叠加淡入，适合强调视角切换）。
 - Payload: { title, left:{label, content}, right:{label, content} }
-- 正例: 左右面板比较股票和期权的风险/权利差异。
-- 不要这样: 两边内容只是同义改写。
+- 正例: 左右面板逐项比较股票和期权的权利/义务、成本、收益边界和风险来源。
+- 要求: left.content 与 right.content 各用 2-4 个短句表达，每句只讲一个差异点，避免整段百科。
+- 不要这样: 两边内容只是同义改写；不要为了迎合隐喻偏好而把严肃概念强行改成不准确的游戏设定。
 
 Pattern: knowledge_check
 - 适用: 理解检查、快问快答。

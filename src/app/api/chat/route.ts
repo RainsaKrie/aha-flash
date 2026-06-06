@@ -14,9 +14,17 @@ import {
   isLearningDepth,
   normalizeUISchema,
   type LearningDepth,
+  type PatternType,
   type UISchema,
+  type TemplateId,
 } from "@/types/schema";
 import type { KnowledgeAsset } from "@/types/state";
+
+interface SchemaIntent {
+  pattern: PatternType;
+  template?: TemplateId;
+  reason: string;
+}
 
 function inferConcept(input: string) {
   const withoutUrls = input.replace(/https?:\/\/[^\s)）]+/g, "");
@@ -57,30 +65,95 @@ function attachDepth(schema: UISchema, depth: LearningDepth): UISchema {
   return { ...schema, depth };
 }
 
+function inferSchemaIntent(input: string): SchemaIntent | null {
+  if (/(区别|对比|比较|VS|vs| versus )/.test(input)) {
+    return {
+      pattern: "comparison",
+      template: /(叠加|淡入|overlay|fade)/i.test(input) ? "overlay_fade" : "split_panel",
+      reason: "用户明确要求对比或辨析",
+    };
+  }
+
+  if (/(测验|测试|小测|题目|quiz)/i.test(input)) {
+    return { pattern: "knowledge_check", reason: "用户明确要求理解检查" };
+  }
+
+  if (/(时间线|历史|发展|演化)/.test(input)) {
+    return { pattern: "process_timeline", reason: "用户明确要求阶段或时间演化" };
+  }
+
+  if (/(分类|分桶|归类|sort)/i.test(input)) {
+    return { pattern: "classification_sort", reason: "用户明确要求分类判断" };
+  }
+
+  if (/(复利|模拟|推演|仿真|simulation)/i.test(input)) {
+    return { pattern: "simulation_play", reason: "用户明确要求模拟推演" };
+  }
+
+  if (/(架构|模块|系统|搭建|builder)/i.test(input)) {
+    return { pattern: "system_builder", reason: "用户明确要求系统或模块搭建" };
+  }
+
+  if (/(滑块|参数|变量|slider)/i.test(input)) {
+    return { pattern: "parameter_explore", reason: "用户明确要求参数探索" };
+  }
+
+  return null;
+}
+
+function buildIntentDirective(intent: SchemaIntent | null) {
+  if (!intent) return "";
+
+  return [
+    "<schema_intent_guard>",
+    `reason: ${intent.reason}`,
+    `required_pattern: ${intent.pattern}`,
+    intent.template ? `required_template: ${intent.template}` : "",
+    "如果用户要求与 required_pattern 冲突，以 required_pattern 为准。",
+    "输出必须满足 required_pattern / required_template；不要改用记忆卡、泛化解释或其他 pattern。",
+    "</schema_intent_guard>",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function schemaMatchesIntent(schema: UISchema | null, intent: SchemaIntent | null) {
+  if (!schema || !intent) return Boolean(schema);
+  const normalized = normalizeUISchema(schema);
+  if (normalized.pattern !== intent.pattern) return false;
+  if (intent.template && normalized.template !== intent.template) return false;
+  return true;
+}
+
 async function generateSchemaWithLLM({
   model,
   system,
   input,
+  intent,
 }: {
   model: NonNullable<ReturnType<typeof getLLMProvider>>;
   system: string;
   input: string;
+  intent: SchemaIntent | null;
 }): Promise<UISchema | null> {
+  const userContent = [input, buildIntentDirective(intent)].filter(Boolean).join("\n\n");
   const first = await generateText({
     model,
     system,
-    messages: [{ role: "user", content: input }],
+    messages: [{ role: "user", content: userContent }],
   });
 
   const firstSchema = extractSchemaFromText(first.text);
-  if (firstSchema) return firstSchema;
+  if (schemaMatchesIntent(firstSchema, intent)) return firstSchema;
 
-  const failureReason = getSchemaFailureReason(first.text);
+  const failureReason = firstSchema
+    ? `Schema pattern/template 与用户意图不匹配，必须满足 ${intent?.pattern}${intent?.template ? `/${intent.template}` : ""}。`
+    : getSchemaFailureReason(first.text);
   const repair = await generateText({
     model,
     system,
     messages: [
-      { role: "user", content: input },
+      { role: "user", content: userContent },
       {
         role: "assistant",
         content: first.text,
@@ -96,7 +169,8 @@ async function generateSchemaWithLLM({
     ],
   });
 
-  return extractSchemaFromText(repair.text);
+  const repairedSchema = extractSchemaFromText(repair.text);
+  return schemaMatchesIntent(repairedSchema, intent) ? repairedSchema : null;
 }
 
 export async function POST(req: Request) {
@@ -110,6 +184,7 @@ export async function POST(req: Request) {
 
   const state = await initUserState(userId);
   const model = getLLMProvider();
+  const schemaIntent = inferSchemaIntent(input);
   const routeInfo = await classifyConversationIntent(input, model);
   const sources = await collectSourceContexts(input);
   const sourcePromptContext = buildSourcePromptContext(sources);
@@ -123,7 +198,7 @@ export async function POST(req: Request) {
 
   if (model) {
     try {
-      const generated = await generateSchemaWithLLM({ model, system: systemPrompt, input });
+      const generated = await generateSchemaWithLLM({ model, system: systemPrompt, input, intent: schemaIntent });
       if (generated) {
         schema = attachDepth(generated, depth);
         source = "llm";
@@ -178,7 +253,9 @@ export async function POST(req: Request) {
     content:
       source === "llm"
         ? "已根据你的状态生成互动组件。"
-        : "先用本地示例把交互跑起来，配置 API Key 后会改由 LLM 实时生成。",
+        : model
+          ? "模型输出没有通过组件约束，先用稳定组件兜底。"
+          : "先用本地示例把交互跑起来，配置 API Key 后会改由 LLM 实时生成。",
     schema,
     sources,
     route: routeInfo,

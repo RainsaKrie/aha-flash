@@ -285,13 +285,39 @@ export function createMockSchema(input: string, depth: LearningDepth = "rapid"):
       };
     }
 
+    if (includesAny(input, ["股票", "期权"])) {
+      return {
+        pattern: "comparison",
+        template: "split_panel",
+        version: "2.0",
+        payload: {
+          title: "股票 vs. 期权 · 权利和风险边界",
+          left: {
+            label: "股票",
+            content:
+              "买股票是在直接拥有公司的一小份权益。收益跟股价上涨和分红相关。下跌时亏损会跟着股价走，理论上最多亏到本金。没有到期日，可以长期持有。",
+          },
+          right: {
+            label: "期权",
+            content:
+              "买期权是在买一个未来按约定价格交易的权利。先付期权费，之后可以选择行权或放弃。买方最大损失通常锁定为期权费。期权有到期日，时间本身会消耗价值。",
+          },
+        },
+        next_concepts: [
+          { label: "期权费", relation: "理解期权成本和最大亏损边界" },
+          { label: "行权价", relation: "理解期权是否值得执行的关键价格" },
+        ],
+      };
+    }
+
     return {
-      type: "comparison_split",
-      version: "1.0",
-      config: {
+      pattern: "comparison",
+      template: "split_panel",
+      version: "2.0",
+      payload: {
         title: "左右对比 · 把差异拉开看",
-        left: { label: "表层差异", content: "看起来像是名词不同，实际常常只是使用场景不同。" },
-        right: { label: "底层差异", content: "真正要抓的是约束、成本、收益和风险如何变化。" },
+        left: { label: "一边", content: "先看它提供什么权利或能力。再看你为它付出的成本。最后看风险边界在哪里。" },
+        right: { label: "另一边", content: "再看它提供的权利或能力有什么不同。比较成本是否一次性、持续性或有时间限制。最后比较收益和亏损是否对称。" },
       },
     };
   }
