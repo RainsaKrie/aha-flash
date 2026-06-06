@@ -1,6 +1,23 @@
 import { z } from "zod";
 import type { UISchema } from "@/types/schema";
 
+const NextConceptsZod = z
+  .array(
+    z.object({
+      label: z.string(),
+      relation: z.string(),
+    }),
+  )
+  .max(3)
+  .optional();
+
+function schemaObject<TShape extends z.ZodRawShape>(shape: TShape) {
+  return z.object({
+    ...shape,
+    next_concepts: NextConceptsZod,
+  });
+}
+
 const GachaConfigZod = z.object({
   title: z.string(),
   quote: z.string().optional(),
@@ -114,52 +131,52 @@ const SimulationPlayConfigZod = z.object({
 });
 
 export const V1UISchemaZod = z.discriminatedUnion("type", [
-  z.object({
+  schemaObject({
     type: z.literal("gacha_simulator"),
     version: z.string(),
     config: GachaConfigZod,
   }),
-  z.object({
+  schemaObject({
     type: z.literal("slider_explorer"),
     version: z.string(),
     config: SliderConfigZod,
   }),
-  z.object({
+  schemaObject({
     type: z.literal("card_flip"),
     version: z.string(),
     config: CardFlipConfigZod,
   }),
-  z.object({
+  schemaObject({
     type: z.literal("timeline_scrubber"),
     version: z.string(),
     config: TimelineConfigZod,
   }),
-  z.object({
+  schemaObject({
     type: z.literal("comparison_split"),
     version: z.string(),
     config: ComparisonConfigZod,
   }),
-  z.object({
+  schemaObject({
     type: z.literal("quiz_battle"),
     version: z.string(),
     config: QuizConfigZod,
   }),
-  z.object({
+  schemaObject({
     type: z.literal("build_sandbox"),
     version: z.string(),
     config: SandboxConfigZod,
   }),
-  z.object({
+  schemaObject({
     type: z.literal("narrative_branch"),
     version: z.string(),
     config: NarrativeBranchConfigZod,
   }),
-  z.object({
+  schemaObject({
     type: z.literal("classification_sort"),
     version: z.string(),
     config: ClassificationSortConfigZod,
   }),
-  z.object({
+  schemaObject({
     type: z.literal("simulation_play"),
     version: z.string(),
     config: SimulationPlayConfigZod,
@@ -167,103 +184,103 @@ export const V1UISchemaZod = z.discriminatedUnion("type", [
 ]);
 
 export const V2UISchemaZod = z.union([
-  z.object({
+  schemaObject({
     pattern: z.literal("probability"),
     template: z.literal("card_flip_reveal"),
     version: z.string(),
     payload: GachaConfigZod,
   }),
-  z.object({
+  schemaObject({
     pattern: z.literal("probability"),
     template: z.literal("spin_wheel"),
     version: z.string(),
     payload: GachaConfigZod,
   }),
-  z.object({
+  schemaObject({
     pattern: z.literal("parameter_explore"),
     template: z.literal("single_slider"),
     version: z.string(),
     payload: SliderConfigZod,
   }),
-  z.object({
+  schemaObject({
     pattern: z.literal("parameter_explore"),
     template: z.literal("dual_slider"),
     version: z.string(),
     payload: SliderConfigZod,
   }),
-  z.object({
+  schemaObject({
     pattern: z.literal("concept_memory"),
     template: z.literal("term_cards"),
     version: z.string(),
     payload: CardFlipConfigZod,
   }),
-  z.object({
+  schemaObject({
     pattern: z.literal("concept_memory"),
     template: z.literal("grid_match"),
     version: z.string(),
     payload: CardFlipConfigZod,
   }),
-  z.object({
+  schemaObject({
     pattern: z.literal("process_timeline"),
     template: z.literal("horizontal_timeline"),
     version: z.string(),
     payload: TimelineConfigZod,
   }),
-  z.object({
+  schemaObject({
     pattern: z.literal("process_timeline"),
     template: z.literal("vertical_scroll"),
     version: z.string(),
     payload: TimelineConfigZod,
   }),
-  z.object({
+  schemaObject({
     pattern: z.literal("comparison"),
     template: z.literal("split_panel"),
     version: z.string(),
     payload: ComparisonConfigZod,
   }),
-  z.object({
+  schemaObject({
     pattern: z.literal("comparison"),
     template: z.literal("overlay_fade"),
     version: z.string(),
     payload: ComparisonConfigZod,
   }),
-  z.object({
+  schemaObject({
     pattern: z.literal("knowledge_check"),
     template: z.literal("single_question"),
     version: z.string(),
     payload: QuizConfigZod,
   }),
-  z.object({
+  schemaObject({
     pattern: z.literal("knowledge_check"),
     template: z.literal("combo_chain"),
     version: z.string(),
     payload: QuizConfigZod,
   }),
-  z.object({
+  schemaObject({
     pattern: z.literal("system_builder"),
     template: z.literal("module_sandbox"),
     version: z.string(),
     payload: SandboxConfigZod,
   }),
-  z.object({
+  schemaObject({
     pattern: z.literal("system_builder"),
     template: z.literal("flow_connect"),
     version: z.string(),
     payload: SandboxConfigZod,
   }),
-  z.object({
+  schemaObject({
     pattern: z.literal("narrative_branch"),
     template: z.literal("branch_story"),
     version: z.string(),
     payload: NarrativeBranchConfigZod,
   }),
-  z.object({
+  schemaObject({
     pattern: z.literal("classification_sort"),
     template: z.literal("category_buckets"),
     version: z.string(),
     payload: ClassificationSortConfigZod,
   }),
-  z.object({
+  schemaObject({
     pattern: z.literal("simulation_play"),
     template: z.literal("parameter_simulation"),
     version: z.string(),

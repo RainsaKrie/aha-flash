@@ -128,11 +128,16 @@ export default function HomePage() {
     }
   }
 
+  async function followNextConcept(label: string, relation: string) {
+    await submit(`${label}是什么？它和刚才的关系是：${relation}`);
+  }
+
   const profile = userState?.profile;
   const summary = userState?.conversation_compressed;
   const knowledgeAssets = userState?.knowledge_assets || [];
   const metaphor = profile?.metaphor_preferences[0] || "抽卡机制";
   const currentRenderableSchema = currentSchema ? normalizeUISchema(currentSchema) : null;
+  const nextConcepts = currentRenderableSchema?.next_concepts.slice(0, 2) || [];
 
   return (
     <main className="app-shell">
@@ -280,10 +285,33 @@ export default function HomePage() {
 
           <Card className="widget-surface">
             {currentSchema ? (
-              renderBySchema(currentSchema, {
-                onInteraction: (event) => void recordComponentEvent(event),
-                onComplete: (event) => void recordComponentEvent(event),
-              })
+              <div className="grid h-full gap-4">
+                {renderBySchema(currentSchema, {
+                  onInteraction: (event) => void recordComponentEvent(event),
+                  onComplete: (event) => void recordComponentEvent(event),
+                })}
+                {nextConcepts.length > 0 && (
+                  <div className="grid gap-3 border-t border-[var(--line)] pt-4">
+                    <div className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent)]">
+                      下一步
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {nextConcepts.map((concept) => (
+                        <button
+                          key={`${concept.label}-${concept.relation}`}
+                          type="button"
+                          className="rounded-[8px] border border-[var(--line)] bg-[#07120f] p-3 text-left transition hover:border-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-60"
+                          disabled={isLoading}
+                          onClick={() => void followNextConcept(concept.label, concept.relation)}
+                        >
+                          <span className="block text-sm font-semibold text-[var(--text)]">{concept.label}</span>
+                          <span className="mt-1 block text-xs leading-5 text-[var(--muted)]">{concept.relation}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="grid h-full min-h-[560px] place-items-center p-6 text-center">
                 <div className="max-w-md">

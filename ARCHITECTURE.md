@@ -35,7 +35,7 @@ LLM Layer
 
 Generative UI Layer
   |
-  +-- V2 Schema: pattern + template + payload
+  +-- V2 Schema: pattern + template + payload + next_concepts
   +-- Registry maps pattern/template to React components
 ```
 
@@ -126,7 +126,7 @@ POST /api/chat
   +-- reflectTurn(input, route, schemaType, state)
   +-- stateStore.applyTurnReflection()
   +-- if route is knowledge: stateStore.addKnowledgeAsset()
-  +-- return schema + route + userState
+  +-- return schema + next concepts + route + userState
 ```
 
 ---
@@ -140,7 +140,10 @@ POST /api/chat
   "pattern": "comparison",
   "template": "overlay_fade",
   "version": "2.0",
-  "payload": {}
+  "payload": {},
+  "next_concepts": [
+    { "label": "期货", "relation": "同属衍生品，但交易义务不同" }
+  ]
 }
 ```
 
@@ -163,8 +166,11 @@ POST /api/chat
   template: TemplateId;
   version: string;
   config: Record<string, unknown>;
+  next_concepts: Array<{ label: string; relation: string }>;
 }
 ```
+
+`next_concepts` 是可选输入字段，归一化后始终是数组。前端在工作台组件下方展示前两个推荐概念，点击后触发下一轮学习。
 
 ---
 
@@ -243,4 +249,4 @@ POST /api/chat
 - 当前 mock schema 仍承担较多验收输入路由。
 - 没有自动化测试集和质量评分脚本。
 - 搜索工具尚未接入。
-- 知识链推荐、深度分级和沙盒页尚未实现。
+- 深度分级和沙盒页尚未实现。

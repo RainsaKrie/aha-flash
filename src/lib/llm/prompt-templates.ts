@@ -13,11 +13,12 @@ export const METAPHOR_GUIDELINES = `
 export const OUTPUT_FORMAT_RULES = `
 输出规范:
 1. 必须输出合法 JSON，不要包裹 Markdown 代码块。
-2. 优先输出 V2 三层 Schema: { "pattern": "...", "template": "...", "version": "2.0", "payload": {...} }。
+2. 优先输出 V2 三层 Schema: { "pattern": "...", "template": "...", "version": "2.0", "payload": {...}, "next_concepts": [{ "label": "...", "relation": "..." }] }。
 3. pattern 必须是: probability, parameter_explore, concept_memory, process_timeline, comparison, knowledge_check, system_builder, narrative_branch, classification_sort, simulation_play。
 4. template 必须匹配 pattern。不要输出不在参考表里的 template。
 5. payload 必须完整满足对应 template 的字段要求。
-6. V1 flat Schema 仍可兼容，但新输出必须优先使用 V2。
+6. 知识讲解类请求应输出 1-2 个 next_concepts；label 是可继续学习的短概念，relation 是它与当前概念的关系，不要写成长解释。
+7. V1 flat Schema 仍可兼容，但新输出必须优先使用 V2。
 `.trim();
 
 export const SCHEMA_REFERENCE = `
@@ -26,6 +27,7 @@ Pattern: probability
 - Template: card_flip_reveal（默认抽卡卡牌）, spin_wheel（转盘概率，适合强调单次随机结果）。
 - Payload: { title, quote?, quote_author?, pool:[{name, rarity, probability, value}], option_cost, strike_price, pulls_per_try, explanation_map:{win, lose} }
 - 正例: 期权用抽卡锁价券表达有限损失和上涨收益。
+- 推荐链正例: 期权后推荐期货、保险。
 - 不要这样: 只写“期权是一种金融工具”，没有可操作动作和结果反馈。
 
 Pattern: parameter_explore

@@ -1,5 +1,10 @@
 import type { UISchema } from "@/types/schema";
 
+const OPTION_NEXT_CONCEPTS = [
+  { label: "期货", relation: "同属衍生品，但期货更像约定未来必须交易" },
+  { label: "保险", relation: "都用小成本管理未来不确定性" },
+];
+
 function includesAny(input: string, words: string[]) {
   return words.some((word) => input.includes(word));
 }
@@ -16,6 +21,7 @@ export function createMockSchema(input: string): UISchema {
         pattern: "probability",
         template: "spin_wheel",
         version: "2.0",
+        next_concepts: OPTION_NEXT_CONCEPTS,
         payload: {
           title: "期权 · 转盘锁价版",
           quote: "期权就是花小钱，买一个未来可选择的权利。",
@@ -39,6 +45,7 @@ export function createMockSchema(input: string): UISchema {
     return {
       type: "gacha_simulator",
       version: "1.0",
+      next_concepts: OPTION_NEXT_CONCEPTS,
       config: {
         title: "期权 · 抽卡锁价版",
         quote: "期权就是花小钱，买一个未来可选择的权利。",

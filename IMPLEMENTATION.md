@@ -12,15 +12,15 @@
 | Phase 1 Stateful Memory | 完成 | 意图分类、用户状态、回合反思、状态增量写入 |
 | Phase 2 Schema 协议重构 | 完成 | V2 `pattern/template/payload`，V1 兼容，注册表升级 |
 | Phase 3 交互模式扩展 | 完成 | 10 个 Pattern，既有 7 个 Pattern 各有 2 个 Template |
-| Phase 4 知识沙盒体系 | 进行中 | 知识资产已完成；推荐链、深度分级、`/sandbox` 待开发 |
+| Phase 4 知识沙盒体系 | 进行中 | 知识资产、知识链推荐已完成；深度分级、`/sandbox` 待开发 |
 | Phase 5 外部集成 | 待开发 | 搜索工具、source-router 降级 |
 | Phase 6 质量体系 | 待开发 | 测试用例、评分脚本、Prompt 对比 |
 
 最近稳定提交：
 
 ```text
-b9876f0 Add template variants for existing patterns
-80a326e Fix state storage on Vercel
+60716b5 Add knowledge asset storage
+940010b Consolidate project documentation
 ```
 
 ---
@@ -53,6 +53,7 @@ b9876f0 Add template variants for existing patterns
 - 修复重试
 - mock fallback
 - `normalizeUISchema()`
+- `next_concepts` 知识链推荐字段
 
 ### 2.4 Generative UI
 
@@ -84,15 +85,14 @@ b9876f0 Add template variants for existing patterns
 
 优先级建议：
 
-1. T10 知识链推荐
-2. T12 `/sandbox` 知识沙盒页面
-3. T11 深度分级
-4. T15-T17 质量体系
-5. T13-T14 搜索工具与 source-router 调整
+1. T12 `/sandbox` 知识沙盒页面
+2. T11 深度分级
+3. T15-T17 质量体系
+4. T13-T14 搜索工具与 source-router 调整
 
 原因：
 - 当前核心体验已能生成组件。
-- 下一步最能提升产品厚度的是“学过什么”和“下一步学什么”。
+- 下一步最能提升产品厚度的是把已学概念沉淀成可浏览、可回访的沙盒。
 - 搜索工具涉及外部 API key，可并行但不应阻塞核心产品闭环。
 
 ---

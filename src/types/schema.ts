@@ -43,10 +43,16 @@ export type TemplateId =
 
 export type UIPayload<TPayload = Record<string, unknown>> = TPayload;
 
+export interface NextConcept {
+  label: string;
+  relation: string;
+}
+
 export interface V1UISchema<TConfig = Record<string, unknown>> {
   type: UISchemaType;
   version: string;
   config: TConfig;
+  next_concepts?: NextConcept[];
   pattern?: never;
   template?: never;
   payload?: never;
@@ -57,6 +63,7 @@ export interface V2UISchema<TPayload = Record<string, unknown>> {
   template: TemplateId;
   version: string;
   payload: UIPayload<TPayload>;
+  next_concepts?: NextConcept[];
   type?: UISchemaType;
   config?: never;
 }
@@ -69,6 +76,7 @@ export interface NormalizedUISchema<TConfig = Record<string, unknown>> {
   template: TemplateId;
   version: string;
   config: TConfig;
+  next_concepts: NextConcept[];
 }
 
 export const V1_TO_V2_SCHEMA_MAP: Record<
@@ -113,6 +121,7 @@ export function normalizeUISchema(schema: UISchema): NormalizedUISchema {
       template: schema.template || fallback.template,
       version: schema.version,
       config: schema.payload,
+      next_concepts: schema.next_concepts || [],
     };
   }
 
@@ -123,6 +132,7 @@ export function normalizeUISchema(schema: UISchema): NormalizedUISchema {
     template: mapped.template,
     version: schema.version,
     config: schema.config,
+    next_concepts: schema.next_concepts || [],
   };
 }
 
