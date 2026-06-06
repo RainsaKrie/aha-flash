@@ -218,9 +218,9 @@ export default function HomePage() {
                 <div className="mb-2 text-xs text-[var(--muted)]">最近主题</div>
                 <div className="flex flex-wrap gap-2">
                   {summary?.recent_topics.length ? (
-                    summary.recent_topics.map((topic) => (
+                    summary.recent_topics.map((topic, index) => (
                       <span
-                        key={topic}
+                        key={`${topic}-${index}`}
                         className="rounded-[8px] border border-[var(--line)] bg-[#07120f] px-2 py-1 text-xs"
                       >
                         {topic}
@@ -235,7 +235,9 @@ export default function HomePage() {
                 <div className="mb-2 text-xs text-[var(--muted)]">关键洞察</div>
                 <ul className="grid gap-2 text-xs leading-5 text-[var(--muted)]">
                   {summary?.key_insights.length ? (
-                    summary.key_insights.slice(0, 3).map((insight) => <li key={insight}>{insight}</li>)
+                    summary.key_insights
+                      .slice(0, 3)
+                      .map((insight, index) => <li key={`${insight}-${index}`}>{insight}</li>)
                   ) : (
                     <li>暂无</li>
                   )}
