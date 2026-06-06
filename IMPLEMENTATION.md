@@ -13,7 +13,7 @@
 | Phase 2 Schema 协议重构 | 完成 | V2 `pattern/template/payload`，V1 兼容，注册表升级 |
 | Phase 3 交互模式扩展 | 完成 | 10 个 Pattern，既有 7 个 Pattern 各有 2 个 Template |
 | Phase 4 知识沙盒体系 | 完成 | 知识资产、知识链推荐、`/sandbox`、深度分级已完成 |
-| Phase 5 外部集成 | 完成 | 搜索工具、source-router 降级 |
+| Phase 5 外部集成 | 完成 | 搜索工具、URL 抓取降级为辅助入口 |
 | Phase 6 质量体系 | 完成 | 测试用例、评分脚本、Prompt 对比 |
 
 最近稳定提交：
@@ -77,10 +77,10 @@
 
 ### 2.5 Tools
 
-- YouTube transcript fetch
-- Web content extract
+- Auxiliary YouTube transcript fetch for explicit URLs
+- Web content extract for explicit URLs
 - Web search provider chain: Brave, Google Programmable Search, Tavily
-- Source router for pasted URLs
+- Source router for pasted URLs as fallback input
 - Source router for pure text external-information queries
 - Tool execution API
 
@@ -99,11 +99,16 @@
 
 当前规划文档中的开发任务已完成，等待新的 backlog 输入。
 
+最新产品判断：
+- “复制 YouTube URL 再粘贴回来”不是主路径，只保留为用户明确给出链接时的辅助能力。
+- 下一轮输入层规划应优先拆分自然导入入口：截图/图片、音频/视频文件、剪贴板内容、系统分享入口。
+- Web search 继续服务“用户直接问外部信息”的场景，不要求用户自己找链接。
+
 原因：
 - 当前核心体验已能生成组件。
 - Phase 4 已形成“学过什么、下一步学什么、怎么调深度”的基础闭环。
 - 质量体系已能做 Prompt 和 Schema 输出回归。
-- Phase 5 已补齐纯文本搜索和 URL 抓取的分工。
+- Phase 5 已补齐纯文本搜索和 URL 抓取的分工，但 URL 抓取只作为备用入口。
 
 ---
 

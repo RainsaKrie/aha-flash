@@ -67,7 +67,7 @@ export function ChatInput({
       <Textarea
         value={value}
         onChange={(event) => setValue(event.target.value)}
-        placeholder="输入你想理解的概念，也可以粘贴网页或 YouTube 链接"
+        placeholder="输入概念、问题，或粘贴一段你刚看到的内容"
         disabled={disabled}
       />
       <div className="grid grid-cols-3 gap-2">
@@ -90,7 +90,7 @@ export function ChatInput({
         ))}
       </div>
       <div className="flex items-center justify-between gap-3">
-        <span className="text-xs text-[var(--muted)]">支持概念、长文链接、YouTube 链接</span>
+        <span className="text-xs text-[var(--muted)]">链接抓取是备用入口，截图/音频导入规划中</span>
         <Button type="submit" disabled={disabled} title="发送">
           <SendHorizontal size={16} />
           生成

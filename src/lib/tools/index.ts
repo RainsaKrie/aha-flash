@@ -6,7 +6,7 @@ import { youtubeTranscriptFetch } from "./youtube-transcript";
 
 export const V1_TOOLS: Record<string, ToolDefinition> = {
   youtube_transcript_fetch: {
-    description: "抓取 YouTube 视频字幕/转录文本，用于提取播客、访谈等高价值语料。",
+    description: "辅助抓取用户明确提供的 YouTube URL 字幕/转录文本；不作为主要输入入口。",
     parameters: {
       type: "object",
       properties: {
@@ -18,7 +18,7 @@ export const V1_TOOLS: Record<string, ToolDefinition> = {
     execute: youtubeTranscriptFetch,
   },
   web_content_extract: {
-    description: "提取网页正文内容，用于抓取长文、博客、访谈记录。",
+    description: "辅助提取用户明确提供的网页正文内容，用于抓取长文、博客、访谈记录。",
     parameters: {
       type: "object",
       properties: {

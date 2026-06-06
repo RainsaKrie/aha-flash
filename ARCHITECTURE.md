@@ -50,7 +50,7 @@ Generative UI Layer
 | LLM | Vercel AI SDK, DeepSeek provider |
 | State | Zustand client store, file/tmp JSON server state |
 | Validation | Zod |
-| Tools | YouTube transcript, web content extraction, web search providers |
+| Tools | Web search providers, web extraction, auxiliary YouTube transcript |
 | Deploy | Vercel |
 
 ---
@@ -209,7 +209,7 @@ POST /api/chat
 
 | Tool | 作用 |
 |---|---|
-| `youtube_transcript_fetch` | 抓取 YouTube 字幕 |
+| `youtube_transcript_fetch` | 辅助抓取 YouTube 字幕；仅在用户明确提供 URL 时使用 |
 | `web_content_extract` | 提取网页正文 |
 | `web_search` | 通过 Brave / Google / Tavily 搜索外部网页，返回短摘要和 URL |
 | `update_user_state` | 服务端注入 `user_id` 后增量更新用户画像 |
@@ -220,6 +220,11 @@ POST /api/chat
 - 搜索结果只注入 Prompt 上下文，不长期保存全文。
 - `WEB_SEARCH_PROVIDER=auto` 时按 Brave -> Google -> Tavily 顺序尝试。
 - 未配置搜索 API key 时，搜索工具返回可控失败，聊天来源中展示失败状态。
+
+输入设计原则：
+- URL 抓取是备用入口，不是主入口。
+- YouTube URL 粘贴不应作为核心使用路径。
+- 下一阶段输入层应优先支持截图/图片、音频/视频文件、剪贴板内容和系统分享入口。
 
 ---
 
