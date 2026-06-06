@@ -9,7 +9,13 @@ import { createMockSchema } from "@/lib/llm/mock-schema";
 import { getLLMProvider } from "@/lib/llm/provider";
 import { extractSchemaFromText, getSchemaFailureReason } from "@/lib/llm/schema-validator";
 import { buildSourcePromptContext, collectSourceContexts } from "@/lib/tools/source-router";
-import { normalizeUISchema, type LearningDepth, type UISchema } from "@/types/schema";
+import {
+  DEFAULT_LEARNING_DEPTH,
+  isLearningDepth,
+  normalizeUISchema,
+  type LearningDepth,
+  type UISchema,
+} from "@/types/schema";
 import type { KnowledgeAsset } from "@/types/state";
 
 function inferConcept(input: string) {
@@ -38,7 +44,7 @@ function inferTopicArea(input: string) {
 }
 
 function normalizeDepth(value: unknown): LearningDepth {
-  return value === "scenario" || value === "mapping" || value === "rapid" ? value : "rapid";
+  return isLearningDepth(value) ? value : DEFAULT_LEARNING_DEPTH;
 }
 
 function depthToUnderstanding(depth: LearningDepth): KnowledgeAsset["understanding"] {

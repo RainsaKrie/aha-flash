@@ -3,15 +3,10 @@
 import { RotateCcw, Sparkles, Ticket } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { DEFAULT_LEARNING_DEPTH, LEARNING_DEPTH_LABELS } from "@/types/schema";
 import type { GachaPoolItem, GachaSimulatorConfig, InteractionEvent, LearningDepth } from "@/types/schema";
 
 type Phase = "idle" | "pulling" | "result";
-
-const depthLabels: Record<LearningDepth, string> = {
-  rapid: "快懂",
-  scenario: "场景",
-  mapping: "映射",
-};
 
 const depthGoals: Record<LearningDepth, string> = {
   rapid: "目标：用一次抽取抓住“选择权 + 有限损失”。",
@@ -39,7 +34,7 @@ export function GachaSimulator({
   const [phase, setPhase] = useState<Phase>("idle");
   const [results, setResults] = useState<GachaPoolItem[]>([]);
   const [balance, setBalance] = useState(3000);
-  const depth = config.depth || "rapid";
+  const depth = config.depth || DEFAULT_LEARNING_DEPTH;
 
   const best = useMemo(() => results.reduce<GachaPoolItem | null>((acc, item) => (!acc || item.value > acc.value ? item : acc), null), [results]);
   const profit = best ? Math.max(best.value - config.strike_price - config.option_cost, -config.option_cost) : 0;
@@ -85,7 +80,7 @@ export function GachaSimulator({
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <h2 className="text-2xl font-semibold">{config.title}</h2>
             <span className="rounded-[8px] border border-[rgba(247,201,72,0.4)] bg-[rgba(247,201,72,0.1)] px-2 py-1 text-xs text-[var(--accent-2)]">
-              {depthLabels[depth]}
+              {LEARNING_DEPTH_LABELS[depth]}
             </span>
           </div>
           {config.quote && <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">{config.quote}</p>}

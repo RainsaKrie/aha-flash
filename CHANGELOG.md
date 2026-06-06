@@ -6,6 +6,20 @@
 
 ## 2026-06-06
 
+### 文档与代码整理
+
+完成：
+- 新增 `README.md`，作为项目入口、快速开始和文档索引。
+- 精简 `IMPLEMENTATION.md`，只保留当前状态、路线、工作流和环境变量。
+- `ARCHITECTURE.md` 不再重复维护 Pattern 表，改为指向代码侧 `SCHEMA_CATALOG`。
+- 代码侧合并学习深度标签配置，并从单一 Schema catalog 派生 V1/V2 映射。
+
+验证：
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- `npm run eval:score`
+
 ### 产品纠偏 — 输入入口
 
 完成：

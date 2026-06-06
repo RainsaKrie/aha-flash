@@ -2,13 +2,8 @@
 
 import { GitBranch } from "lucide-react";
 import { useState } from "react";
+import { DEFAULT_LEARNING_DEPTH, LEARNING_DEPTH_LABELS } from "@/types/schema";
 import type { InteractionEvent, LearningDepth, NarrativeBranchConfig } from "@/types/schema";
-
-const depthLabels: Record<LearningDepth, string> = {
-  rapid: "快懂",
-  scenario: "场景",
-  mapping: "映射",
-};
 
 const depthGoals: Record<LearningDepth, string> = {
   rapid: "目标：快速看见过去成本不可追回。",
@@ -25,7 +20,7 @@ export function NarrativeBranch({
 }) {
   const [selected, setSelected] = useState<number | null>(null);
   const branch = selected === null ? null : config.branches[selected];
-  const depth = config.depth || "rapid";
+  const depth = config.depth || DEFAULT_LEARNING_DEPTH;
 
   return (
     <section className="grid h-full min-h-[520px] grid-rows-[auto_1fr_auto] gap-5 p-5">
@@ -36,7 +31,7 @@ export function NarrativeBranch({
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <h2 className="text-2xl font-semibold">{config.title}</h2>
           <span className="rounded-[8px] border border-[rgba(247,201,72,0.4)] bg-[rgba(247,201,72,0.1)] px-2 py-1 text-xs text-[var(--accent-2)]">
-            {depthLabels[depth]}
+            {LEARNING_DEPTH_LABELS[depth]}
           </span>
         </div>
         <p className="mt-2 text-xs text-[var(--accent)]">{depthGoals[depth]}</p>

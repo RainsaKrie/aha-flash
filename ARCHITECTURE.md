@@ -184,22 +184,14 @@ POST /api/chat
 
 ---
 
-## 7. 当前 Pattern / Template
+## 7. Pattern / Template 注册
 
-| Pattern | Templates |
-|---|---|
-| `probability` | `card_flip_reveal`, `spin_wheel` |
-| `parameter_explore` | `single_slider`, `dual_slider` |
-| `concept_memory` | `term_cards`, `grid_match` |
-| `process_timeline` | `horizontal_timeline`, `vertical_scroll` |
-| `comparison` | `split_panel`, `overlay_fade` |
-| `knowledge_check` | `single_question`, `combo_chain` |
-| `system_builder` | `module_sandbox`, `flow_connect` |
-| `narrative_branch` | `branch_story` |
-| `classification_sort` | `category_buckets` |
-| `simulation_play` | `parameter_simulation` |
+Schema 的 Pattern / Template 产品清单见 `PRD.md`。代码侧以 `src/types/schema.ts` 中的 `SCHEMA_CATALOG` 作为协议映射源，并由 `src/components/generative-ui/registry.tsx` 将 `pattern/template` 映射到 React 组件。
 
-组件注册在 `src/components/generative-ui/registry.tsx`。
+原则：
+- 新增 Pattern 时，先更新类型和 `SCHEMA_CATALOG`。
+- 新增 Template 时，保持 Schema 校验、mock、Prompt 示例和组件注册同步。
+- V1 类型只保留兼容入口，新能力优先走 V2 `pattern/template/payload`。
 
 ---
 

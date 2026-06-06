@@ -36,11 +36,11 @@ export function SandboxFlowConnect({
         <div className="flex flex-wrap items-center gap-2 rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4">
           {sequence.length ? (
             sequence.map((id, index) => {
-              const module = config.modules.find((item) => item.id === id);
+              const flowModule = config.modules.find((item) => item.id === id);
               return (
                 <span key={id} className="flex items-center gap-2">
                   <strong className="rounded-[8px] border border-[var(--line)] bg-[#0c1915] px-3 py-2 text-sm">
-                    {module?.label || id}
+                    {flowModule?.label || id}
                   </strong>
                   {index < sequence.length - 1 && <span className="text-[var(--accent)]">→</span>}
                 </span>
@@ -52,18 +52,18 @@ export function SandboxFlowConnect({
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
-          {config.modules.map((module) => {
-            const active = sequence.includes(module.id);
+          {config.modules.map((flowModule) => {
+            const active = sequence.includes(flowModule.id);
             return (
               <button
-                key={module.id}
-                onClick={() => add(module.id)}
+                key={flowModule.id}
+                onClick={() => add(flowModule.id)}
                 className={`min-h-32 rounded-[8px] border p-4 text-left transition hover:border-[var(--accent)] ${
                   active ? "border-[var(--accent)] bg-[rgba(53,230,155,0.12)]" : "border-[var(--line)] bg-[#07120f]"
                 }`}
               >
-                <strong>{module.label}</strong>
-                <span className="mt-3 block text-sm leading-6 text-[var(--muted)]">{module.description}</span>
+                <strong>{flowModule.label}</strong>
+                <span className="mt-3 block text-sm leading-6 text-[var(--muted)]">{flowModule.description}</span>
               </button>
             );
           })}

@@ -4,13 +4,7 @@ import { Activity, Boxes, Columns2, Gauge, GitBranch, History, SendHorizontal, S
 import { FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import type { LearningDepth } from "@/types/schema";
-
-const depthOptions: Array<{ value: LearningDepth; label: string; title: string }> = [
-  { value: "rapid", label: "快懂", title: "10 秒顿悟" },
-  { value: "scenario", label: "场景", title: "真实场景决策" },
-  { value: "mapping", label: "映射", title: "隐喻与原理对照" },
-];
+import { LEARNING_DEPTH_OPTIONS, type LearningDepth } from "@/types/schema";
 
 export function ChatInput({
   onSubmit,
@@ -71,7 +65,7 @@ export function ChatInput({
         disabled={disabled}
       />
       <div className="grid grid-cols-3 gap-2">
-        {depthOptions.map((option) => (
+        {LEARNING_DEPTH_OPTIONS.map((option) => (
           <button
             key={option.value}
             type="button"

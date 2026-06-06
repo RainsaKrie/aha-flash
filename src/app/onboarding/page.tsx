@@ -70,7 +70,7 @@ export default function OnboardingPage() {
       </header>
       <Card className="grid gap-6 p-5">
         <StyleQuiz selected={selectedStyles} onSelect={toggleStyle} />
-        <PreferenceForm state={state} onSave={save} saving={saving} />
+        <PreferenceForm key={state?.user_id || "empty"} state={state} onSave={save} saving={saving} />
       </Card>
     </main>
   );

@@ -10,15 +10,9 @@ import { renderBySchema } from "@/components/generative-ui/registry";
 import { readUserId, writeUserId } from "@/lib/utils/storage";
 import { useAppStore } from "@/stores/app-store";
 import type { Message } from "@/types/chat";
-import { normalizeUISchema } from "@/types/schema";
+import { DEFAULT_LEARNING_DEPTH, LEARNING_DEPTH_LABELS, normalizeUISchema } from "@/types/schema";
 import type { InteractionEvent, LearningDepth } from "@/types/schema";
 import type { UserState } from "@/types/state";
-
-const depthLabels: Record<LearningDepth, string> = {
-  rapid: "快懂",
-  scenario: "场景",
-  mapping: "映射",
-};
 
 export default function HomePage() {
   const {
@@ -35,7 +29,7 @@ export default function HomePage() {
     setLoading,
     setError,
   } = useAppStore();
-  const [learningDepth, setLearningDepth] = useState<LearningDepth>("rapid");
+  const [learningDepth, setLearningDepth] = useState<LearningDepth>(DEFAULT_LEARNING_DEPTH);
 
   useEffect(() => {
     async function boot() {
@@ -204,7 +198,7 @@ export default function HomePage() {
               </div>
               <div className="flex justify-between gap-3">
                 <dt className="text-[var(--muted)]">深度</dt>
-                <dd>{depthLabels[currentRenderableSchema?.depth || learningDepth]}</dd>
+                <dd>{LEARNING_DEPTH_LABELS[currentRenderableSchema?.depth || learningDepth]}</dd>
               </div>
               <div className="flex justify-between gap-3">
                 <dt className="text-[var(--muted)]">交互</dt>

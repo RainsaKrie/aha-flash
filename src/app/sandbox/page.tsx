@@ -13,6 +13,8 @@ const understandingLabel: Record<KnowledgeAsset["understanding"], string> = {
   deep: "深入",
 };
 
+const EMPTY_ASSETS: KnowledgeAsset[] = [];
+
 function groupAssets(assets: KnowledgeAsset[]) {
   return assets.reduce<Record<string, KnowledgeAsset[]>>((groups, asset) => {
     const key = asset.topic_area || "未分组";
@@ -53,7 +55,7 @@ export default function SandboxPage() {
     void boot();
   }, []);
 
-  const assets = state?.knowledge_assets || [];
+  const assets = state?.knowledge_assets ?? EMPTY_ASSETS;
   const groups = useMemo(() => groupAssets(assets), [assets]);
   const groupEntries = Object.entries(groups);
   const patterns = new Set(assets.map((asset) => asset.pattern));

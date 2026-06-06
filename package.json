@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "eval:score": "node --no-warnings --experimental-strip-types tests/eval/score.ts",
     "eval:compare": "node --no-warnings --experimental-strip-types tests/eval/compare.ts"

@@ -45,6 +45,23 @@ export type UIPayload<TPayload = Record<string, unknown>> = TPayload;
 
 export type LearningDepth = "rapid" | "scenario" | "mapping";
 
+export const DEFAULT_LEARNING_DEPTH: LearningDepth = "rapid";
+
+export const LEARNING_DEPTH_OPTIONS: Array<{ value: LearningDepth; label: string; title: string }> = [
+  { value: "rapid", label: "快懂", title: "10 秒顿悟" },
+  { value: "scenario", label: "场景", title: "真实场景决策" },
+  { value: "mapping", label: "映射", title: "隐喻与原理对照" },
+];
+
+export const LEARNING_DEPTH_LABELS: Record<LearningDepth, string> = LEARNING_DEPTH_OPTIONS.reduce(
+  (labels, option) => ({ ...labels, [option.value]: option.label }),
+  {} as Record<LearningDepth, string>,
+);
+
+export function isLearningDepth(value: unknown): value is LearningDepth {
+  return value === "rapid" || value === "scenario" || value === "mapping";
+}
+
 export interface NextConcept {
   label: string;
   relation: string;
@@ -84,34 +101,35 @@ export interface NormalizedUISchema<TConfig = Record<string, unknown>> {
   depth: LearningDepth;
 }
 
-export const V1_TO_V2_SCHEMA_MAP: Record<
-  UISchemaType,
-  { pattern: PatternType; template: TemplateId }
+export const SCHEMA_CATALOG: Record<
+  PatternType,
+  { type: UISchemaType; defaultTemplate: TemplateId; templates: TemplateId[] }
 > = {
-  gacha_simulator: { pattern: "probability", template: "card_flip_reveal" },
-  slider_explorer: { pattern: "parameter_explore", template: "single_slider" },
-  card_flip: { pattern: "concept_memory", template: "term_cards" },
-  timeline_scrubber: { pattern: "process_timeline", template: "horizontal_timeline" },
-  comparison_split: { pattern: "comparison", template: "split_panel" },
-  quiz_battle: { pattern: "knowledge_check", template: "single_question" },
-  build_sandbox: { pattern: "system_builder", template: "module_sandbox" },
-  narrative_branch: { pattern: "narrative_branch", template: "branch_story" },
-  classification_sort: { pattern: "classification_sort", template: "category_buckets" },
-  simulation_play: { pattern: "simulation_play", template: "parameter_simulation" },
+  probability: { type: "gacha_simulator", defaultTemplate: "card_flip_reveal", templates: ["card_flip_reveal", "spin_wheel"] },
+  parameter_explore: { type: "slider_explorer", defaultTemplate: "single_slider", templates: ["single_slider", "dual_slider"] },
+  concept_memory: { type: "card_flip", defaultTemplate: "term_cards", templates: ["term_cards", "grid_match"] },
+  process_timeline: { type: "timeline_scrubber", defaultTemplate: "horizontal_timeline", templates: ["horizontal_timeline", "vertical_scroll"] },
+  comparison: { type: "comparison_split", defaultTemplate: "split_panel", templates: ["split_panel", "overlay_fade"] },
+  knowledge_check: { type: "quiz_battle", defaultTemplate: "single_question", templates: ["single_question", "combo_chain"] },
+  system_builder: { type: "build_sandbox", defaultTemplate: "module_sandbox", templates: ["module_sandbox", "flow_connect"] },
+  narrative_branch: { type: "narrative_branch", defaultTemplate: "branch_story", templates: ["branch_story"] },
+  classification_sort: { type: "classification_sort", defaultTemplate: "category_buckets", templates: ["category_buckets"] },
+  simulation_play: { type: "simulation_play", defaultTemplate: "parameter_simulation", templates: ["parameter_simulation"] },
 };
 
-export const V2_TO_V1_SCHEMA_MAP: Record<PatternType, { type: UISchemaType; template: TemplateId }> = {
-  probability: { type: "gacha_simulator", template: "card_flip_reveal" },
-  parameter_explore: { type: "slider_explorer", template: "single_slider" },
-  concept_memory: { type: "card_flip", template: "term_cards" },
-  process_timeline: { type: "timeline_scrubber", template: "horizontal_timeline" },
-  comparison: { type: "comparison_split", template: "split_panel" },
-  knowledge_check: { type: "quiz_battle", template: "single_question" },
-  system_builder: { type: "build_sandbox", template: "module_sandbox" },
-  narrative_branch: { type: "narrative_branch", template: "branch_story" },
-  classification_sort: { type: "classification_sort", template: "category_buckets" },
-  simulation_play: { type: "simulation_play", template: "parameter_simulation" },
-};
+export const V2_TO_V1_SCHEMA_MAP = Object.fromEntries(
+  Object.entries(SCHEMA_CATALOG).map(([pattern, item]) => [
+    pattern,
+    { type: item.type, template: item.defaultTemplate },
+  ]),
+) as Record<PatternType, { type: UISchemaType; template: TemplateId }>;
+
+export const V1_TO_V2_SCHEMA_MAP = Object.fromEntries(
+  Object.entries(SCHEMA_CATALOG).map(([pattern, item]) => [
+    item.type,
+    { pattern, template: item.defaultTemplate },
+  ]),
+) as Record<UISchemaType, { pattern: PatternType; template: TemplateId }>;
 
 function isV2UISchema(schema: UISchema): schema is V2UISchema {
   return typeof schema.pattern === "string";
@@ -127,7 +145,7 @@ export function normalizeUISchema(schema: UISchema): NormalizedUISchema {
       version: schema.version,
       config: schema.payload,
       next_concepts: schema.next_concepts || [],
-      depth: schema.depth || "rapid",
+      depth: schema.depth || DEFAULT_LEARNING_DEPTH,
     };
   }
 
@@ -139,7 +157,7 @@ export function normalizeUISchema(schema: UISchema): NormalizedUISchema {
     version: schema.version,
     config: schema.config,
     next_concepts: schema.next_concepts || [],
-    depth: schema.depth || "rapid",
+    depth: schema.depth || DEFAULT_LEARNING_DEPTH,
   };
 }
 

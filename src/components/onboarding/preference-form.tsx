@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { UserState } from "@/types/state";
@@ -35,15 +35,6 @@ export function PreferenceForm({
   const [blindspots, setBlindspots] = useState(profile?.knowledge_blindspots.join("，") || "金融，编程");
   const [metaphors, setMetaphors] = useState(profile?.metaphor_preferences.join("，") || "游戏机制，体育竞技");
   const [complexity, setComplexity] = useState<1 | 2 | 3 | 4 | 5>(profile?.complexity_tolerance || 3);
-
-  useEffect(() => {
-    if (!profile) return;
-    setBackground(profile.background);
-    setHobbies(profile.hobbies.join("，"));
-    setBlindspots(profile.knowledge_blindspots.join("，"));
-    setMetaphors(profile.metaphor_preferences.join("，"));
-    setComplexity(profile.complexity_tolerance);
-  }, [profile]);
 
   return (
     <form
