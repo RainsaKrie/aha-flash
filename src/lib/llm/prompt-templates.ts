@@ -13,12 +13,15 @@ export const METAPHOR_GUIDELINES = `
 export const OUTPUT_FORMAT_RULES = `
 输出规范:
 1. 必须输出合法 JSON，不要包裹 Markdown 代码块。
-2. 优先输出 V2 三层 Schema: { "pattern": "...", "template": "...", "version": "2.0", "payload": {...}, "next_concepts": [{ "label": "...", "relation": "..." }] }。
+2. 优先输出 V2 三层 Schema: { "pattern": "...", "template": "...", "version": "2.0", "depth": "rapid|scenario|mapping", "payload": {...}, "next_concepts": [{ "label": "...", "relation": "..." }] }。
 3. pattern 必须是: probability, parameter_explore, concept_memory, process_timeline, comparison, knowledge_check, system_builder, narrative_branch, classification_sort, simulation_play。
 4. template 必须匹配 pattern。不要输出不在参考表里的 template。
 5. payload 必须完整满足对应 template 的字段要求。
-6. 知识讲解类请求应输出 1-2 个 next_concepts；label 是可继续学习的短概念，relation 是它与当前概念的关系，不要写成长解释。
-7. V1 flat Schema 仍可兼容，但新输出必须优先使用 V2。
+6. depth 必须等于 <target_depth> 中给出的目标深度。
+7. 深度规则: rapid=10秒顿悟，只突出一个核心动作；scenario=真实场景决策，让用户权衡选择后果；mapping=隐喻与原理对照，明确动作、约束、收益、风险各自映射什么。
+8. 同一概念切换 depth 时，标题、说明、交互目标和反馈文案必须变化。
+9. 知识讲解类请求应输出 1-2 个 next_concepts；label 是可继续学习的短概念，relation 是它与当前概念的关系，不要写成长解释。
+10. V1 flat Schema 仍可兼容，但新输出必须优先使用 V2。
 `.trim();
 
 export const SCHEMA_REFERENCE = `
@@ -28,6 +31,7 @@ Pattern: probability
 - Payload: { title, quote?, quote_author?, pool:[{name, rarity, probability, value}], option_cost, strike_price, pulls_per_try, explanation_map:{win, lose} }
 - 正例: 期权用抽卡锁价券表达有限损失和上涨收益。
 - 推荐链正例: 期权后推荐期货、保险。
+- 深度变化: rapid 强调“花小钱买未来选择权”；scenario 强调“到期时是否行权”；mapping 强调“期权费/行权价/标的价格/损益边界”的对应关系。
 - 不要这样: 只写“期权是一种金融工具”，没有可操作动作和结果反馈。
 
 Pattern: parameter_explore
@@ -77,6 +81,7 @@ Pattern: narrative_branch
 - Template: branch_story。
 - Payload: { title, opening, branches:[{choice_label, outcome_description, insight}] }
 - 正例: 沉没成本用“继续排队/及时离开/换目标”的分支故事揭示成本不可追回。
+- 深度变化: rapid 只让用户看见“过去成本不可追回”；scenario 让用户在真实选择中比较未来收益；mapping 把已付成本、机会成本、边际收益逐项对照。
 - 不要这样: 每个分支结果都一样，用户选择不会改变后果。
 
 Pattern: classification_sort

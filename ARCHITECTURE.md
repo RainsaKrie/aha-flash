@@ -35,7 +35,7 @@ LLM Layer
 
 Generative UI Layer
   |
-  +-- V2 Schema: pattern + template + payload + next_concepts
+  +-- V2 Schema: pattern + template + payload + depth + next_concepts
   +-- Registry maps pattern/template to React components
 ```
 
@@ -119,7 +119,7 @@ POST /api/chat
   +-- initUserState(userId)
   +-- classifyConversationIntent(input)
   +-- collectSourceContexts(input)
-  +-- buildSystemPrompt(state + route + source_context)
+  +-- buildSystemPrompt(state + route + target_depth + source_context)
   +-- generateSchemaWithLLM()
       |
       +-- if model unavailable or invalid output: createMockSchema()
@@ -127,7 +127,7 @@ POST /api/chat
   +-- reflectTurn(input, route, schemaType, state)
   +-- stateStore.applyTurnReflection()
   +-- if route is knowledge: stateStore.addKnowledgeAsset()
-  +-- return schema + next concepts + route + userState
+  +-- return schema + depth + next concepts + route + userState
 ```
 
 ---
@@ -141,6 +141,7 @@ POST /api/chat
   "pattern": "comparison",
   "template": "overlay_fade",
   "version": "2.0",
+  "depth": "scenario",
   "payload": {},
   "next_concepts": [
     { "label": "期货", "relation": "同属衍生品，但交易义务不同" }
@@ -167,11 +168,14 @@ POST /api/chat
   template: TemplateId;
   version: string;
   config: Record<string, unknown>;
+  depth: "rapid" | "scenario" | "mapping";
   next_concepts: Array<{ label: string; relation: string }>;
 }
 ```
 
 `next_concepts` 是可选输入字段，归一化后始终是数组。前端在工作台组件下方展示前两个推荐概念，点击后触发下一轮学习。
+
+`depth` 是可选输入字段，归一化后默认为 `rapid`。`/api/chat` 会把请求中的目标深度注入 Prompt，并将最终 schema 附上该深度。知识资产理解深度按 `rapid -> shallow`、`scenario -> moderate`、`mapping -> deep` 写入。
 
 ---
 
@@ -219,6 +223,7 @@ POST /api/chat
 - `userState`
 - `messages`
 - `currentSchema`
+- 当前学习深度
 - loading/error
 
 `/sandbox` 页面通过同一个 localStorage 用户 ID 读取 `/api/state`，将 `knowledge_assets` 按 `topic_area` 分组，展示概念卡片、`pattern/template`、理解深度和学习时间。
@@ -252,4 +257,3 @@ POST /api/chat
 - 当前 mock schema 仍承担较多验收输入路由。
 - 没有自动化测试集和质量评分脚本。
 - 搜索工具尚未接入。
-- 深度分级尚未实现。

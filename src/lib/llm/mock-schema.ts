@@ -1,4 +1,4 @@
-import type { UISchema } from "@/types/schema";
+import type { LearningDepth, UISchema } from "@/types/schema";
 
 const OPTION_NEXT_CONCEPTS = [
   { label: "期货", relation: "同属衍生品，但期货更像约定未来必须交易" },
@@ -9,7 +9,125 @@ function includesAny(input: string, words: string[]) {
   return words.some((word) => input.includes(word));
 }
 
-export function createMockSchema(input: string): UISchema {
+function createOptionConfig(depth: LearningDepth) {
+  const depthCopy = {
+    rapid: {
+      title: "期权 · 10 秒锁价券",
+      quote: "期权就是花小钱，买一个未来可选择的权利。",
+      pulls_per_try: 6,
+      win: "高价值结果涨到 {{market_price}}，你仍按锁定价 {{strike_price}} 行动：选择权开始变值钱。",
+      lose: "没有出现高价值结果，你最多只损失 {{option_cost}}：坏结果被封顶。",
+    },
+    scenario: {
+      title: "期权 · 到期决策版",
+      quote: "先付期权费，等未来价格揭晓，再决定要不要行权。",
+      pulls_per_try: 10,
+      win: "未来价格来到 {{market_price}}，高过锁定价 {{strike_price}}，此时行权更划算。",
+      lose: "未来结果不够好，你可以放弃行权，只把 {{option_cost}} 当作买选择权的成本。",
+    },
+    mapping: {
+      title: "期权 · 隐喻映射版",
+      quote: "抽卡券=期权费，锁定价=行权价，角色价值=标的价格，是否使用=行权决策。",
+      pulls_per_try: 8,
+      win: "标的价格 {{market_price}} 高于行权价 {{strike_price}}，收益来自价格差减去期权费。",
+      lose: "标的价格没有越过边界，损失被限制在期权费 {{option_cost}}，这就是有限损失结构。",
+    },
+  }[depth];
+
+  return {
+    title: depthCopy.title,
+    quote: depthCopy.quote,
+    quote_author: "趣灵",
+    pool: [
+      { name: "限定 5 星角色", rarity: "5", probability: 0.016, value: 2000 },
+      { name: "强力 4 星角色", rarity: "4", probability: 0.13, value: 350 },
+      { name: "普通素材", rarity: "3", probability: 0.854, value: 40 },
+    ],
+    option_cost: 100,
+    strike_price: 1000,
+    pulls_per_try: depthCopy.pulls_per_try,
+    explanation_map: {
+      win: depthCopy.win,
+      lose: depthCopy.lose,
+    },
+  };
+}
+
+function createSunkCostPayload(depth: LearningDepth) {
+  if (depth === "scenario") {
+    return {
+      title: "沉没成本 · 真实决策场景",
+      opening:
+        "你排队 40 分钟买限定甜品，快到你时发现评价很普通。现在要决定的不是“前 40 分钟值不值”，而是“接下来 10 分钟还值不值”。",
+      branches: [
+        {
+          choice_label: "继续排队",
+          outcome_description: "你买到了甜品，但体验一般。新的 10 分钟没有带来足够收益。",
+          insight: "场景决策看未来：继续投入只该由未来收益决定。",
+        },
+        {
+          choice_label: "立刻离开",
+          outcome_description: "你承认前 40 分钟已经回不来，把剩下时间换成更确定的安排。",
+          insight: "离开不是浪费过去，而是保护还没投入的资源。",
+        },
+        {
+          choice_label: "换一个目标",
+          outcome_description: "你去附近买了更确定好吃的东西，整体体验更稳。",
+          insight: "比较下一步方案时，机会成本比已付成本更重要。",
+        },
+      ],
+    };
+  }
+
+  if (depth === "mapping") {
+    return {
+      title: "沉没成本 · 隐喻映射版",
+      opening:
+        "把故事拆成三件事：已等待时间=沉没成本，接下来时间=新增成本，能得到的体验=未来收益。决策只看后两者。",
+      branches: [
+        {
+          choice_label: "把已等待时间算进理由",
+          outcome_description: "你让不可追回的时间继续指挥未来，新增成本被过去绑架。",
+          insight: "映射：沉没成本不可改变，不应进入下一步收益计算。",
+        },
+        {
+          choice_label: "只比较未来 10 分钟",
+          outcome_description: "你重新估算下一步投入和可能收益，决策变得清楚。",
+          insight: "映射：边际成本和边际收益才是当前选择的核心变量。",
+        },
+        {
+          choice_label: "列出替代方案",
+          outcome_description: "你发现同一段未来时间可以换来更好体验。",
+          insight: "映射：机会成本提醒你，继续不是默认选项。",
+        },
+      ],
+    };
+  }
+
+  return {
+    title: "沉没成本 · 10 秒止损版",
+    opening: "已经花掉的时间不能退回。下一步只看：继续投入还划不划算？",
+    branches: [
+      {
+        choice_label: "继续",
+        outcome_description: "你继续投入，但过去的损失没有因此变回来。",
+        insight: "沉没成本的关键：过去不能追回。",
+      },
+      {
+        choice_label: "停止",
+        outcome_description: "你保住了接下来还能自由使用的时间。",
+        insight: "止损是在保护未来资源。",
+      },
+      {
+        choice_label: "换目标",
+        outcome_description: "你把剩余资源换到更值得的地方。",
+        insight: "下一步应该看未来收益。",
+      },
+    ],
+  };
+}
+
+export function createMockSchema(input: string, depth: LearningDepth = "rapid"): UISchema {
   const normalized = input.toLowerCase();
 
   const asksComparison = includesAny(input, ["比较", "区别", "对比", "A/B", "优缺点"]);
@@ -21,48 +139,18 @@ export function createMockSchema(input: string): UISchema {
         pattern: "probability",
         template: "spin_wheel",
         version: "2.0",
+        depth,
         next_concepts: OPTION_NEXT_CONCEPTS,
-        payload: {
-          title: "期权 · 转盘锁价版",
-          quote: "期权就是花小钱，买一个未来可选择的权利。",
-          quote_author: "趣灵",
-          pool: [
-            { name: "限定 5 星角色", rarity: "5", probability: 0.016, value: 2000 },
-            { name: "强力 4 星角色", rarity: "4", probability: 0.13, value: 350 },
-            { name: "普通素材", rarity: "3", probability: 0.854, value: 40 },
-          ],
-          option_cost: 100,
-          strike_price: 1000,
-          pulls_per_try: 10,
-          explanation_map: {
-            win: "转到高价值结果 {{market_price}}，但你仍按锁定价 {{strike_price}} 行动。",
-            lose: "没转到高价值结果，你最多只损失 {{option_cost}}。",
-          },
-        },
+        payload: createOptionConfig(depth),
       };
     }
 
     return {
       type: "gacha_simulator",
       version: "1.0",
+      depth,
       next_concepts: OPTION_NEXT_CONCEPTS,
-      config: {
-        title: "期权 · 抽卡锁价版",
-        quote: "期权就是花小钱，买一个未来可选择的权利。",
-        quote_author: "趣灵",
-        pool: [
-          { name: "限定 5 星角色", rarity: "5", probability: 0.016, value: 2000 },
-          { name: "强力 4 星角色", rarity: "4", probability: 0.13, value: 350 },
-          { name: "普通素材", rarity: "3", probability: 0.854, value: 40 },
-        ],
-        option_cost: 100,
-        strike_price: 1000,
-        pulls_per_try: 10,
-        explanation_map: {
-          win: "角色市场价涨到 {{market_price}}，但你仍按锁定价 {{strike_price}} 入手。期权的价值来自未来上涨时的选择权。",
-          lose: "没有抽到高价值结果，你最多只损失 {{option_cost}}。这就是期权的有限损失。",
-        },
-      },
+      config: createOptionConfig(depth),
     };
   }
 
@@ -94,27 +182,8 @@ export function createMockSchema(input: string): UISchema {
       pattern: "narrative_branch",
       template: "branch_story",
       version: "2.0",
-      payload: {
-        title: "沉没成本 · 分支故事",
-        opening: "你排队 40 分钟买限定甜品，快到你时发现评价很普通。已经花掉的 40 分钟不能退回，现在真正的问题是：下一分钟还值不值得继续投进去？",
-        branches: [
-          {
-            choice_label: "继续排队",
-            outcome_description: "你买到了甜品，但发现味道一般。之前的等待没有变成收益，新的等待反而继续增加成本。",
-            insight: "沉没成本不能决定下一步，下一步只该看未来收益和未来成本。",
-          },
-          {
-            choice_label: "立刻离开",
-            outcome_description: "你损失了已经等待的时间，但把接下来的时间拿去做更有价值的事。",
-            insight: "及时止损不是否定过去，而是保护还没花出去的资源。",
-          },
-          {
-            choice_label: "换一个目标",
-            outcome_description: "你用剩下的时间买了附近更确定好吃的东西，体验反而更稳。",
-            insight: "决策的核心是机会成本：同一段未来时间还能换来什么。",
-          },
-        ],
-      },
+      depth,
+      payload: createSunkCostPayload(depth),
     };
   }
 

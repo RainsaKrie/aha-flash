@@ -72,6 +72,29 @@
 - `npm run build`
 - Playwright 生产服务页面快照验收
 
+完成 T11：深度分级。
+
+新增：
+- Schema 支持顶层 `depth: rapid | scenario | mapping`
+- `/api/chat` 接收 `depth`，并注入 Prompt 的 `<target_depth>`
+- 首页输入区新增“快懂 / 场景 / 映射”三段深度切换
+- 首页状态面板展示当前输出深度
+- `probability` 期权示例按三档生成不同标题、说明、交互目标和反馈文案
+- `narrative_branch` 沉没成本示例按三档生成不同开场、分支目标和洞察文案
+- 知识资产理解深度按 `rapid -> shallow`、`scenario -> moderate`、`mapping -> deep` 写入
+
+验收：
+- 同一“期权”输入在三档下返回不同标题和不同交互目标。
+- 同一“沉没成本”输入在三档下返回不同开场长度、分支洞察和理解深度。
+- 页面切到“映射”后生成期权，工作台显示“期权 · 隐喻映射版”和“目标：把抽卡动作逐项对应到期权原理。”
+- 状态摘要和知识资产深度与当前 depth 保持一致。
+
+验证：
+- `npm run typecheck`
+- `npm run build`
+- API 三档复测
+- Playwright 生产服务页面快照验收
+
 ---
 
 ## 2026-06-05

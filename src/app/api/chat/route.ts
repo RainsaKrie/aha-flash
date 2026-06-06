@@ -9,7 +9,8 @@ import { createMockSchema } from "@/lib/llm/mock-schema";
 import { getLLMProvider } from "@/lib/llm/provider";
 import { extractSchemaFromText, getSchemaFailureReason } from "@/lib/llm/schema-validator";
 import { buildSourcePromptContext, collectSourceContexts } from "@/lib/tools/source-router";
-import { normalizeUISchema, type UISchema } from "@/types/schema";
+import { normalizeUISchema, type LearningDepth, type UISchema } from "@/types/schema";
+import type { KnowledgeAsset } from "@/types/state";
 
 function inferConcept(input: string) {
   const withoutUrls = input.replace(/https?:\/\/[^\s)）]+/g, "");
@@ -34,6 +35,20 @@ function inferTopicArea(input: string) {
   if (/[历史发展演化时间线]/.test(input)) return "历史";
   if (/[沉没成本决策逻辑谬误]/.test(input)) return "认知";
   return "通识";
+}
+
+function normalizeDepth(value: unknown): LearningDepth {
+  return value === "scenario" || value === "mapping" || value === "rapid" ? value : "rapid";
+}
+
+function depthToUnderstanding(depth: LearningDepth): KnowledgeAsset["understanding"] {
+  if (depth === "mapping") return "deep";
+  if (depth === "scenario") return "moderate";
+  return "shallow";
+}
+
+function attachDepth(schema: UISchema, depth: LearningDepth): UISchema {
+  return { ...schema, depth };
 }
 
 async function generateSchemaWithLLM({
@@ -79,8 +94,9 @@ async function generateSchemaWithLLM({
 }
 
 export async function POST(req: Request) {
-  const { message, userId } = await req.json();
+  const { message, userId, depth: rawDepth } = await req.json();
   const input = String(message || "").trim();
+  const depth = normalizeDepth(rawDepth);
 
   if (!input) {
     return NextResponse.json({ error: "message is required" }, { status: 400 });
@@ -92,18 +108,18 @@ export async function POST(req: Request) {
   const sources = await collectSourceContexts(input);
   const sourcePromptContext = buildSourcePromptContext(sources);
   const routeContext = `<route_context route="${routeInfo.route}" confidence="${routeInfo.confidence}" source="${routeInfo.source}" />`;
-  const systemPrompt = [buildSystemPrompt(state), routeContext, sourcePromptContext]
+  const systemPrompt = [buildSystemPrompt(state, depth), routeContext, sourcePromptContext]
     .filter(Boolean)
     .join("\n\n");
 
-  let schema = createMockSchema(input);
+  let schema = attachDepth(createMockSchema(input, depth), depth);
   let source: "mock" | "llm" = "mock";
 
   if (model) {
     try {
       const generated = await generateSchemaWithLLM({ model, system: systemPrompt, input });
       if (generated) {
-        schema = generated;
+        schema = attachDepth(generated, depth);
         source = "llm";
       }
     } catch {
@@ -118,13 +134,21 @@ export async function POST(req: Request) {
       : routeInfo.route === "casual"
         ? "闲聊"
         : inferTopic(input);
-  const reflection = await reflectTurn({
+  const rawReflection = await reflectTurn({
     input,
     route: routeInfo.route,
     schemaType: normalizedSchema.type,
     state,
     model,
   });
+  const reflection = {
+    ...rawReflection,
+    understanding_level: depthToUnderstanding(normalizedSchema.depth),
+    summary:
+      routeInfo.route === "knowledge"
+        ? `用户以 ${normalizedSchema.depth} 深度学习了 ${normalizedSchema.type} 互动组件。`
+        : rawReflection.summary,
+  };
   let updatedState = await stateStore.applyTurnReflection(
     state.user_id,
     topic,
@@ -137,7 +161,7 @@ export async function POST(req: Request) {
       concept: inferConcept(input),
       pattern: normalizedSchema.pattern,
       template: normalizedSchema.template,
-      understanding: reflection.understanding_level || "shallow",
+      understanding: depthToUnderstanding(normalizedSchema.depth),
       topic_area: inferTopicArea(input),
     });
   }

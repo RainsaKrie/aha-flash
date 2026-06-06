@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { UISchema } from "@/types/schema";
 
+const DepthZod = z.enum(["rapid", "scenario", "mapping"]).optional();
+
 const NextConceptsZod = z
   .array(
     z.object({
@@ -15,6 +17,7 @@ function schemaObject<TShape extends z.ZodRawShape>(shape: TShape) {
   return z.object({
     ...shape,
     next_concepts: NextConceptsZod,
+    depth: DepthZod,
   });
 }
 

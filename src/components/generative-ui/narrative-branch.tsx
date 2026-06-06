@@ -2,7 +2,19 @@
 
 import { GitBranch } from "lucide-react";
 import { useState } from "react";
-import type { InteractionEvent, NarrativeBranchConfig } from "@/types/schema";
+import type { InteractionEvent, LearningDepth, NarrativeBranchConfig } from "@/types/schema";
+
+const depthLabels: Record<LearningDepth, string> = {
+  rapid: "快懂",
+  scenario: "场景",
+  mapping: "映射",
+};
+
+const depthGoals: Record<LearningDepth, string> = {
+  rapid: "目标：快速看见过去成本不可追回。",
+  scenario: "目标：在真实选择里比较未来收益和新增成本。",
+  mapping: "目标：把故事元素映射到沉没成本、机会成本和边际收益。",
+};
 
 export function NarrativeBranch({
   config,
@@ -13,6 +25,7 @@ export function NarrativeBranch({
 }) {
   const [selected, setSelected] = useState<number | null>(null);
   const branch = selected === null ? null : config.branches[selected];
+  const depth = config.depth || "rapid";
 
   return (
     <section className="grid h-full min-h-[520px] grid-rows-[auto_1fr_auto] gap-5 p-5">
@@ -20,7 +33,13 @@ export function NarrativeBranch({
         <p className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--accent)]">
           <GitBranch size={15} /> narrative branch
         </p>
-        <h2 className="mt-1 text-2xl font-semibold">{config.title}</h2>
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <h2 className="text-2xl font-semibold">{config.title}</h2>
+          <span className="rounded-[8px] border border-[rgba(247,201,72,0.4)] bg-[rgba(247,201,72,0.1)] px-2 py-1 text-xs text-[var(--accent-2)]">
+            {depthLabels[depth]}
+          </span>
+        </div>
+        <p className="mt-2 text-xs text-[var(--accent)]">{depthGoals[depth]}</p>
       </header>
 
       <div className="grid content-center gap-5">
@@ -53,7 +72,7 @@ export function NarrativeBranch({
             <strong className="text-[var(--accent)]">{branch.insight}</strong>
           </>
         ) : (
-          <p className="text-[var(--muted)]">选择一个分支，看看这个决定把故事推向哪里。</p>
+          <p className="text-[var(--muted)]">{depthGoals[depth]}</p>
         )}
       </div>
     </section>

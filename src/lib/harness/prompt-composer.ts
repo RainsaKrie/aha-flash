@@ -1,4 +1,5 @@
 import type { UserState } from "@/types/state";
+import type { LearningDepth } from "@/types/schema";
 import { getPreferredMetaphorContext } from "@/lib/metaphor/metaphor-engine";
 import {
   METAPHOR_GUIDELINES,
@@ -7,7 +8,7 @@ import {
   SYSTEM_ROLE_PROMPT,
 } from "@/lib/llm/prompt-templates";
 
-export function buildSystemPrompt(state: UserState) {
+export function buildSystemPrompt(state: UserState, targetDepth: LearningDepth = "rapid") {
   const metaphor = getPreferredMetaphorContext(state);
   const stateContext = `
 <user_state>
@@ -24,10 +25,12 @@ export function buildSystemPrompt(state: UserState) {
     .join("; ")}</knowledge_assets>
 </user_state>
 `.trim();
+  const depthContext = `<target_depth>${targetDepth}</target_depth>`;
 
   return [
     SYSTEM_ROLE_PROMPT,
     stateContext,
+    depthContext,
     metaphor.promptHint,
     METAPHOR_GUIDELINES,
     OUTPUT_FORMAT_RULES,

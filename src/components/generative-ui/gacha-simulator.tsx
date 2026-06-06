@@ -3,9 +3,21 @@
 import { RotateCcw, Sparkles, Ticket } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import type { GachaPoolItem, GachaSimulatorConfig, InteractionEvent } from "@/types/schema";
+import type { GachaPoolItem, GachaSimulatorConfig, InteractionEvent, LearningDepth } from "@/types/schema";
 
 type Phase = "idle" | "pulling" | "result";
+
+const depthLabels: Record<LearningDepth, string> = {
+  rapid: "快懂",
+  scenario: "场景",
+  mapping: "映射",
+};
+
+const depthGoals: Record<LearningDepth, string> = {
+  rapid: "目标：用一次抽取抓住“选择权 + 有限损失”。",
+  scenario: "目标：在未来结果揭晓后判断是否行权。",
+  mapping: "目标：把抽卡动作逐项对应到期权原理。",
+};
 
 function draw(pool: GachaPoolItem[]) {
   const roll = Math.random();
@@ -27,6 +39,7 @@ export function GachaSimulator({
   const [phase, setPhase] = useState<Phase>("idle");
   const [results, setResults] = useState<GachaPoolItem[]>([]);
   const [balance, setBalance] = useState(3000);
+  const depth = config.depth || "rapid";
 
   const best = useMemo(() => results.reduce<GachaPoolItem | null>((acc, item) => (!acc || item.value > acc.value ? item : acc), null), [results]);
   const profit = best ? Math.max(best.value - config.strike_price - config.option_cost, -config.option_cost) : 0;
@@ -69,8 +82,14 @@ export function GachaSimulator({
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--line)] pb-4">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--accent)]">gacha simulator</p>
-          <h2 className="mt-1 text-2xl font-semibold">{config.title}</h2>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <h2 className="text-2xl font-semibold">{config.title}</h2>
+            <span className="rounded-[8px] border border-[rgba(247,201,72,0.4)] bg-[rgba(247,201,72,0.1)] px-2 py-1 text-xs text-[var(--accent-2)]">
+              {depthLabels[depth]}
+            </span>
+          </div>
           {config.quote && <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">{config.quote}</p>}
+          <p className="mt-2 text-xs text-[var(--accent)]">{depthGoals[depth]}</p>
         </div>
         <div className="rounded-[8px] border border-[var(--line)] bg-[#07120f] px-3 py-2 text-right">
           <div className="text-xs text-[var(--muted)]">余额</div>
@@ -148,7 +167,7 @@ export function GachaSimulator({
             </strong>
           </div>
         ) : (
-          <p className="text-sm text-[var(--muted)]">先付一小笔期权费，保留未来按锁定价行动的权利。</p>
+          <p className="text-sm text-[var(--muted)]">{depthGoals[depth]}</p>
         )}
       </footer>
     </section>

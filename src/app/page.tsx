@@ -2,7 +2,7 @@
 
 import { BrainCircuit, FileJson2, History, Map, Settings2 } from "lucide-react";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ChatHistory } from "@/components/chat/chat-history";
 import { ChatInput } from "@/components/chat/chat-input";
 import { Card } from "@/components/ui/card";
@@ -11,8 +11,14 @@ import { readUserId, writeUserId } from "@/lib/utils/storage";
 import { useAppStore } from "@/stores/app-store";
 import type { Message } from "@/types/chat";
 import { normalizeUISchema } from "@/types/schema";
-import type { InteractionEvent } from "@/types/schema";
+import type { InteractionEvent, LearningDepth } from "@/types/schema";
 import type { UserState } from "@/types/state";
+
+const depthLabels: Record<LearningDepth, string> = {
+  rapid: "快懂",
+  scenario: "场景",
+  mapping: "映射",
+};
 
 export default function HomePage() {
   const {
@@ -29,6 +35,7 @@ export default function HomePage() {
     setLoading,
     setError,
   } = useAppStore();
+  const [learningDepth, setLearningDepth] = useState<LearningDepth>("rapid");
 
   useEffect(() => {
     async function boot() {
@@ -47,7 +54,7 @@ export default function HomePage() {
     void boot();
   }, [setError, setUserState]);
 
-  async function submit(value: string) {
+  async function submit(value: string, depth: LearningDepth = learningDepth) {
     const userMessage: Message = {
       id: crypto.randomUUID(),
       role: "user",
@@ -63,7 +70,7 @@ export default function HomePage() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: value, userId }),
+        body: JSON.stringify({ message: value, userId, depth }),
       });
       if (!response.ok) throw new Error(`Chat request failed: ${response.status}`);
       const data = await response.json();
@@ -129,7 +136,7 @@ export default function HomePage() {
   }
 
   async function followNextConcept(label: string, relation: string) {
-    await submit(`${label}是什么？它和刚才的关系是：${relation}`);
+    await submit(`${label}是什么？它和刚才的关系是：${relation}`, learningDepth);
   }
 
   const profile = userState?.profile;
@@ -194,6 +201,10 @@ export default function HomePage() {
                     ? `${currentRenderableSchema.pattern}/${currentRenderableSchema.template}`
                     : "待生成"}
                 </dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-[var(--muted)]">深度</dt>
+                <dd>{depthLabels[currentRenderableSchema?.depth || learningDepth]}</dd>
               </div>
               <div className="flex justify-between gap-3">
                 <dt className="text-[var(--muted)]">交互</dt>
@@ -272,7 +283,12 @@ export default function HomePage() {
         </div>
 
         <Card className="p-4">
-          <ChatInput onSubmit={submit} disabled={isLoading} />
+          <ChatInput
+            onSubmit={submit}
+            depth={learningDepth}
+            onDepthChange={setLearningDepth}
+            disabled={isLoading}
+          />
         </Card>
       </aside>
 

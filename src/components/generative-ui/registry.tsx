@@ -92,5 +92,10 @@ export function renderBySchema(
   const Component = pattern[normalized.template] || pattern[pattern.default];
 
   if (!Component) return null;
-  return <Component config={normalized.config as never} {...handlers} />;
+  const config = {
+    ...(normalized.config as Record<string, unknown>),
+    depth: normalized.depth,
+  };
+
+  return <Component config={config as never} {...handlers} />;
 }

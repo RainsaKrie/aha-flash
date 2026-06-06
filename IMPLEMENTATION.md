@@ -12,15 +12,15 @@
 | Phase 1 Stateful Memory | 完成 | 意图分类、用户状态、回合反思、状态增量写入 |
 | Phase 2 Schema 协议重构 | 完成 | V2 `pattern/template/payload`，V1 兼容，注册表升级 |
 | Phase 3 交互模式扩展 | 完成 | 10 个 Pattern，既有 7 个 Pattern 各有 2 个 Template |
-| Phase 4 知识沙盒体系 | 进行中 | 知识资产、知识链推荐、`/sandbox` 已完成；深度分级待开发 |
+| Phase 4 知识沙盒体系 | 完成 | 知识资产、知识链推荐、`/sandbox`、深度分级已完成 |
 | Phase 5 外部集成 | 待开发 | 搜索工具、source-router 降级 |
 | Phase 6 质量体系 | 待开发 | 测试用例、评分脚本、Prompt 对比 |
 
 最近稳定提交：
 
 ```text
-60716b5 Add knowledge asset storage
-940010b Consolidate project documentation
+b0431a3 Add knowledge sandbox page
+602f2df Add knowledge chain recommendations
 ```
 
 ---
@@ -31,6 +31,7 @@
 
 - 首页工作台：输入、对话、状态面板、Generative UI stage
 - `/sandbox` 知识沙盒：已学概念地图、主题分组、概念卡片
+- 学习深度切换：快懂、场景、映射三档
 - Onboarding：背景、爱好、知识盲区、隐喻偏好
 - 本地/线上 demo 可运行
 - GitHub + Vercel 自动部署链路
@@ -55,6 +56,7 @@
 - mock fallback
 - `normalizeUISchema()`
 - `next_concepts` 知识链推荐字段
+- `depth` 深度分级字段
 
 ### 2.4 Generative UI
 
@@ -86,13 +88,13 @@
 
 优先级建议：
 
-1. T11 深度分级
-2. T15-T17 质量体系
-3. T13-T14 搜索工具与 source-router 调整
+1. T15-T17 质量体系
+2. T13-T14 搜索工具与 source-router 调整
 
 原因：
 - 当前核心体验已能生成组件。
-- 下一步最能提升产品厚度的是让同一概念支持不同理解深度。
+- Phase 4 已形成“学过什么、下一步学什么、怎么调深度”的基础闭环。
+- 下一步应先建立质量评估，让 Prompt 和 Schema 输出变得可回归。
 - 搜索工具涉及外部 API key，可并行但不应阻塞核心产品闭环。
 
 ---

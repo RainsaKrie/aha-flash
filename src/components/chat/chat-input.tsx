@@ -4,12 +4,23 @@ import { Activity, Boxes, Columns2, Gauge, GitBranch, History, SendHorizontal, S
 import { FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import type { LearningDepth } from "@/types/schema";
+
+const depthOptions: Array<{ value: LearningDepth; label: string; title: string }> = [
+  { value: "rapid", label: "快懂", title: "10 秒顿悟" },
+  { value: "scenario", label: "场景", title: "真实场景决策" },
+  { value: "mapping", label: "映射", title: "隐喻与原理对照" },
+];
 
 export function ChatInput({
   onSubmit,
+  depth,
+  onDepthChange,
   disabled,
 }: {
-  onSubmit: (value: string) => Promise<void>;
+  onSubmit: (value: string, depth: LearningDepth) => Promise<void>;
+  depth: LearningDepth;
+  onDepthChange: (depth: LearningDepth) => void;
   disabled?: boolean;
 }) {
   const [value, setValue] = useState("期权是什么？用我能听懂的方式讲。");
@@ -30,7 +41,7 @@ export function ChatInput({
     const trimmed = value.trim();
     if (!trimmed) return;
     setValue("");
-    await onSubmit(trimmed);
+    await onSubmit(trimmed, depth);
   }
 
   return (
@@ -59,6 +70,25 @@ export function ChatInput({
         placeholder="输入你想理解的概念，也可以粘贴网页或 YouTube 链接"
         disabled={disabled}
       />
+      <div className="grid grid-cols-3 gap-2">
+        {depthOptions.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={[
+              "min-h-9 rounded-[8px] border px-2 text-xs transition",
+              depth === option.value
+                ? "border-[var(--accent)] bg-[rgba(53,230,155,0.18)] text-[var(--text)]"
+                : "border-[var(--line)] bg-[#07120f] text-[var(--muted)] hover:border-[var(--accent)]",
+            ].join(" ")}
+            disabled={disabled}
+            title={option.title}
+            onClick={() => onDepthChange(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
       <div className="flex items-center justify-between gap-3">
         <span className="text-xs text-[var(--muted)]">支持概念、长文链接、YouTube 链接</span>
         <Button type="submit" disabled={disabled} title="发送">

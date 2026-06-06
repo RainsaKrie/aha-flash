@@ -43,6 +43,8 @@ export type TemplateId =
 
 export type UIPayload<TPayload = Record<string, unknown>> = TPayload;
 
+export type LearningDepth = "rapid" | "scenario" | "mapping";
+
 export interface NextConcept {
   label: string;
   relation: string;
@@ -53,6 +55,7 @@ export interface V1UISchema<TConfig = Record<string, unknown>> {
   version: string;
   config: TConfig;
   next_concepts?: NextConcept[];
+  depth?: LearningDepth;
   pattern?: never;
   template?: never;
   payload?: never;
@@ -64,6 +67,7 @@ export interface V2UISchema<TPayload = Record<string, unknown>> {
   version: string;
   payload: UIPayload<TPayload>;
   next_concepts?: NextConcept[];
+  depth?: LearningDepth;
   type?: UISchemaType;
   config?: never;
 }
@@ -77,6 +81,7 @@ export interface NormalizedUISchema<TConfig = Record<string, unknown>> {
   version: string;
   config: TConfig;
   next_concepts: NextConcept[];
+  depth: LearningDepth;
 }
 
 export const V1_TO_V2_SCHEMA_MAP: Record<
@@ -122,6 +127,7 @@ export function normalizeUISchema(schema: UISchema): NormalizedUISchema {
       version: schema.version,
       config: schema.payload,
       next_concepts: schema.next_concepts || [],
+      depth: schema.depth || "rapid",
     };
   }
 
@@ -133,6 +139,7 @@ export function normalizeUISchema(schema: UISchema): NormalizedUISchema {
     version: schema.version,
     config: schema.config,
     next_concepts: schema.next_concepts || [],
+    depth: schema.depth || "rapid",
   };
 }
 
@@ -158,6 +165,7 @@ export interface GachaSimulatorConfig {
   title: string;
   quote?: string;
   quote_author?: string;
+  depth?: LearningDepth;
   pool: GachaPoolItem[];
   option_cost: number;
   strike_price: number;
@@ -210,6 +218,7 @@ export interface BuildSandboxConfig {
 
 export interface NarrativeBranchConfig {
   title: string;
+  depth?: LearningDepth;
   opening: string;
   branches: Array<{
     choice_label: string;
