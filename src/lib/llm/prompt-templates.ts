@@ -21,7 +21,8 @@ export const OUTPUT_FORMAT_RULES = `
 7. 深度规则: rapid=10秒顿悟，只突出一个核心动作；scenario=真实场景决策，让用户权衡选择后果；mapping=隐喻与原理对照，明确动作、约束、收益、风险各自映射什么。
 8. 同一概念切换 depth 时，标题、说明、交互目标和反馈文案必须变化。
 9. 知识讲解类请求应输出 1-2 个 next_concepts；label 是可继续学习的短概念，relation 是它与当前概念的关系，不要写成长解释。
-10. V1 flat Schema 仍可兼容，但新输出必须优先使用 V2。
+10. 如果存在 <source_context>，payload 内容必须吸收来源语境；不要编造 source_context 中没有出现的来源。
+11. V1 flat Schema 仍可兼容，但新输出必须优先使用 V2。
 `.trim();
 
 export const SCHEMA_REFERENCE = `

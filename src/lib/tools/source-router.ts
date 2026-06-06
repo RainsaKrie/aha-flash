@@ -1,5 +1,6 @@
 import type { SourceContext } from "@/types/tool";
 import { webContentExtract } from "./web-extractor";
+import { webSearch } from "./web-search";
 import { youtubeTranscriptFetch } from "./youtube-transcript";
 
 const URL_REGEX = /https?:\/\/[^\s)）]+/gi;
@@ -10,6 +11,13 @@ function extractUrls(input: string) {
 
 function isYoutubeUrl(url: string) {
   return /youtube\.com|youtu\.be/i.test(url);
+}
+
+function shouldSearch(input: string) {
+  if (extractUrls(input).length) return false;
+  return /最新|最近|当前|今年|今天|昨日|昨天|新闻|看法|观点|评价|数据|价格|政策|法规|巴菲特|马斯克|OpenAI|DeepSeek/i.test(
+    input,
+  );
 }
 
 function normalizeToolResult(url: string, result: unknown): SourceContext {
@@ -33,8 +41,44 @@ function normalizeToolResult(url: string, result: unknown): SourceContext {
   };
 }
 
+function normalizeSearchResult(input: string, result: unknown): SourceContext[] {
+  const data = result as {
+    success?: boolean;
+    query?: string;
+    answer?: string;
+    results?: Array<{ title?: string; url?: string; content?: string }>;
+    error?: string;
+  };
+
+  if (!data.success || !data.results?.length) {
+    return [
+      {
+        type: "search",
+        url: "",
+        title: data.query || input,
+        success: false,
+        error: data.error || "search failed",
+      },
+    ];
+  }
+
+  return data.results.slice(0, 5).map((item, index) => ({
+    type: "search",
+    url: item.url || "",
+    title: item.title || `搜索结果 ${index + 1}`,
+    excerpt: item.content || data.answer,
+    text: [data.answer, item.content].filter(Boolean).join("\n").slice(0, 1200),
+    success: Boolean(item.url),
+  }));
+}
+
 export async function collectSourceContexts(input: string): Promise<SourceContext[]> {
   const urls = extractUrls(input).slice(0, 2);
+
+  if (!urls.length && shouldSearch(input)) {
+    const result = await webSearch({ query: input, max_results: 5 });
+    return normalizeSearchResult(input, result);
+  }
 
   const results = await Promise.all(
     urls.map(async (url) => {

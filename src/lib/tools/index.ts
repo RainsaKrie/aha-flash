@@ -1,6 +1,7 @@
 import type { ToolDefinition } from "@/types/tool";
 import { updateUserState } from "./update-user-state";
 import { webContentExtract } from "./web-extractor";
+import { webSearch } from "./web-search";
 import { youtubeTranscriptFetch } from "./youtube-transcript";
 
 export const V1_TOOLS: Record<string, ToolDefinition> = {
@@ -27,6 +28,18 @@ export const V1_TOOLS: Record<string, ToolDefinition> = {
       required: ["url"],
     },
     execute: webContentExtract,
+  },
+  web_search: {
+    description: "搜索互联网页面并返回适合注入 Prompt 的来源摘要。仅保存短摘要和 URL，不保存全文。",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "搜索查询" },
+        max_results: { type: "number", description: "最大结果数，默认 5，最多 5" },
+      },
+      required: ["query"],
+    },
+    execute: webSearch,
   },
   update_user_state: {
     description: "当用户在对话中表达背景、爱好、知识盲区或隐喻偏好时，增量更新 User_State。",

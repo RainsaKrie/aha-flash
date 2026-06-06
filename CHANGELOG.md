@@ -6,6 +6,35 @@
 
 ## 2026-06-06
 
+### Phase 5 — 外部集成
+
+完成 T13-T14：联网搜索 Tool 与 source-router 调整。
+
+新增：
+- `web_search` tool
+- Tavily Search API 集成
+- `TAVILY_API_KEY` 环境变量
+- 纯文本外部信息请求的搜索触发规则
+- 聊天消息来源展示支持“搜索”
+
+行为：
+- 输入包含 URL 时，继续走 `web_content_extract` 或 `youtube_transcript_fetch`。
+- 输入不含 URL、但包含“最新/最近/当前/新闻/看法/观点/价格/政策/巴菲特”等外部信息信号时，触发 `web_search`。
+- 搜索结果只作为 Prompt 上下文注入，不写入长期状态，不保存全文。
+- 未配置 `TAVILY_API_KEY` 时返回可控失败，并在聊天来源中显示“读取失败 · 搜索”。
+
+验收：
+- `/api/tools` 调用 `web_search` 在无 key 时返回 `TAVILY_API_KEY is not configured`，不报 500。
+- `/api/chat` 输入“巴菲特对期权的最新看法”会返回 `sources[0].type = "search"`。
+- `/api/chat` 输入 URL 时返回 `type = "web"`，不误触发 search。
+- 页面提交搜索类问题后，聊天消息展示“读取失败 · 搜索 · 巴菲特对期权的最新看法”。
+
+验证：
+- `npm run typecheck`
+- `npm run build`
+- API 复测
+- Playwright 生产服务页面快照验收
+
 ### Phase 4 — 知识沙盒体系
 
 完成 T09：知识资产存储。

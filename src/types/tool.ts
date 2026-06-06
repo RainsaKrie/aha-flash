@@ -16,7 +16,7 @@ export interface ToolDefinition {
 }
 
 export interface SourceContext {
-  type: "youtube" | "web";
+  type: "youtube" | "web" | "search";
   url: string;
   title?: string;
   excerpt?: string;

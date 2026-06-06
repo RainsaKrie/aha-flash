@@ -50,7 +50,7 @@ Generative UI Layer
 | LLM | Vercel AI SDK, DeepSeek provider |
 | State | Zustand client store, file/tmp JSON server state |
 | Validation | Zod |
-| Tools | YouTube transcript, web content extraction |
+| Tools | YouTube transcript, web content extraction, Tavily web search |
 | Deploy | Vercel |
 
 ---
@@ -211,11 +211,14 @@ POST /api/chat
 |---|---|
 | `youtube_transcript_fetch` | 抓取 YouTube 字幕 |
 | `web_content_extract` | 提取网页正文 |
+| `web_search` | 搜索外部网页，返回短摘要和 URL |
 | `update_user_state` | 服务端注入 `user_id` 后增量更新用户画像 |
 
 来源路由：
 - 用户输入中含 URL 时，`source-router.ts` 会尝试抓取。
-- 未来搜索工具接入后，source-router 降为辅助入口。
+- 用户输入不含 URL 但包含外部信息信号时，`source-router.ts` 会触发 `web_search`。
+- 搜索结果只注入 Prompt 上下文，不长期保存全文。
+- 未配置 `TAVILY_API_KEY` 时，搜索工具返回可控失败，聊天来源中展示失败状态。
 
 ---
 
@@ -243,8 +246,6 @@ POST /api/chat
 - 模块构建完成
 
 ---
-
-## 10. 关键决策
 
 ## 10. 质量评估
 
@@ -286,4 +287,3 @@ npm run eval:compare -- baseline.json candidate.json
 
 - Vercel `/tmp` 状态不持久，不能作为生产记忆。
 - 当前 mock schema 仍承担较多验收输入路由。
-- 搜索工具尚未接入。
