@@ -23,11 +23,7 @@ Codex 处理规则：
 4. 将长期技术变化合并进 `TECHNICAL.md`。
 5. 将已完成或已采纳的结果写进 `CHANGELOG.md`。
 6. 开发前先完成文档整合，再按整合后的文档继续开发。
-7. 处理过的输入文档移入 `docs/input-docs/archive/`，根目录只保留待处理输入。
-
-## 历史输入
-
-当前 `docs/input-docs/archive/legacy-2026-06-07/` 中的文件是旧 Epiphany / Round2 / Design Spec 材料，已经按当前判断整合到核心文档。它们只作为历史参考，不再作为最新执行入口。
+7. 处理过的输入文档需要审查去留：已整合、重复或过期的直接删除；只有仍有独立追溯价值的材料才放入 `docs/input-docs/archive/`。
 
 ## 快速开始
 
