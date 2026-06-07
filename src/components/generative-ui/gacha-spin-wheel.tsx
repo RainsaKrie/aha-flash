@@ -15,6 +15,13 @@ function draw(pool: GachaPoolItem[]) {
   return pool[pool.length - 1];
 }
 
+function tierLabel(item: GachaPoolItem) {
+  if (item.rarity === "5") return "5 星结果";
+  if (item.rarity === "4") return "4 星结果";
+  if (item.rarity === "3") return "3 星结果";
+  return item.name;
+}
+
 export function GachaSpinWheel({
   config,
   onComplete,
@@ -42,7 +49,7 @@ export function GachaSpinWheel({
       setSpinning(false);
       onComplete?.({
         type: "gacha_completed",
-        payload: { won: next.value > config.strike_price, profit: nextProfit, best_item: next.name },
+        payload: { won: next.value > config.strike_price, profit: nextProfit, best_item: tierLabel(next) },
       });
     }, 650);
   }
@@ -65,7 +72,7 @@ export function GachaSpinWheel({
               style={{ transform: `rotate(${rotation}deg)` }}
             />
             <div className="relative grid h-32 w-32 place-items-center rounded-full border border-[var(--line)] bg-[#08130f] p-4 text-center">
-              <strong className="text-sm leading-5">{spinning ? "转动中" : result?.name || topPrize.name}</strong>
+              <strong className="text-sm leading-5">{spinning ? "转动中" : result ? tierLabel(result) : tierLabel(topPrize)}</strong>
             </div>
           </div>
         </div>

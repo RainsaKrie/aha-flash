@@ -35,6 +35,7 @@ Pattern: probability
 - Payload: { title, quote?, quote_author?, pool:[{name, rarity, probability, value}], option_cost, strike_price, pulls_per_try, explanation_map:{win, lose} }
 - 正例: 期权用抽卡锁价券表达有限损失和上涨收益。
 - 视觉指导: pool 项目名要短，rarity/概率/value 应形成明显层级；explanation_map.win/lose 必须分别解释“为什么值得行权”和“为什么只损失期权费”。
+- 命名约束: pool.name 使用“5 星结果 / 4 星结果 / 3 星结果”这类等级名，不要编造“纠缠卷、魔法券、神秘道具”等游戏道具名。
 - 推荐链正例: 期权后推荐期货、保险。
 - 深度变化: rapid 强调“花小钱买未来选择权”；scenario 强调“到期时是否行权”；mapping 强调“期权费/行权价/标的价格/损益边界”的对应关系。
 - 不要这样: 只写“期权是一种金融工具”，没有可操作动作和结果反馈。

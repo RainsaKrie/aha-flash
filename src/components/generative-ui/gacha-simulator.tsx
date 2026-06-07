@@ -24,6 +24,13 @@ function draw(pool: GachaPoolItem[]) {
   return pool[pool.length - 1];
 }
 
+function tierLabel(item: GachaPoolItem) {
+  if (item.rarity === "5") return "5 星结果";
+  if (item.rarity === "4") return "4 星结果";
+  if (item.rarity === "3") return "3 星结果";
+  return item.name;
+}
+
 export function GachaSimulator({
   config,
   onComplete,
@@ -62,7 +69,7 @@ export function GachaSimulator({
         payload: {
           won: didWin,
           profit: nextProfit,
-          best_item: bestItem?.name,
+          best_item: bestItem ? tierLabel(bestItem) : undefined,
         },
       });
     }, 620);
@@ -160,7 +167,7 @@ export function GachaSimulator({
                   <span className="block text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
                     {phase === "pulling" ? "rolling" : `${Math.round(item.probability * 100)}%`}
                   </span>
-                  <strong className="mt-2 block text-base">{phase === "pulling" ? "..." : item.name}</strong>
+                  <strong className="mt-2 block text-base">{phase === "pulling" ? "..." : tierLabel(item)}</strong>
                   <span className="mt-2 block text-xs text-[var(--accent-2)]">价值 {item.value}</span>
                 </span>
               </div>
@@ -172,7 +179,7 @@ export function GachaSimulator({
               {pool.slice(0, 3).map((item) => (
                 <div key={`${item.name}-odds`} className="rounded-[8px] border border-[var(--line)] bg-[#0c1915] p-3 text-xs">
                   <div className="flex justify-between gap-3">
-                    <span className="text-[var(--muted)]">{item.name}</span>
+                    <span className="text-[var(--muted)]">{tierLabel(item)}</span>
                     <strong>{Math.round(item.probability * 100)}%</strong>
                   </div>
                 </div>
