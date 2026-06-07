@@ -174,10 +174,57 @@ Schema 可附带：
 视觉标准：
 
 - 每个 Pattern 有独立主色，而不是全局绿色一把梭。
-- 表面色、容器色、抬高色必须有明确亮度差。
+- 全组件暗色层级必须拉开，`#07120f` / `#091611` / `#0c1915` 这类肉眼难分的近似色不再作为相邻层级。
+- 表面色、容器色、抬高色至少有 15% 亮度差。
 - 标题、副标题、正文、辅助文字、关键数值有固定层级。
 - 卡片、按钮、标签、进度条使用统一圆角规则。
 - 间距遵循 8/16/20/24px 的清晰节奏。
+
+Pattern 主色：
+
+| Pattern | 主色 | 语义 |
+|---|---|---|
+| `probability` | `#F7C948` | 稀有/价值 |
+| `parameter_explore` | `#36D399` | 可调节 |
+| `concept_memory` | `#78A6FF` | 记忆/认知 |
+| `process_timeline` | `#B392F0` | 时间流动 |
+| `comparison` | `#F4A261` | 对比/差异 |
+| `knowledge_check` | `#FF6B6B` | 正确/错误 |
+| `system_builder` | `#35E69B` | 连接/构建 |
+| `narrative_branch` | `#E879BA` | 选择/分支 |
+| `classification_sort` | `#4DD9C1` | 分类/归位 |
+| `simulation_play` | `#FACC15` | 模拟/推演 |
+
+字体层级：
+
+| 层级 | 规格 | 用途 |
+|---|---|---|
+| 标题 | `text-2xl font-semibold` | 概念名 |
+| 副标题 | `text-base font-medium` | 步骤/阶段名 |
+| 正文 | `text-sm leading-relaxed` | 解释文本 |
+| 辅助 | `text-xs text-[var(--muted)]` | 标签/提示 |
+| 数值 | `text-3xl font-bold` | 关键数字 |
+
+禁用：
+
+- `text-lg` 作为标题。
+- `text-xl` 作为正文。
+- `gap-3` / `gap-7` 等非 4 的倍数间距。
+- `rounded-[8px]` 硬编码。
+- 组件文件中直接硬编码 Pattern 色值。
+
+间距与圆角：
+
+| 类型 | 规格 |
+|---|---|
+| 组件内边距 | `p-5` |
+| 卡片间距 | `gap-4` |
+| 区块间距 | `gap-6` |
+| 行内间距 | `gap-2` |
+| 卡片/面板 | `rounded-xl` |
+| 按钮 | `rounded-lg` |
+| 标签/badge | `rounded-md` |
+| 进度条 | `rounded-full` |
 
 交互标准：
 
@@ -186,6 +233,30 @@ Schema 可附带：
 - 关键数字、结果揭示、成功/失败状态必须有语义化动效。
 - 所有可点击元素最小高度 44px。
 - 深度切换不在顶部提前让用户选三档；默认先给“看一眼”，完成交互后在组件下方/输入框上方用内联引导进入下一档。
+
+状态与微交互参数：
+
+| 状态/交互 | 视觉表现 |
+|---|---|
+| entering | 250ms fade-in + translateY(16px) 到 0 |
+| idle | 主 CTA 使用 `ui-breathe`，opacity 0.9 到 1，周期 2s |
+| interacting | 按钮 disabled + spinner，操作区高亮边框 |
+| result | 反馈区 `ui-result`，关键数字 `animate-value-pop` |
+| empty | `EmptyState` 从中心渐入 |
+| error | 组件级 ErrorBoundary |
+| 按钮按下 | scale(0.96) 到 1，150ms ease-out |
+| 卡片选中 | border-color 变化 + scale(1.02)，200ms |
+| 数值变化 | scale(1.3) 到 1，300ms spring |
+| 结果揭示 | opacity 0 到 1 + translateY(8px) 到 0，400ms ease-out |
+| 成功 | `animate-success-flash`，400ms |
+| 失败 | `animate-error-shake`，300ms |
+
+可及性：
+
+- 所有按钮必须 `cursor-pointer`。
+- 图标按钮必须有可理解的 `title` 或 `aria-label`。
+- 滑块必须有 `aria-label`。
+- 深色背景上的文字对比度目标不低于 4.5:1。
 
 内容标准：
 
@@ -221,6 +292,16 @@ Schema 可附带：
 - 再用用户熟悉领域的真实机制、道具、动作或规则做对应。
 - 选定术语体系后全文统一，禁止混用。
 - 每个抽象概念必须有具体对应物，禁止“像玩游戏一样”这种泛类比。
+- LLM 不拿固定术语表硬套，而按“拆动作 -> 找机制 -> 验映射 -> 统一术语 -> 给对应物”推理。
+- 推理结果写入 payload 的 `metaphor_trace` 字段，前端不渲染，仅用于调试、评估和回归。
+
+隐喻推理流程：
+
+1. 拆解概念的核心动作：这个概念在做什么，用 1-2 个动词概括。
+2. 在用户领域找行为最接近的机制。
+3. 逐一验证映射是否成立，选成立度最高的。
+4. 选定一个术语体系后全文统一，禁止混用。
+5. 每个抽象概念必须有具体对应物，禁止泛类比。
 
 ## 10. 当前路线
 
@@ -232,7 +313,7 @@ Round 2 当前判断：
 |---|---|---|
 | P0 | 首页改为顶栏 + 居中组件舞台 + 底部输入栏，移除侧栏/聊天历史/网格背景 | 完成 |
 | P1 | 按 Design Spec 提升互动组件视觉、状态和交互质量 | 进行中 |
-| P2 | Payload 最少内容量、反例补充、隐喻推理步骤和 `metaphor_trace` | 待做 |
+| P2 | Payload 最少内容量、反例补充、隐喻推理步骤和 `metaphor_trace` | 完成 |
 | P3 | 顶部深度按钮改为完成后的渐进式深度引导 | 完成 |
 | P4 | 隐喻一致性评分维度 | 待做 |
 | P5 | 移除网络搜索与 URL 自动路由表面积 | 待做 |

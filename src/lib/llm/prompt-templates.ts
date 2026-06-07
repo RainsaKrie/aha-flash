@@ -5,9 +5,12 @@ export const SYSTEM_ROLE_PROMPT = `
 
 export const METAPHOR_GUIDELINES = `
 隐喻生成原则:
-1. 优先使用用户状态中的爱好、知识盲区和隐喻偏好。
-2. 把抽象概念映射成可操作的动作、反馈和结果。
-3. 控制文本密度，解释必须短、准、能驱动交互。
+1. 通用语打底，领域语翻译: 先用任何人能懂的平实中文说清概念动作，再用用户熟悉领域的术语体系做对应。
+2. 优先使用用户状态中的爱好、知识盲区和隐喻偏好，但不得生造无解释价值的道具名。
+3. 把抽象概念映射成可操作的动作、反馈和结果。
+4. 选定一个术语体系后全文统一，禁止混用不同游戏/行业/场景的术语。
+5. 每个抽象概念必须有具体对应物，禁止“像玩游戏一样”这种泛类比。
+6. 控制文本密度，解释必须短、准、能驱动交互。
 `.trim();
 
 export const OUTPUT_FORMAT_RULES = `
@@ -28,6 +31,9 @@ export const OUTPUT_FORMAT_RULES = `
 14. 空态规避: cards/events/options/modules/items/pool 等数组必须非空，且至少包含 2 个可操作项；测验必须至少有 1 个 correct=true。
 15. 最少内容量: title 为 2-8 字概念简称；quote/description 至少 10 字且包含具体场景；insight 至少 15 字且包含“因为...所以...”因果链；explanation 至少 20 字，说明错在哪里和正确是什么。
 16. 数组内容量: cards/events/branches/items/modules/options/pool 默认至少 3 项；outcome_description 至少 15 字，并描述选择后的具体后果。
+17. 隐喻推理流程: 先拆解概念核心动作（1-2 个动词），再从用户领域找最接近机制，逐一验证映射是否成立，选择成立度最高的术语体系，最后保证每个抽象概念都有具体对应物。
+18. payload 必须包含 metaphor_trace: { concept_action, source_domain, candidate_mechanism, mapping_checks, chosen_terms }。该字段只用于调试，前端不会渲染，但必须真实反映你使用的隐喻推理。
+19. metaphor_trace.mapping_checks 至少 2 项；chosen_terms 至少 2 项；不要把空泛口号写进 metaphor_trace。
 `.trim();
 
 export const SCHEMA_REFERENCE = `
@@ -35,6 +41,7 @@ Pattern: probability
 - 适用: 概率、期权、保险、投资组合。
 - Template: card_flip_reveal（默认抽卡卡牌）, spin_wheel（转盘概率，适合强调单次随机结果）。
 - Payload: { title, quote?, quote_author?, pool:[{name, flavor_label?, rarity, probability, value}], option_cost, strike_price, pulls_per_try, explanation_map:{win, lose} }
+- 所有 Payload 都应额外包含 metaphor_trace 调试字段。
 - 正例: 期权用抽卡锁价券表达有限损失和上涨收益。
 - 视觉指导: pool 项目名要短，rarity/概率/value 应形成明显层级；explanation_map.win/lose 必须分别解释“为什么值得行权”和“为什么只损失期权费”。
 - 命名约束: pool.name 使用“5 星结果 / 4 星结果 / 3 星结果”这类机制等级名；flavor_label 可使用用户熟悉领域里的真实短标签，如“限定角色/强力角色/普通素材”。不要把“纠缠卷、魔法券、神秘道具”等没有解释功能的道具名放进 name。

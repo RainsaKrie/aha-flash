@@ -180,8 +180,17 @@ export interface GachaPoolItem {
   value: number;
 }
 
+export interface MetaphorTrace {
+  concept_action: string;
+  source_domain: string;
+  candidate_mechanism: string;
+  mapping_checks: string[];
+  chosen_terms: string[];
+}
+
 export interface ComponentDepthConfig {
   depth?: LearningDepth;
+  metaphor_trace?: MetaphorTrace;
 }
 
 export interface GachaSimulatorConfig extends ComponentDepthConfig {

@@ -74,6 +74,22 @@
 
 ---
 
+### 内容质量与隐喻推理补充
+
+完成：
+- 将完整 `DESIGN_SPEC` 中的颜色、字号、间距、圆角、动效参数和可及性规则补充进 `PRODUCT.md` 与 `TECHNICAL.md`。
+- `src/types/schema.ts` 新增 `MetaphorTrace`，所有组件 payload 类型通过 `ComponentDepthConfig` 支持可选 `metaphor_trace`。
+- `schema-validator` 允许所有 V2/V1 payload 携带 `metaphor_trace` 调试字段。
+- `prompt-templates.ts` 将隐喻规则改为“通用语打底，领域语翻译”。
+- `OUTPUT_FORMAT_RULES` 增加隐喻推理流程：拆动作、找机制、验映射、统一术语、给具体对应物。
+- Prompt 要求 payload 输出 `metaphor_trace`，前端不渲染，仅用于调试、评估和回归。
+
+验证：
+- `npm run typecheck`
+- `npm run build`
+
+---
+
 ### 文档目录整理
 
 完成：

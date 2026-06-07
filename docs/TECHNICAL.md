@@ -10,7 +10,7 @@ User
   v
 Next.js App Router
   |
-  +-- UI Shell: chat + state panel + generative workbench
+  +-- UI Shell: topbar + centered component stage + bottom input bar
   |
   +-- API Layer
       |
@@ -190,8 +190,29 @@ POST /api/chat
 - `comparison` 可携带 `subject_a`、`subject_b`、`dimensions`、`summary`。
 - `parameter_explore` 可携带 `outputs`、`insight_rules`。
 - `system_builder` 可携带 `required_module_ids`、`expected_sequence`、`connections`、`success_summary`。
+- 所有 payload 可携带 `metaphor_trace`，用于记录隐喻推理，不在前端渲染。
 
 这些字段是可选增强项；缺失时组件仍保留兼容兜底，但 Prompt 应优先输出带交互结构的 payload。
+
+`metaphor_trace` 结构：
+
+```ts
+{
+  concept_action: string;
+  source_domain: string;
+  candidate_mechanism: string;
+  mapping_checks: string[];
+  chosen_terms: string[];
+}
+```
+
+使用规则：
+
+- `concept_action` 写概念的 1-2 个核心动作。
+- `source_domain` 来自用户状态中的兴趣、背景或隐喻偏好。
+- `candidate_mechanism` 写用户领域中最接近的机制。
+- `mapping_checks` 说明抽象概念与领域机制为何成立。
+- `chosen_terms` 记录最终采用的术语体系，辅助检查是否混用。
 
 ## 7. Pattern / Template 注册
 
@@ -308,7 +329,37 @@ rg -n "旧入口文档|待处理输入|archive" docs/README.md docs/PRODUCT.md d
 - 下一步概念推荐和深度引导出现在组件下方/输入框上方。
 - `src/app/globals.css` 的 `body` 背景保持纯背景色，不使用网格线装饰。
 
-## 14. 环境变量
+## 14. 组件 UI 规格
+
+共享实现优先放在 `src/components/generative-ui/shared.tsx`：
+
+- `patternColors`：维护 Pattern 主色表。
+- `patternStyle()`：注入 `--accent`、`--pattern-surface`、`--pattern-panel`、`--pattern-raised`、`--line`。
+- `ComponentFrame`：统一标题区、描述、深度 badge 和 footer。
+- `Panel`、`FeedbackPanel`、`ProgressMeter`、`ChoiceButton`、`EmptyState`：统一面板、反馈、进度、选项和空态。
+
+硬性约束：
+
+- 组件文件不直接硬编码 Pattern 色值。
+- 组件文件不使用 `rounded-[8px]`，改用 `rounded-lg`、`rounded-md`、`rounded-xl`。
+- 组件文件不使用 `animate-pulse`，改用 `ui-breathe`。
+- 标题使用 `text-2xl font-semibold`，阶段/卡片标题使用 `text-base font-medium`。
+- 间距只使用 8/16/20/24px 节奏，避免 `gap-3` / `gap-7`。
+- 所有可点击元素不低于 44px。
+
+## 15. Prompt 与隐喻推理
+
+`src/lib/llm/prompt-templates.ts` 必须包含：
+
+- 输出合法 JSON，不包 Markdown。
+- 优先输出 V2 `pattern/template/payload/depth/next_concepts`。
+- 深度必须等于 `<target_depth>`。
+- 内容底线：title 2-8 字；quote/description 至少 10 字且含具体场景；insight 至少 15 字且含因果链；explanation 至少 20 字；关键数组至少 3 项。
+- 每个 Pattern 至少 2 条反例：结构反例和内容反例。
+- 隐喻推理流程：拆动作、找机制、验映射、统一术语、给具体对应物。
+- payload 中输出 `metaphor_trace`，前端不渲染。
+
+## 16. 环境变量
 
 ```env
 DEEPSEEK_API_KEY=
@@ -324,7 +375,7 @@ AHA_FLASH_STATE_DIR=
 - Vercel demo 默认写 `/tmp/aha-flash/states`，不保证长期持久。
 - 搜索相关环境变量是历史表面积，Round 2 计划移除。
 
-## 15. 关键决策
+## 17. 关键决策
 
 | 决策 | 当前选择 | 原因 |
 |---|---|---|
@@ -334,7 +385,7 @@ AHA_FLASH_STATE_DIR=
 | UI 组件 | 自建 React 组件 | 控制交互体验和协议映射 |
 | 路由分类 | LLM 优先，规则 fallback | 有 key 时更准，无 key 时稳定可演示 |
 
-## 16. 已知技术债
+## 18. 已知技术债
 
 - Vercel `/tmp` 状态不持久，不能作为生产记忆。
 - 当前 mock schema 仍承担较多验收输入路由。

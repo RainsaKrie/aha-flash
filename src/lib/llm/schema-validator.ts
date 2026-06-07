@@ -3,6 +3,16 @@ import type { UISchema } from "@/types/schema";
 
 const DepthZod = z.enum(["rapid", "scenario", "mapping"]).optional();
 
+const MetaphorTraceZod = z
+  .object({
+    concept_action: z.string(),
+    source_domain: z.string(),
+    candidate_mechanism: z.string(),
+    mapping_checks: z.array(z.string()),
+    chosen_terms: z.array(z.string()),
+  })
+  .optional();
+
 const NextConceptsZod = z
   .array(
     z.object({
@@ -21,7 +31,14 @@ function schemaObject<TShape extends z.ZodRawShape>(shape: TShape) {
   });
 }
 
-const GachaConfigZod = z.object({
+function payloadObject<TShape extends z.ZodRawShape>(shape: TShape) {
+  return z.object({
+    ...shape,
+    metaphor_trace: MetaphorTraceZod,
+  });
+}
+
+const GachaConfigZod = payloadObject({
   title: z.string(),
   quote: z.string().optional(),
   quote_author: z.string().optional(),
@@ -44,7 +61,7 @@ const GachaConfigZod = z.object({
   }),
 });
 
-const SliderConfigZod = z.object({
+const SliderConfigZod = payloadObject({
   title: z.string(),
   variable_label: z.string(),
   min: z.number(),
@@ -71,17 +88,17 @@ const SliderConfigZod = z.object({
     .optional(),
 });
 
-const CardFlipConfigZod = z.object({
+const CardFlipConfigZod = payloadObject({
   title: z.string(),
   cards: z.array(z.object({ front: z.string(), back: z.string() })),
 });
 
-const TimelineConfigZod = z.object({
+const TimelineConfigZod = payloadObject({
   title: z.string(),
   events: z.array(z.object({ label: z.string(), description: z.string() })),
 });
 
-const ComparisonConfigZod = z.object({
+const ComparisonConfigZod = payloadObject({
   title: z.string(),
   left: z.object({ label: z.string(), content: z.string() }),
   right: z.object({ label: z.string(), content: z.string() }),
@@ -100,7 +117,7 @@ const ComparisonConfigZod = z.object({
   summary: z.string().optional(),
 });
 
-const QuizConfigZod = z.object({
+const QuizConfigZod = payloadObject({
   title: z.string(),
   question: z.string(),
   options: z.array(
@@ -112,7 +129,7 @@ const QuizConfigZod = z.object({
   ),
 });
 
-const SandboxConfigZod = z.object({
+const SandboxConfigZod = payloadObject({
   title: z.string(),
   target: z.string(),
   modules: z.array(
@@ -129,7 +146,7 @@ const SandboxConfigZod = z.object({
   success_summary: z.string().optional(),
 });
 
-const NarrativeBranchConfigZod = z.object({
+const NarrativeBranchConfigZod = payloadObject({
   title: z.string(),
   opening: z.string(),
   branches: z.array(
@@ -141,7 +158,7 @@ const NarrativeBranchConfigZod = z.object({
   ),
 });
 
-const ClassificationSortConfigZod = z.object({
+const ClassificationSortConfigZod = payloadObject({
   title: z.string(),
   categories: z.array(z.object({ id: z.string(), name: z.string() })),
   items: z.array(
@@ -153,7 +170,7 @@ const ClassificationSortConfigZod = z.object({
   ),
 });
 
-const SimulationPlayConfigZod = z.object({
+const SimulationPlayConfigZod = payloadObject({
   title: z.string(),
   params: z.array(
     z.object({
