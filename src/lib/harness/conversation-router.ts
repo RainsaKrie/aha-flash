@@ -48,6 +48,7 @@ const preferenceWords = [
   "我想用",
   "我希望用",
 ];
+const casualWords = ["你好", "谢谢", "再见", "在吗", "哈哈"];
 const followupWords = [
   "继续",
   "接着",
@@ -112,9 +113,26 @@ function sameTextSubject(left: string, right: string) {
   return normalize(left) === normalize(right);
 }
 
+function isPureNounPhrase(input: string) {
+  const compact = input.trim();
+  if (!compact || compact.length > 24) return false;
+  if (casualWords.some((word) => compact.includes(word))) return false;
+  if (/[？?。！!，,；;：:、]/.test(compact)) return false;
+  if (/(我是|我想|我喜欢|请|帮我|解释|怎么|为什么|是什么|区别|对比|测试|测验|继续|再讲)/.test(compact)) return false;
+  return /^[\p{Script=Han}A-Za-z0-9\s·（）()\-]+$/u.test(compact);
+}
+
 export function classifyConversationByRules(input: string): RouteClassification {
   if (preferenceWords.some((word) => input.includes(word))) {
     return { route: "preference", confidence: 0.82, source: "rules", reason: "命中偏好表达关键词" };
+  }
+
+  if (casualWords.some((word) => input.trim().includes(word))) {
+    return { route: "casual", confidence: 0.86, source: "rules", reason: "命中闲聊关键词" };
+  }
+
+  if (isPureNounPhrase(input)) {
+    return { route: "knowledge", confidence: 0.92, source: "rules", reason: "纯名词短语默认按知识概念处理" };
   }
 
   if (knowledgeWords.some((word) => input.includes(word))) {
@@ -128,7 +146,8 @@ export async function classifyConversationIntent(
   input: string,
   model?: LanguageModel | null,
 ): Promise<RouteClassification> {
-  if (!model) return classifyConversationByRules(input);
+  const ruleResult = classifyConversationByRules(input);
+  if (!model || ruleResult.reason === "纯名词短语默认按知识概念处理") return ruleResult;
 
   try {
     const result = await generateText({
@@ -149,7 +168,7 @@ export async function classifyConversationIntent(
     // fall through to deterministic fallback
   }
 
-  return classifyConversationByRules(input);
+  return ruleResult;
 }
 
 function parseFollowup(text: string): Pick<FollowupDetection, "is_followup" | "confidence" | "reason" | "concept"> | null {

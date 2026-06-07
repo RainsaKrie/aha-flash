@@ -38,6 +38,11 @@ interface ChatStageEvent {
 
 type EmitChatEvent = (event: ChatStageEvent) => Promise<void> | void;
 
+interface SchemaGenerationResult {
+  schema: UISchema | null;
+  validationError?: string;
+}
+
 function inferConcept(input: string) {
   const withoutUrls = input.replace(/https?:\/\/[^\s)）]+/g, "");
   const firstSentence = withoutUrls.split(/[。！？!?]/)[0] || withoutUrls;
@@ -168,7 +173,7 @@ async function generateSchemaWithLLM({
   system: string;
   input: string;
   intent: SchemaIntent | null;
-}): Promise<UISchema | null> {
+}): Promise<SchemaGenerationResult> {
   const userContent = [input, buildIntentDirective(intent)].filter(Boolean).join("\n\n");
   const first = await generateText({
     model,
@@ -177,7 +182,7 @@ async function generateSchemaWithLLM({
   });
 
   const firstSchema = extractSchemaFromText(first.text);
-  if (schemaMatchesIntent(firstSchema, intent)) return firstSchema;
+  if (schemaMatchesIntent(firstSchema, intent)) return { schema: firstSchema };
 
   const failureReason = firstSchema
     ? `Schema pattern/template 与用户意图不匹配，必须满足 ${intent?.pattern}${intent?.template ? `/${intent.template}` : ""}。`
@@ -203,7 +208,16 @@ async function generateSchemaWithLLM({
   });
 
   const repairedSchema = extractSchemaFromText(repair.text);
-  return schemaMatchesIntent(repairedSchema, intent) ? repairedSchema : null;
+  if (schemaMatchesIntent(repairedSchema, intent)) return { schema: repairedSchema };
+
+  const repairFailureReason = repairedSchema
+    ? `修复后 Schema pattern/template 仍不匹配，必须满足 ${intent?.pattern}${intent?.template ? `/${intent.template}` : ""}。`
+    : getSchemaFailureReason(repair.text);
+
+  return {
+    schema: null,
+    validationError: `初次失败: ${failureReason}\n修复失败: ${repairFailureReason}`,
+  };
 }
 
 async function processChatRequest({
@@ -249,16 +263,19 @@ async function processChatRequest({
 
   let schema = attachDepth(createMockSchema(input, depth), depth);
   let source: "mock" | "llm" = "mock";
+  let validationError: string | undefined;
 
   await emit?.({ type: "stage", stage: "generating", label: model ? "生成互动组件结构" : "准备本地稳定组件" });
   if (model) {
     try {
       const generated = await generateSchemaWithLLM({ model, system: systemPrompt, input, intent: schemaIntent });
-      if (generated) {
-        schema = attachDepth(generated, depth);
+      validationError = generated.validationError;
+      if (generated.schema) {
+        schema = attachDepth(generated.schema, depth);
         source = "llm";
       }
-    } catch {
+    } catch (error) {
+      validationError = error instanceof Error ? error.message : String(error);
       source = "mock";
     }
   }
@@ -334,6 +351,7 @@ async function processChatRequest({
     userId: state.user_id,
     userState: updatedState,
     source,
+    validation_error: validationError,
     created_at: new Date().toISOString(),
   };
 }

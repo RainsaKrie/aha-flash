@@ -86,6 +86,7 @@ export default function HomePage() {
   const [componentFeedback, setComponentFeedback] = useState<"helpful" | "off" | null>(null);
   const [loadingStage, setLoadingStage] = useState("正在生成互动组件...");
   const [lastSubmitted, setLastSubmitted] = useState("");
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
     async function boot() {
@@ -127,6 +128,7 @@ export default function HomePage() {
     setComponentFeedback(null);
     setLoadingStage("读取你的学习状态");
     setLastSubmitted(value);
+    setValidationError(null);
 
     try {
       const response = await fetch("/api/chat", {
@@ -145,6 +147,7 @@ export default function HomePage() {
       if (data.userState) {
         setUserState(data.userState as UserState);
       }
+      setValidationError(typeof data.validation_error === "string" ? data.validation_error : null);
       const schema = data.schema as UISchema;
 
       const assistantMessage: Message = {
@@ -355,6 +358,12 @@ export default function HomePage() {
           </div>
         )}
         {errorMessage && <div className="input-error">{errorMessage}</div>}
+        {process.env.NODE_ENV !== "production" && validationError && (
+          <div className="dev-validation-error">
+            <strong>Schema fallback</strong>
+            <span>{validationError}</span>
+          </div>
+        )}
         <ChatInput onSubmit={(value) => submit(value, learningDepth)} disabled={isLoading} />
       </footer>
     </main>

@@ -354,6 +354,26 @@ button:disabled {
   font-size: 12px;
 }
 
+.dev-validation-error {
+  margin: 0 auto 10px;
+  display: grid;
+  max-width: 1120px;
+  gap: 4px;
+  border: 1px dashed rgba(247, 201, 72, 0.42);
+  border-radius: 8px;
+  background: rgba(247, 201, 72, 0.08);
+  padding: 10px 12px;
+  color: var(--accent-2);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.dev-validation-error span {
+  max-height: 96px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
 .input-bar form {
   margin: 0 auto;
   max-width: 1120px;
