@@ -163,6 +163,19 @@ function schemaMatchesIntent(schema: UISchema | null, intent: SchemaIntent | nul
   return true;
 }
 
+function getRawModelOutputDebug(label: string, text: string) {
+  if (process.env.NODE_ENV === "production") return "";
+  return `\n${label}原始输出:\n${text.slice(0, 5000)}`;
+}
+
+function logSchemaParseFailure(label: string, text: string, reason: string) {
+  if (process.env.NODE_ENV === "production") return;
+  console.error(`[aha-flash] ${label} schema parse failed`, {
+    reason,
+    raw_output: text,
+  });
+}
+
 async function generateSchemaWithLLM({
   model,
   system,
@@ -187,6 +200,7 @@ async function generateSchemaWithLLM({
   const failureReason = firstSchema
     ? `Schema pattern/template 与用户意图不匹配，必须满足 ${intent?.pattern}${intent?.template ? `/${intent.template}` : ""}。`
     : getSchemaFailureReason(first.text);
+  if (!firstSchema) logSchemaParseFailure("initial", first.text, failureReason);
   const repair = await generateText({
     model,
     system,
@@ -213,10 +227,18 @@ async function generateSchemaWithLLM({
   const repairFailureReason = repairedSchema
     ? `修复后 Schema pattern/template 仍不匹配，必须满足 ${intent?.pattern}${intent?.template ? `/${intent.template}` : ""}。`
     : getSchemaFailureReason(repair.text);
+  if (!repairedSchema) logSchemaParseFailure("repair", repair.text, repairFailureReason);
 
   return {
     schema: null,
-    validationError: `初次失败: ${failureReason}\n修复失败: ${repairFailureReason}`,
+    validationError: [
+      `初次失败: ${failureReason}`,
+      !firstSchema ? getRawModelOutputDebug("初次", first.text) : "",
+      `修复失败: ${repairFailureReason}`,
+      !repairedSchema ? getRawModelOutputDebug("修复", repair.text) : "",
+    ]
+      .filter(Boolean)
+      .join("\n"),
   };
 }
 

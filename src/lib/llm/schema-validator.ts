@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { UISchema } from "@/types/schema";
+import { SCHEMA_CATALOG, V1_TO_V2_SCHEMA_MAP, type UISchema } from "@/types/schema";
 
 export type MetaphorTraceValidationMode = "off" | "warn" | "reject";
 
@@ -351,6 +351,138 @@ export const V2UISchemaZod = z.union([
 
 export const UISchemaZod = z.union([V2UISchemaZod, V1UISchemaZod]);
 
+const V2PayloadSchemas: Record<string, Record<string, z.ZodType>> = {
+  probability: {
+    card_flip_reveal: GachaConfigZod,
+    spin_wheel: GachaConfigZod,
+  },
+  parameter_explore: {
+    single_slider: SliderConfigZod,
+    dual_slider: SliderConfigZod,
+  },
+  concept_memory: {
+    term_cards: CardFlipConfigZod,
+    grid_match: CardFlipConfigZod,
+  },
+  process_timeline: {
+    horizontal_timeline: TimelineConfigZod,
+    vertical_scroll: TimelineConfigZod,
+  },
+  comparison: {
+    split_panel: ComparisonConfigZod,
+    overlay_fade: ComparisonConfigZod,
+  },
+  knowledge_check: {
+    single_question: QuizConfigZod,
+    combo_chain: QuizConfigZod,
+  },
+  system_builder: {
+    module_sandbox: SandboxConfigZod,
+    flow_connect: SandboxConfigZod,
+  },
+  narrative_branch: {
+    branch_story: NarrativeBranchConfigZod,
+  },
+  classification_sort: {
+    category_buckets: ClassificationSortConfigZod,
+  },
+  simulation_play: {
+    parameter_simulation: SimulationPlayConfigZod,
+  },
+};
+
+function getRecord(raw: unknown) {
+  return raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : null;
+}
+
+function summarizeZodIssues(error: z.ZodError, prefix = "") {
+  return error.issues.slice(0, 8).map((issue) => ({
+    path: [prefix, issue.path.join(".")].filter(Boolean).join(".") || "(root)",
+    message: issue.message,
+    code: issue.code,
+  }));
+}
+
+function diagnoseSchemaMismatch(raw: unknown, error: z.ZodError) {
+  const record = getRecord(raw);
+  if (!record) {
+    return {
+      reason: "schema is not an object",
+      actual_type: Array.isArray(raw) ? "array" : typeof raw,
+      suspected_field: "(root)",
+      zod_issues: summarizeZodIssues(error),
+    };
+  }
+
+  const pattern = typeof record.pattern === "string" ? record.pattern : undefined;
+  const template = typeof record.template === "string" ? record.template : undefined;
+  const type = typeof record.type === "string" ? record.type : undefined;
+  const version = typeof record.version === "string" ? record.version : undefined;
+  const hasPayload = Object.hasOwn(record, "payload");
+  const hasConfig = Object.hasOwn(record, "config");
+  const patternCatalog = pattern ? SCHEMA_CATALOG[pattern as keyof typeof SCHEMA_CATALOG] : undefined;
+  const v1Catalog = type ? V1_TO_V2_SCHEMA_MAP[type as keyof typeof V1_TO_V2_SCHEMA_MAP] : undefined;
+  const targetedPayloadSchema = pattern && template ? V2PayloadSchemas[pattern]?.[template] : undefined;
+  const targetedPayloadResult = targetedPayloadSchema && hasPayload ? targetedPayloadSchema.safeParse(record.payload) : null;
+  const targetedPayloadIssues = targetedPayloadResult && !targetedPayloadResult.success
+    ? summarizeZodIssues(targetedPayloadResult.error, "payload")
+    : [];
+
+  let suspectedField = "union";
+  let reason = "schema does not match any known pattern/template shape";
+
+  if (!pattern && !type) {
+    suspectedField = "pattern";
+    reason = "missing pattern for V2 schema and missing type for V1 schema";
+  } else if (pattern && !patternCatalog) {
+    suspectedField = "pattern";
+    reason = "unknown pattern";
+  } else if (pattern && !template) {
+    suspectedField = "template";
+    reason = "missing template for V2 schema";
+  } else if (patternCatalog && template && !(patternCatalog.templates as readonly string[]).includes(template)) {
+    suspectedField = "template";
+    reason = `template does not belong to pattern ${pattern}`;
+  } else if (pattern && !hasPayload) {
+    suspectedField = "payload";
+    reason = "missing payload for V2 schema";
+  } else if (type && !v1Catalog) {
+    suspectedField = "type";
+    reason = "unknown V1 type";
+  } else if (type && !hasConfig) {
+    suspectedField = "config";
+    reason = "missing config for V1 schema";
+  } else if (!version) {
+    suspectedField = "version";
+    reason = "missing version";
+  } else if (targetedPayloadIssues.length > 0) {
+    suspectedField = targetedPayloadIssues[0].path;
+    reason = "payload field does not satisfy the selected pattern/template schema";
+  } else if (pattern && hasPayload) {
+    suspectedField = "payload";
+    reason = "payload fields do not satisfy the selected pattern/template schema";
+  } else if (type && hasConfig) {
+    suspectedField = "config";
+    reason = "config fields do not satisfy the selected V1 type schema";
+  }
+
+  return {
+    reason,
+    suspected_field: suspectedField,
+    actual_pattern: pattern ?? null,
+    actual_template: template ?? null,
+    actual_type: type ?? null,
+    has_payload: hasPayload,
+    has_config: hasConfig,
+    allowed_templates_for_pattern: patternCatalog?.templates ?? null,
+    zod_issues: targetedPayloadIssues.length ? targetedPayloadIssues : summarizeZodIssues(error),
+  };
+}
+
+function stringifySchemaDiagnostics(raw: unknown, error: z.ZodError) {
+  return JSON.stringify(diagnoseSchemaMismatch(raw, error), null, 2);
+}
+
 function getMetaphorTraceIssues(schema: UISchema) {
   const config = "pattern" in schema && typeof schema.pattern === "string" ? schema.payload : schema.config;
   const trace = config && typeof config === "object" ? (config as Record<string, unknown>).metaphor_trace : null;
@@ -411,7 +543,12 @@ export function getSchemaWarnings(raw: unknown, options: SchemaValidationOptions
 
 export function validateSchema(raw: unknown, options: SchemaValidationOptions = {}): UISchema | null {
   const result = UISchemaZod.safeParse(raw);
-  if (!result.success) return null;
+  if (!result.success) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("[aha-flash] schema validation failed", diagnoseSchemaMismatch(raw, result.error));
+    }
+    return null;
+  }
   const schema = result.data as UISchema;
   const advisoryIssues = getAdvisorySchemaIssues(schema);
   if ((options.metaphorTraceMode ?? "warn") === "reject" && advisoryIssues.length > 0) {
@@ -424,7 +561,7 @@ export function validateSchema(raw: unknown, options: SchemaValidationOptions = 
 
 export function getSchemaErrors(raw: unknown, options: SchemaValidationOptions = {}) {
   const result = UISchemaZod.safeParse(raw);
-  if (!result.success) return JSON.stringify(result.error.flatten(), null, 2);
+  if (!result.success) return stringifySchemaDiagnostics(raw, result.error);
 
   if ((options.metaphorTraceMode ?? "warn") === "reject") {
     const issues = getAdvisorySchemaIssues(result.data as UISchema);
