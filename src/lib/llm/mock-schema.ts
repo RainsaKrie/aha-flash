@@ -127,6 +127,87 @@ function createSunkCostPayload(depth: LearningDepth) {
   };
 }
 
+function createBayesPayload(depth: LearningDepth) {
+  if (depth === "scenario") {
+    return {
+      title: "贝叶斯 · 证据更新",
+      cards: [
+        {
+          front: "先验判断",
+          back: "看到新证据前，你先有一个初始概率，比如“这封邮件像诈骗”的直觉。",
+        },
+        {
+          front: "证据强度",
+          back: "新线索不是直接给答案，而是改变某个假设的可信度，比如链接异常会提高诈骗概率。",
+        },
+        {
+          front: "后验判断",
+          back: "把先验和证据合在一起，得到更新后的概率，再决定下一步行动。",
+        },
+      ],
+      metaphor_trace: {
+        concept_action: "更新判断",
+        source_domain: "日常决策",
+        candidate_mechanism: "根据新线索重估风险",
+        mapping_checks: ["先验对应看到证据前的初始判断", "证据强度对应新线索对假设的支持程度"],
+        chosen_terms: ["先验", "证据", "后验"],
+      },
+    };
+  }
+
+  if (depth === "mapping") {
+    return {
+      title: "贝叶斯 · 映射拆解",
+      cards: [
+        {
+          front: "P(假设)",
+          back: "先验概率：你在没有看到新证据前，对某个假设的初始相信程度。",
+        },
+        {
+          front: "P(证据|假设)",
+          back: "似然：如果假设是真的，看到这个证据的概率有多大。",
+        },
+        {
+          front: "P(假设|证据)",
+          back: "后验概率：看到证据之后，假设成立的概率被重新计算。",
+        },
+      ],
+      metaphor_trace: {
+        concept_action: "反向更新",
+        source_domain: "概率判断",
+        candidate_mechanism: "用证据重新分配相信程度",
+        mapping_checks: ["公式左边是证据出现后的判断", "公式右边把先验和证据可信度合并"],
+        chosen_terms: ["先验", "似然", "后验"],
+      },
+    };
+  }
+
+  return {
+    title: "贝叶斯 · 三步更新",
+    cards: [
+      {
+        front: "先有猜测",
+        back: "贝叶斯定理不是凭空算答案，而是先承认你已经有一个初始判断。",
+      },
+      {
+        front: "看新证据",
+        back: "证据会提高或降低某个假设的可信度，关键是它在不同假设下有多常见。",
+      },
+      {
+        front: "更新概率",
+        back: "后验概率就是“看到证据之后，我现在该多相信这个假设”。",
+      },
+    ],
+    metaphor_trace: {
+      concept_action: "更新概率",
+      source_domain: "判断修正",
+      candidate_mechanism: "根据新证据调整相信程度",
+      mapping_checks: ["先验对应初始猜测", "后验对应看完证据后的新判断"],
+      chosen_terms: ["先验", "证据", "后验"],
+    },
+  };
+}
+
 export function createMockSchema(input: string, depth: LearningDepth = "rapid"): UISchema {
   const normalized = input.toLowerCase();
 
@@ -151,6 +232,20 @@ export function createMockSchema(input: string, depth: LearningDepth = "rapid"):
       depth,
       next_concepts: OPTION_NEXT_CONCEPTS,
       config: createOptionConfig(depth),
+    };
+  }
+
+  if (includesAny(input, ["贝叶斯", "先验", "后验"]) || normalized.includes("bayes")) {
+    return {
+      pattern: "concept_memory",
+      template: "term_cards",
+      version: "2.0",
+      depth,
+      payload: createBayesPayload(depth),
+      next_concepts: [
+        { label: "条件概率", relation: "贝叶斯定理的基础语言" },
+        { label: "似然", relation: "证据在某个假设下出现的概率" },
+      ],
     };
   }
 

@@ -85,6 +85,7 @@ export default function HomePage() {
   const [componentCompleted, setComponentCompleted] = useState(false);
   const [componentFeedback, setComponentFeedback] = useState<"helpful" | "off" | null>(null);
   const [loadingStage, setLoadingStage] = useState("正在生成互动组件...");
+  const [lastSubmitted, setLastSubmitted] = useState("");
 
   useEffect(() => {
     async function boot() {
@@ -125,6 +126,7 @@ export default function HomePage() {
     setComponentCompleted(false);
     setComponentFeedback(null);
     setLoadingStage("读取你的学习状态");
+    setLastSubmitted(value);
 
     try {
       const response = await fetch("/api/chat", {
@@ -276,6 +278,12 @@ export default function HomePage() {
 
       <section className="component-stage" aria-live="polite">
         <div className="component-stage__inner">
+          {lastSubmitted && (
+            <div className="current-prompt" aria-label="当前问题">
+              <span>当前问题</span>
+              <strong>{lastSubmitted}</strong>
+            </div>
+          )}
           {currentSchema ? (
             renderBySchema(currentSchema, {
               onInteraction: (event) => void recordComponentEvent(event),

@@ -152,6 +152,28 @@ button:disabled {
   width: min(100%, 1120px);
 }
 
+.current-prompt {
+  margin: 0 0 12px;
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(15, 42, 34, 0.72);
+  padding: 8px 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.current-prompt strong {
+  overflow: hidden;
+  color: var(--text);
+  font-weight: 550;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .empty-stage {
   min-height: min(560px, calc(100vh - 220px));
   display: grid;
