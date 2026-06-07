@@ -199,4 +199,5 @@ V1 支持：
 | `ARCHITECTURE.md` | 当前技术架构和关键决策 |
 | `IMPLEMENTATION.md` | 当前实现状态和后续路线 |
 | `BACKLOG.md` | 临时迭代输入，只保留未完成任务 |
+| `DESIGN_SPEC.md` | 互动组件视觉、交互和内容质量规范 |
 | `CHANGELOG.md` | 已完成任务和验收归档 |

@@ -122,6 +122,8 @@ tests/
 
 ## 文档
 
+所有项目文档统一放在 `docs/` 下；历史输入材料放在 `docs/input-docs/`。
+
 | 文档 | 用途 |
 |---|---|
 | `PRD.md` | 产品目标、用户价值、长期功能边界 |
@@ -129,6 +131,7 @@ tests/
 | `IMPLEMENTATION.md` | 当前实施状态、路线和开发工作流 |
 | `BACKLOG.md` | 当前未完成任务和临时迭代入口 |
 | `BACKLOG_ROUND2.md` | Round 2 详细规划源 |
+| `DESIGN_SPEC.md` | 互动组件视觉、交互和内容质量规范 |
 | `CHANGELOG.md` | 已完成任务、验收记录和重要修复 |
 
 ---
