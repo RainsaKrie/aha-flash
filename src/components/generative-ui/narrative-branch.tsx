@@ -2,7 +2,8 @@
 
 import { GitBranch } from "lucide-react";
 import { useState } from "react";
-import { DEFAULT_LEARNING_DEPTH, LEARNING_DEPTH_LABELS } from "@/types/schema";
+import { ChoiceButton, ComponentFrame, EmptyState, FeedbackPanel, Panel } from "./shared";
+import { DEFAULT_LEARNING_DEPTH } from "@/types/schema";
 import type { InteractionEvent, LearningDepth, NarrativeBranchConfig } from "@/types/schema";
 
 const depthGoals: Record<LearningDepth, string> = {
@@ -21,30 +22,38 @@ export function NarrativeBranch({
   const [selected, setSelected] = useState<number | null>(null);
   const branch = selected === null ? null : config.branches[selected];
   const depth = config.depth || DEFAULT_LEARNING_DEPTH;
+  const branches = config.branches || [];
 
   return (
-    <section className="grid h-full min-h-[520px] grid-rows-[auto_1fr_auto] gap-5 p-5">
-      <header className="border-b border-[var(--line)] pb-4">
-        <p className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--accent)]">
-          <GitBranch size={15} /> narrative branch
-        </p>
-        <div className="mt-1 flex flex-wrap items-center gap-2">
-          <h2 className="text-2xl font-semibold">{config.title}</h2>
-          <span className="rounded-[8px] border border-[rgba(247,201,72,0.4)] bg-[rgba(247,201,72,0.1)] px-2 py-1 text-xs text-[var(--accent-2)]">
-            {LEARNING_DEPTH_LABELS[depth]}
-          </span>
-        </div>
-        <p className="mt-2 text-xs text-[var(--accent)]">{depthGoals[depth]}</p>
-      </header>
-
-      <div className="grid content-center gap-5">
-        <p className="rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4 text-sm leading-6 text-[var(--muted)]">
+    <ComponentFrame
+      icon={GitBranch}
+      label="narrative branch"
+      title={config.title}
+      depth={depth}
+      description={depthGoals[depth]}
+      footer={
+        <FeedbackPanel tone={branch ? "success" : "neutral"}>
+          {branch ? (
+            <>
+              <p className="text-[var(--muted)]">{branch.outcome_description}</p>
+              <strong className="mt-2 block text-[var(--accent)]">{branch.insight}</strong>
+            </>
+          ) : (
+            depthGoals[depth]
+          )}
+        </FeedbackPanel>
+      }
+    >
+      <div className="grid content-center gap-6">
+        <Panel className="p-4 text-sm leading-6 text-[var(--muted)]">
           {config.opening}
-        </p>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {config.branches.map((item, index) => (
-            <button
+        </Panel>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {branches.length ? (
+            branches.map((item, index) => (
+            <ChoiceButton
               key={item.choice_label}
+              active={selected === index}
               onClick={() => {
                 setSelected(index);
                 onComplete?.({
@@ -52,24 +61,16 @@ export function NarrativeBranch({
                   payload: { choice: item.choice_label, insight: item.insight },
                 });
               }}
-              className="min-h-28 rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4 text-left text-sm transition hover:border-[var(--accent)]"
+              className="min-h-28"
             >
               {item.choice_label}
-            </button>
-          ))}
+            </ChoiceButton>
+            ))
+          ) : (
+            <EmptyState detail="模型没有给出分支选项，重新生成后应包含 3 个有不同后果的选择。" />
+          )}
         </div>
       </div>
-
-      <div className="grid gap-3 rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4 text-sm leading-6">
-        {branch ? (
-          <>
-            <p className="text-[var(--muted)]">{branch.outcome_description}</p>
-            <strong className="text-[var(--accent)]">{branch.insight}</strong>
-          </>
-        ) : (
-          <p className="text-[var(--muted)]">{depthGoals[depth]}</p>
-        )}
-      </div>
-    </section>
+    </ComponentFrame>
   );
 }

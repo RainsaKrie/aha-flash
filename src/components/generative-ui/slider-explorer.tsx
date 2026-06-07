@@ -44,7 +44,7 @@ export function SliderExplorer({
   const insight = config.insight_rules?.find((rule) => rule.when === band)?.text;
 
   return (
-    <section className="grid h-full min-h-[520px] grid-rows-[auto_1fr] gap-5 p-5">
+    <section className="grid h-full min-h-[520px] grid-rows-[auto_1fr] gap-6 p-5">
       <header className="border-b border-[var(--line)] pb-4">
         <p className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--accent)]">
           <Gauge size={15} /> slider explorer
@@ -52,10 +52,10 @@ export function SliderExplorer({
         <h2 className="mt-1 text-2xl font-semibold">{config.title}</h2>
       </header>
       <div className="grid content-center gap-6">
-        <label className="grid gap-3">
+        <label className="grid gap-4 rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-5">
           <div className="flex items-end justify-between gap-4">
             <span className="text-sm text-[var(--muted)]">{config.variable_label}</span>
-            <strong className="text-3xl text-[var(--accent-2)]">
+            <strong className="animate-value-pop text-3xl font-bold text-[var(--accent)]">
               {value}
               {config.unit}
             </strong>
@@ -77,7 +77,7 @@ export function SliderExplorer({
             className="w-full accent-[var(--accent)]"
           />
         </label>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-3">
           {config.scenarios?.map((scenario) => (
             <Button
               key={scenario.label}
@@ -93,14 +93,14 @@ export function SliderExplorer({
             </Button>
           ))}
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           {outputs.slice(0, 4).map((output) => (
-            <div key={output.label} className="rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4">
-              <div className="flex items-center justify-between gap-3">
+            <div key={output.label} className="ui-result rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-4">
+              <div className="flex items-center justify-between gap-4">
                 <div className="text-sm text-[var(--muted)]">{output.label}</div>
                 {output.expression_label && <div className="text-xs text-[var(--accent)]">{output.expression_label}</div>}
               </div>
-              <div className="mt-2 text-2xl font-semibold">
+              <div className="animate-value-pop mt-2 text-3xl font-bold text-[var(--text)]">
                 {computeOutput(output, value)}
                 {output.unit}
               </div>
@@ -108,7 +108,7 @@ export function SliderExplorer({
             </div>
           ))}
         </div>
-        <p className="rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4 text-sm text-[var(--muted)]">
+        <p className="ui-result rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-4 text-sm leading-6 text-[var(--muted)]">
           {insight || config.explanation_template.replace("{{value}}", String(value))}
         </p>
       </div>

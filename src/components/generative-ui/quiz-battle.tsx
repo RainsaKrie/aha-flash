@@ -28,9 +28,9 @@ export function QuizBattle({
         </FeedbackPanel>
       }
     >
-      <div className="grid content-center gap-5">
-        <h3 className="text-xl font-semibold">{config.question}</h3>
-        <div className="grid gap-3">
+      <div className="grid content-center gap-6">
+        <h3 className="text-base font-medium leading-7">{config.question}</h3>
+        <div className="grid gap-4">
           {options.length ? (
             options.map((option, index) => (
             <ChoiceButton

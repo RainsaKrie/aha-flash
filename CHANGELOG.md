@@ -23,6 +23,22 @@
 - `npm run build`
 - Playwright 验证组件顶部深度切换条已出现
 
+### Design Spec 核心组件精修
+
+完成：
+- `gacha-simulator` 按规范统一圆角、间距、语义呼吸动画、操作高亮、结果区入场和余额数值弹入。
+- `slider-explorer` / `dual-slider-explorer` 改为仪表式参数面板，输出卡片和解释区使用统一 raised/panel 层级。
+- `quiz-battle` 调整题目层级和选项间距，匹配共享反馈动画。
+- `narrative-branch` 迁移到 `ComponentFrame`、`ChoiceButton`、`FeedbackPanel`，补齐空态和结果揭示反馈。
+- 全局增加 `.ui-breathe` 语义动画，替代组件内直接使用 `animate-pulse`。
+
+验证：
+- `npm run typecheck`
+- `npm run lint`
+- `npm run eval:score`
+- `npm run build`
+- Playwright 验证默认期权组件正常渲染
+
 ---
 
 ### 组件质量第二阶段
