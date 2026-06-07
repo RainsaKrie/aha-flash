@@ -39,9 +39,9 @@ function createOptionConfig(depth: LearningDepth) {
     quote: depthCopy.quote,
     quote_author: "趣灵",
     pool: [
-      { name: "5 星结果", rarity: "5", probability: 0.016, value: 2000 },
-      { name: "4 星结果", rarity: "4", probability: 0.13, value: 350 },
-      { name: "3 星结果", rarity: "3", probability: 0.854, value: 40 },
+      { name: "5 星结果", flavor_label: "限定角色", rarity: "5", probability: 0.016, value: 2000 },
+      { name: "4 星结果", flavor_label: "强力角色", rarity: "4", probability: 0.13, value: 350 },
+      { name: "3 星结果", flavor_label: "普通素材", rarity: "3", probability: 0.854, value: 40 },
     ],
     option_cost: 100,
     strike_price: 1000,

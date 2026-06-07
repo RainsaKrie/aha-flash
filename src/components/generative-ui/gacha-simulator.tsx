@@ -31,6 +31,10 @@ function tierLabel(item: GachaPoolItem) {
   return item.name;
 }
 
+function flavorLabel(item: GachaPoolItem) {
+  return item.flavor_label && item.flavor_label !== tierLabel(item) ? item.flavor_label : "";
+}
+
 export function GachaSimulator({
   config,
   onComplete,
@@ -46,7 +50,7 @@ export function GachaSimulator({
   const best = useMemo(() => results.reduce<GachaPoolItem | null>((acc, item) => (!acc || item.value > acc.value ? item : acc), null), [results]);
   const profit = best ? Math.max(best.value - config.strike_price - config.option_cost, -config.option_cost) : 0;
   const won = Boolean(best && best.value > config.strike_price);
-  const pool = config.pool.length ? config.pool : [{ name: "未知结果", rarity: "3", probability: 1, value: 0 }];
+  const pool = config.pool.length ? config.pool : [{ name: "未知结果", flavor_label: "兜底结果", rarity: "3", probability: 1, value: 0 }];
 
   function pull() {
     setPhase("pulling");
@@ -70,6 +74,7 @@ export function GachaSimulator({
           won: didWin,
           profit: nextProfit,
           best_item: bestItem ? tierLabel(bestItem) : undefined,
+          flavor_label: bestItem ? flavorLabel(bestItem) || undefined : undefined,
         },
       });
     }, 620);
@@ -168,6 +173,9 @@ export function GachaSimulator({
                     {phase === "pulling" ? "rolling" : `${Math.round(item.probability * 100)}%`}
                   </span>
                   <strong className="mt-2 block text-base">{phase === "pulling" ? "..." : tierLabel(item)}</strong>
+                  {phase !== "pulling" && flavorLabel(item) && (
+                    <span className="mt-1 block text-xs text-[var(--muted)]">{flavorLabel(item)}</span>
+                  )}
                   <span className="mt-2 block text-xs text-[var(--accent-2)]">价值 {item.value}</span>
                 </span>
               </div>
@@ -179,7 +187,10 @@ export function GachaSimulator({
               {pool.slice(0, 3).map((item) => (
                 <div key={`${item.name}-odds`} className="rounded-[8px] border border-[var(--line)] bg-[#0c1915] p-3 text-xs">
                   <div className="flex justify-between gap-3">
-                    <span className="text-[var(--muted)]">{tierLabel(item)}</span>
+                    <span className="text-[var(--muted)]">
+                      {tierLabel(item)}
+                      {flavorLabel(item) ? ` · ${flavorLabel(item)}` : ""}
+                    </span>
                     <strong>{Math.round(item.probability * 100)}%</strong>
                   </div>
                 </div>

@@ -28,6 +28,7 @@ const GachaConfigZod = z.object({
   pool: z.array(
     z.object({
       name: z.string(),
+      flavor_label: z.string().optional(),
       rarity: z.string(),
       probability: z.number(),
       value: z.number(),

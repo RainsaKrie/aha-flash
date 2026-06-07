@@ -174,6 +174,7 @@ export interface GenerativeUIComponentProps<TConfig = Record<string, unknown>> {
 
 export interface GachaPoolItem {
   name: string;
+  flavor_label?: string;
   rarity: "5" | "4" | "3" | string;
   probability: number;
   value: number;

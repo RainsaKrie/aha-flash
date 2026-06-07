@@ -22,6 +22,10 @@ function tierLabel(item: GachaPoolItem) {
   return item.name;
 }
 
+function flavorLabel(item: GachaPoolItem) {
+  return item.flavor_label && item.flavor_label !== tierLabel(item) ? item.flavor_label : "";
+}
+
 export function GachaSpinWheel({
   config,
   onComplete,
@@ -49,7 +53,12 @@ export function GachaSpinWheel({
       setSpinning(false);
       onComplete?.({
         type: "gacha_completed",
-        payload: { won: next.value > config.strike_price, profit: nextProfit, best_item: tierLabel(next) },
+        payload: {
+          won: next.value > config.strike_price,
+          profit: nextProfit,
+          best_item: tierLabel(next),
+          flavor_label: flavorLabel(next) || undefined,
+        },
       });
     }, 650);
   }
@@ -72,7 +81,12 @@ export function GachaSpinWheel({
               style={{ transform: `rotate(${rotation}deg)` }}
             />
             <div className="relative grid h-32 w-32 place-items-center rounded-full border border-[var(--line)] bg-[#08130f] p-4 text-center">
-              <strong className="text-sm leading-5">{spinning ? "转动中" : result ? tierLabel(result) : tierLabel(topPrize)}</strong>
+              <span>
+                <strong className="block text-sm leading-5">{spinning ? "转动中" : result ? tierLabel(result) : tierLabel(topPrize)}</strong>
+                {!spinning && result && flavorLabel(result) && (
+                  <span className="mt-1 block text-xs text-[var(--muted)]">{flavorLabel(result)}</span>
+                )}
+              </span>
             </div>
           </div>
         </div>
