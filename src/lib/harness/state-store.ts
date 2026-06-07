@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { nanoid } from "nanoid";
-import type { KnowledgeAsset, UserProfile, UserState } from "@/types/state";
+import type { CurrentThread, KnowledgeAsset, ThreadSummary, UserProfile, UserState } from "@/types/state";
 
 function resolveStatesDir() {
   if (process.env.AHA_FLASH_STATE_DIR) return process.env.AHA_FLASH_STATE_DIR;
@@ -13,6 +13,7 @@ function resolveStatesDir() {
 const STATES_DIR = resolveStatesDir();
 const MAX_STATE_BYTES = 5120;
 const MAX_KNOWLEDGE_ASSETS = 10;
+const MAX_THREAD_SUMMARIES = 6;
 
 function mergeUnique(current: string[] = [], next: string[] = []) {
   return [...new Set([...current, ...next].map((item) => item.trim()).filter(Boolean))].slice(0, 12);
@@ -20,6 +21,37 @@ function mergeUnique(current: string[] = [], next: string[] = []) {
 
 function normalizeConcept(value: string) {
   return value.trim().toLowerCase();
+}
+
+function compactInput(value: string, max = 120) {
+  const compact = value.replace(/\s+/g, " ").trim();
+  return compact.length > max ? compact.slice(0, max) : compact;
+}
+
+function sameConcept(left?: string, right?: string) {
+  return Boolean(left && right && normalizeConcept(left) === normalizeConcept(right));
+}
+
+function archiveThread(
+  thread: CurrentThread,
+  current: UserState,
+  now: string,
+): ThreadSummary | null {
+  if (thread.depth <= 1) return null;
+
+  return {
+    thread_id: `${normalizeConcept(thread.concept)}-${thread.started_at}`,
+    concept: thread.concept,
+    total_rounds: thread.depth,
+    max_depth: thread.depth,
+    final_understanding:
+      current.conversation_compressed.last_session_summary ||
+      `围绕「${thread.concept}」完成了 ${thread.depth} 轮连续追问。`,
+    insight:
+      current.conversation_compressed.key_insights[0] ||
+      `用户连续追问「${thread.concept}」，需要保持同一隐喻体系。`,
+    archived_at: now,
+  };
 }
 
 export interface StateReflectionPatch {
@@ -37,6 +69,10 @@ export class StateStore {
       const state = JSON.parse(raw) as UserState;
       return {
         ...state,
+        conversation_compressed: {
+          ...state.conversation_compressed,
+          thread_summaries: state.conversation_compressed.thread_summaries || [],
+        },
         knowledge_assets: state.knowledge_assets || [],
       };
     } catch {
@@ -60,6 +96,7 @@ export class StateStore {
         key_insights: [],
         last_session_summary: "",
         total_interactions: 0,
+        thread_summaries: [],
       },
       knowledge_assets: [],
       ui_preferences: {
@@ -188,6 +225,36 @@ export class StateStore {
         last_session_summary: reflection.summary.slice(0, 150),
         understanding_level:
           reflection.understanding_level || current.conversation_compressed.understanding_level,
+      },
+    });
+  }
+
+  async updateCurrentThread(
+    userId: string,
+    params: { concept: string; input: string; isFollowup: boolean },
+  ): Promise<UserState> {
+    const current = (await this.get(userId)) ?? (await this.create(userId));
+    const now = new Date().toISOString();
+    const previous = current.conversation_compressed.current_thread;
+    const continuesThread =
+      params.isFollowup && previous && sameConcept(previous.concept, params.concept);
+    const archived = previous && !continuesThread ? archiveThread(previous, current, now) : null;
+    const current_thread: CurrentThread = {
+      concept: params.concept.trim().slice(0, 40) || previous?.concept || "当前概念",
+      depth: continuesThread ? Math.min(previous.depth + 1, 12) : 1,
+      started_at: continuesThread ? previous.started_at : now,
+      last_user_input: compactInput(params.input),
+    };
+    const thread_summaries = [
+      ...(archived ? [archived] : []),
+      ...(current.conversation_compressed.thread_summaries || []),
+    ].slice(0, MAX_THREAD_SUMMARIES);
+
+    return this.update(userId, {
+      conversation_compressed: {
+        ...current.conversation_compressed,
+        current_thread,
+        thread_summaries,
       },
     });
   }

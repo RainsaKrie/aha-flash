@@ -1,4 +1,5 @@
 import { generateText, type LanguageModel } from "ai";
+import type { CurrentThread } from "@/types/state";
 
 export type ConversationRoute = "knowledge" | "preference" | "casual";
 
@@ -7,6 +8,14 @@ export interface RouteClassification {
   confidence: number;
   reason?: string;
   source: "llm" | "rules";
+}
+
+export interface FollowupDetection {
+  is_followup: boolean;
+  confidence: number;
+  reason: string;
+  source: "llm" | "rules";
+  concept?: string;
 }
 
 const knowledgeWords = [
@@ -39,6 +48,29 @@ const preferenceWords = [
   "我想用",
   "我希望用",
 ];
+const followupWords = [
+  "继续",
+  "接着",
+  "刚才",
+  "上面",
+  "这个",
+  "那个",
+  "它",
+  "这",
+  "那",
+  "为什么",
+  "怎么",
+  "再",
+  "展开",
+  "详细",
+  "举例",
+  "换个",
+  "如果",
+  "所以",
+  "行权",
+  "收益",
+  "风险",
+];
 
 function parseClassification(text: string): Pick<RouteClassification, "route" | "confidence" | "reason"> | null {
   const match = text.match(/\{[\s\S]*\}/);
@@ -61,6 +93,23 @@ function parseClassification(text: string): Pick<RouteClassification, "route" | 
   }
 
   return null;
+}
+
+function inferQuestionSubject(input: string) {
+  const cleaned = input
+    .replace(/请|帮我|给我|一下|用.*(?:讲|解释|对比|演示|模拟)/g, "")
+    .replace(/[，,：:\s]/g, "")
+    .trim();
+  if (/^(为什么|怎么|有什么区别|区别|对比|继续|接着|再)/.test(cleaned)) return "";
+  const match = cleaned.match(/^(.{1,18}?)(是什么|为什么|怎么|有什么区别|区别|对比)/);
+  const subject = match?.[1]?.trim();
+  if (!subject || /^(这|那|它|这个|那个|刚才|上面)$/.test(subject)) return "";
+  return subject;
+}
+
+function sameTextSubject(left: string, right: string) {
+  const normalize = (value: string) => value.replace(/\s+/g, "").toLowerCase();
+  return normalize(left) === normalize(right);
 }
 
 export function classifyConversationByRules(input: string): RouteClassification {
@@ -101,6 +150,108 @@ export async function classifyConversationIntent(
   }
 
   return classifyConversationByRules(input);
+}
+
+function parseFollowup(text: string): Pick<FollowupDetection, "is_followup" | "confidence" | "reason" | "concept"> | null {
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) return null;
+
+  try {
+    const parsed = JSON.parse(match[0]) as Partial<FollowupDetection>;
+    if (typeof parsed.is_followup === "boolean" && typeof parsed.confidence === "number") {
+      return {
+        is_followup: parsed.is_followup,
+        confidence: Math.max(0, Math.min(1, parsed.confidence)),
+        reason: parsed.reason || "LLM 判定",
+        concept: parsed.concept,
+      };
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+export function detectFollowupByRules(input: string, currentThread?: CurrentThread): FollowupDetection {
+  if (!currentThread?.concept) {
+    return {
+      is_followup: false,
+      confidence: 0.82,
+      reason: "当前没有可延续的学习线程",
+      source: "rules",
+    };
+  }
+
+  const normalizedInput = input.trim();
+  const concept = currentThread.concept.trim();
+  if (concept && normalizedInput.includes(concept)) {
+    return {
+      is_followup: true,
+      confidence: 0.86,
+      reason: "输入再次提到当前概念",
+      source: "rules",
+      concept,
+    };
+  }
+
+  const subject = inferQuestionSubject(normalizedInput);
+  if (subject && !sameTextSubject(subject, concept)) {
+    return {
+      is_followup: false,
+      confidence: 0.84,
+      reason: "输入包含新的明确概念主语",
+      source: "rules",
+      concept: subject,
+    };
+  }
+
+  if (followupWords.some((word) => normalizedInput.includes(word))) {
+    return {
+      is_followup: true,
+      confidence: 0.78,
+      reason: "命中追问/延展表达",
+      source: "rules",
+      concept,
+    };
+  }
+
+  return {
+    is_followup: false,
+    confidence: 0.7,
+    reason: "未命中当前概念或追问信号",
+    source: "rules",
+  };
+}
+
+export async function detectFollowupIntent(
+  input: string,
+  currentThread?: CurrentThread,
+  model?: LanguageModel | null,
+): Promise<FollowupDetection> {
+  const ruleResult = detectFollowupByRules(input, currentThread);
+  if (!model || !currentThread?.concept || ruleResult.confidence >= 0.84) return ruleResult;
+
+  try {
+    const result = await generateText({
+      model,
+      system: [
+        "你是趣灵（aha-flash）的追问判别器。",
+        "判断用户输入是在延续当前学习线程，还是开启新概念。",
+        "只输出 JSON，不要 Markdown，不要解释。",
+        '格式: {"is_followup":true|false,"confidence":0-1,"reason":"短原因","concept":"线程概念或新概念"}',
+        `当前线程概念: ${currentThread.concept}`,
+        `当前线程深度: ${currentThread.depth}`,
+      ].join("\n"),
+      messages: [{ role: "user", content: input }],
+    });
+    const parsed = parseFollowup(result.text);
+    if (parsed) return { ...parsed, source: "llm" };
+  } catch {
+    // fall through to deterministic fallback
+  }
+
+  return ruleResult;
 }
 
 export function routeConversation(input: string): ConversationRoute {

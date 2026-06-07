@@ -104,8 +104,9 @@ tests/
 重要约束：
 
 - 不保存全量历史文本。
-- 每轮对话只写入压缩摘要和关键洞察。
-- Round 2 需要增加短期对话窗口，携带最近 3 轮原文，以减少追问时的信息丢失。
+- 每轮对话只写入压缩摘要、关键洞察、当前线程和必要短期窗口。
+- `/api/chat` 请求携带最近 6 条轻量消息作为短期窗口，只用于本轮 Prompt，不写入长期状态。
+- `current_thread` 记录当前概念、追问深度和最后一次用户输入；换题时归档到 `thread_summaries`。
 - 同一概念重复学习时覆盖旧资产，避免状态列表膨胀。
 - 状态体积保持小而可读。
 
@@ -115,32 +116,19 @@ tests/
 POST /api/chat
   |
   +-- initUserState(userId)
+  +-- attach recent_messages
+  +-- detectFollowupIntent(input, current_thread)
   +-- classifyConversationIntent(input)
-  +-- buildSystemPrompt(state + route + target_depth)
+  +-- buildSystemPrompt(state + recent_messages + thread + route + target_depth)
   +-- generateSchemaWithLLM()
       |
       +-- if model unavailable or invalid output: createMockSchema()
   +-- normalizeUISchema(schema)
+  +-- if route is knowledge: stateStore.updateCurrentThread()
   +-- reflectTurn(input, route, schemaType, state)
   +-- stateStore.applyTurnReflection()
   +-- if route is knowledge: stateStore.addKnowledgeAsset()
   +-- return schema + depth + next concepts + route + userState
-```
-
-Round 2 目标生命周期：
-
-```text
-POST /api/chat
-  |
-  +-- initUserState(userId)
-  +-- attach recent_messages
-  +-- detect follow-up vs new topic
-  +-- classifyConversationIntent(input, thread context)
-  +-- buildSystemPrompt(state + recent_messages + thread + target_depth)
-  +-- generate / stream schema
-  +-- normalize schema
-  +-- reflect turn and update current thread
-  +-- archive thread summary when topic breaks
 ```
 
 ## 6. Schema 协议
@@ -387,5 +375,5 @@ AHA_FLASH_STATE_DIR=
 
 - Vercel `/tmp` 状态不持久，不能作为生产记忆。
 - 当前 mock schema 仍承担较多验收输入路由。
-- 对话追问依赖压缩摘要，缺少短期原文窗口和线程级摘要。
-- 互动组件已经开始按 Design Spec 改造，但仍需要逐组件完成质量统一。
+- 追问检测仍是规则 + 轻量 LLM 判别，后续需要真实对话样本回归。
+- 流式生成、反馈调优和知识卡片导出仍未完成。

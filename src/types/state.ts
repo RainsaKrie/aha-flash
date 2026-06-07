@@ -15,6 +15,25 @@ export interface CompressedSummary {
   last_session_summary: string;
   total_interactions: number;
   understanding_level?: "shallow" | "moderate" | "deep";
+  current_thread?: CurrentThread;
+  thread_summaries?: ThreadSummary[];
+}
+
+export interface CurrentThread {
+  concept: string;
+  depth: number;
+  started_at: string;
+  last_user_input?: string;
+}
+
+export interface ThreadSummary {
+  thread_id: string;
+  concept: string;
+  total_rounds: number;
+  max_depth: number;
+  final_understanding: string;
+  insight: string;
+  archived_at: string;
 }
 
 export interface UIPreferences {

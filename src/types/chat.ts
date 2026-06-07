@@ -11,3 +11,9 @@ export interface Message {
   tool_calls?: ToolCall[];
   created_at: string;
 }
+
+export interface RecentMessage {
+  role: Extract<MessageRole, "user" | "assistant">;
+  content: string;
+  created_at?: string;
+}

@@ -58,6 +58,14 @@ export default function HomePage() {
   }, [setError, setUserState]);
 
   async function submit(value: string, depth: LearningDepth = learningDepth) {
+    const recentMessages = messages
+      .filter((message) => message.role === "user" || message.role === "assistant")
+      .slice(-6)
+      .map((message) => ({
+        role: message.role,
+        content: message.content.slice(0, 500),
+        created_at: message.created_at,
+      }));
     const userMessage: Message = {
       id: crypto.randomUUID(),
       role: "user",
@@ -74,7 +82,7 @@ export default function HomePage() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: value, userId, depth }),
+        body: JSON.stringify({ message: value, userId, depth, recent_messages: recentMessages }),
       });
       if (!response.ok) throw new Error(`Chat request failed: ${response.status}`);
       const data = await response.json();

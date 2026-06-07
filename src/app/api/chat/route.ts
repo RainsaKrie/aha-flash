@@ -1,6 +1,10 @@
 import { generateText } from "ai";
 import { NextResponse } from "next/server";
-import { classifyConversationIntent, inferTopic } from "@/lib/harness/conversation-router";
+import {
+  classifyConversationIntent,
+  detectFollowupIntent,
+  inferTopic,
+} from "@/lib/harness/conversation-router";
 import { buildSystemPrompt } from "@/lib/harness/prompt-composer";
 import { reflectTurn } from "@/lib/harness/state-reflection";
 import { initUserState } from "@/lib/harness/state-machine";
@@ -18,6 +22,7 @@ import {
   type TemplateId,
 } from "@/types/schema";
 import type { KnowledgeAsset } from "@/types/state";
+import type { RecentMessage } from "@/types/chat";
 
 interface SchemaIntent {
   pattern: PatternType;
@@ -52,6 +57,27 @@ function inferTopicArea(input: string) {
 
 function normalizeDepth(value: unknown): LearningDepth {
   return isLearningDepth(value) ? value : DEFAULT_LEARNING_DEPTH;
+}
+
+function normalizeRecentMessages(value: unknown): RecentMessage[] {
+  if (!Array.isArray(value)) return [];
+
+  const messages: RecentMessage[] = [];
+  for (const raw of value) {
+    if (!raw || typeof raw !== "object") continue;
+    const message = raw as Record<string, unknown>;
+    const role = message.role === "assistant" ? "assistant" : message.role === "user" ? "user" : null;
+    const content = typeof message.content === "string" ? message.content.trim() : "";
+    if (!role || !content) continue;
+
+    messages.push({
+      role,
+      content: content.slice(0, 500),
+      created_at: typeof message.created_at === "string" ? message.created_at : undefined,
+    });
+  }
+
+  return messages.slice(-6);
 }
 
 function depthToUnderstanding(depth: LearningDepth): KnowledgeAsset["understanding"] {
@@ -173,9 +199,10 @@ async function generateSchemaWithLLM({
 }
 
 export async function POST(req: Request) {
-  const { message, userId, depth: rawDepth } = await req.json();
+  const { message, userId, depth: rawDepth, recent_messages } = await req.json();
   const input = String(message || "").trim();
   const depth = normalizeDepth(rawDepth);
+  const recentMessages = normalizeRecentMessages(recent_messages);
 
   if (!input) {
     return NextResponse.json({ error: "message is required" }, { status: 400 });
@@ -184,9 +211,27 @@ export async function POST(req: Request) {
   const state = await initUserState(userId);
   const model = getLLMProvider();
   const schemaIntent = inferSchemaIntent(input);
-  const routeInfo = await classifyConversationIntent(input, model);
+  const followupInfo = await detectFollowupIntent(
+    input,
+    state.conversation_compressed.current_thread,
+    model,
+  );
+  const classifiedRoute = await classifyConversationIntent(input, model);
+  const routeInfo =
+    followupInfo.is_followup && classifiedRoute.route === "casual"
+      ? {
+          ...classifiedRoute,
+          route: "knowledge" as const,
+          reason: `延续当前线程：${followupInfo.reason}`,
+        }
+      : classifiedRoute;
   const routeContext = `<route_context route="${routeInfo.route}" confidence="${routeInfo.confidence}" source="${routeInfo.source}" />`;
-  const systemPrompt = [buildSystemPrompt(state, depth), routeContext].filter(Boolean).join("\n\n");
+  const systemPrompt = [
+    buildSystemPrompt(state, depth, { recentMessages, followup: followupInfo }),
+    routeContext,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   let schema = attachDepth(createMockSchema(input, depth), depth);
   let source: "mock" | "llm" = "mock";
@@ -204,12 +249,16 @@ export async function POST(req: Request) {
   }
 
   const normalizedSchema = normalizeUISchema(schema);
+  const concept =
+    followupInfo.is_followup && state.conversation_compressed.current_thread?.concept
+      ? state.conversation_compressed.current_thread.concept
+      : inferConcept(input);
   const topic =
     routeInfo.route === "preference"
       ? "用户偏好"
       : routeInfo.route === "casual"
         ? "闲聊"
-        : inferTopic(input);
+        : concept || inferTopic(input);
   const rawReflection = await reflectTurn({
     input,
     route: routeInfo.route,
@@ -225,7 +274,16 @@ export async function POST(req: Request) {
         ? `用户以 ${normalizedSchema.depth} 深度学习了 ${normalizedSchema.type} 互动组件。`
         : rawReflection.summary,
   };
-  let updatedState = await stateStore.applyTurnReflection(
+  let updatedState = state;
+  if (routeInfo.route === "knowledge") {
+    updatedState = await stateStore.updateCurrentThread(state.user_id, {
+      concept: topic,
+      input,
+      isFollowup: followupInfo.is_followup,
+    });
+  }
+
+  updatedState = await stateStore.applyTurnReflection(
     state.user_id,
     topic,
     `已生成 ${normalizedSchema.pattern}/${normalizedSchema.template} 互动组件`,
@@ -234,7 +292,7 @@ export async function POST(req: Request) {
 
   if (routeInfo.route === "knowledge") {
     updatedState = await stateStore.addKnowledgeAsset(state.user_id, {
-      concept: inferConcept(input),
+      concept,
       pattern: normalizedSchema.pattern,
       template: normalizedSchema.template,
       understanding: depthToUnderstanding(normalizedSchema.depth),
@@ -253,6 +311,7 @@ export async function POST(req: Request) {
           : "先用本地示例把交互跑起来，配置 API Key 后会改由 LLM 实时生成。",
     schema,
     route: routeInfo,
+    followup: followupInfo,
     userId: state.user_id,
     userState: updatedState,
     source,
