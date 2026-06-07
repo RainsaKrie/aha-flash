@@ -354,7 +354,7 @@ export const UISchemaZod = z.union([V2UISchemaZod, V1UISchemaZod]);
 function getMetaphorTraceIssues(schema: UISchema) {
   const config = "pattern" in schema && typeof schema.pattern === "string" ? schema.payload : schema.config;
   const trace = config && typeof config === "object" ? (config as Record<string, unknown>).metaphor_trace : null;
-  if (!trace || typeof trace !== "object") return ["payload.metaphor_trace is required"];
+  if (!trace || typeof trace !== "object") return ["payload.metaphor_trace is missing"];
 
   const traceRecord = trace as Record<string, unknown>;
   const mappingChecks = Array.isArray(traceRecord.mapping_checks) ? traceRecord.mapping_checks : [];
@@ -380,23 +380,45 @@ function getMetaphorTraceIssues(schema: UISchema) {
   return issues;
 }
 
+function getAdvisorySchemaIssues(schema: UISchema) {
+  const issues = [...getMetaphorTraceIssues(schema)];
+
+  if (!schema.depth) {
+    issues.push("depth is missing");
+  }
+
+  if (!Array.isArray(schema.next_concepts) || schema.next_concepts.length === 0) {
+    issues.push("next_concepts is missing");
+  }
+
+  return issues;
+}
+
+function emitSchemaWarnings(issues: string[], options: SchemaValidationOptions) {
+  const mode = options.metaphorTraceMode ?? "warn";
+  if (mode !== "warn" || issues.length === 0 || process.env.NODE_ENV !== "production") return;
+  console.warn("[aha-flash] schema warnings", issues);
+}
+
 export function getSchemaWarnings(raw: unknown, options: SchemaValidationOptions = {}) {
   const mode = options.metaphorTraceMode ?? "warn";
   if (mode === "off") return [];
 
   const result = UISchemaZod.safeParse(raw);
   if (!result.success) return [];
-  return getMetaphorTraceIssues(result.data as UISchema);
+  return getAdvisorySchemaIssues(result.data as UISchema);
 }
 
 export function validateSchema(raw: unknown, options: SchemaValidationOptions = {}): UISchema | null {
   const result = UISchemaZod.safeParse(raw);
   if (!result.success) return null;
   const schema = result.data as UISchema;
-  if ((options.metaphorTraceMode ?? "warn") === "reject" && getMetaphorTraceIssues(schema).length > 0) {
+  const advisoryIssues = getAdvisorySchemaIssues(schema);
+  if ((options.metaphorTraceMode ?? "warn") === "reject" && advisoryIssues.length > 0) {
     return null;
   }
 
+  emitSchemaWarnings(advisoryIssues, options);
   return schema;
 }
 
@@ -405,8 +427,8 @@ export function getSchemaErrors(raw: unknown, options: SchemaValidationOptions =
   if (!result.success) return JSON.stringify(result.error.flatten(), null, 2);
 
   if ((options.metaphorTraceMode ?? "warn") === "reject") {
-    const issues = getMetaphorTraceIssues(result.data as UISchema);
-    if (issues.length) return JSON.stringify({ metaphor_trace: issues }, null, 2);
+    const issues = getAdvisorySchemaIssues(result.data as UISchema);
+    if (issues.length) return JSON.stringify({ warnings: issues }, null, 2);
   }
 
   return "";

@@ -20,6 +20,7 @@ export interface FollowupDetection {
 
 const knowledgeWords = [
   "是什么",
+  "如何",
   "为什么",
   "怎么",
   "解释",
@@ -36,6 +37,7 @@ const knowledgeWords = [
 const preferenceWords = [
   "我喜欢",
   "我不喜欢",
+  "我习惯",
   "偏好",
   "背景",
   "爱好",
@@ -115,7 +117,7 @@ function sameTextSubject(left: string, right: string) {
 
 function isPureNounPhrase(input: string) {
   const compact = input.trim();
-  if (!compact || compact.length > 24) return false;
+  if (!compact || compact.length > 10) return false;
   if (casualWords.some((word) => compact.includes(word))) return false;
   if (/[？?。！!，,；;：:、]/.test(compact)) return false;
   if (/(我是|我想|我喜欢|请|帮我|解释|怎么|为什么|是什么|区别|对比|测试|测验|继续|再讲)/.test(compact)) return false;
@@ -123,12 +125,14 @@ function isPureNounPhrase(input: string) {
 }
 
 export function classifyConversationByRules(input: string): RouteClassification {
-  if (preferenceWords.some((word) => input.includes(word))) {
-    return { route: "preference", confidence: 0.82, source: "rules", reason: "命中偏好表达关键词" };
+  const normalizedInput = input.trim();
+
+  if (/(我喜欢|我习惯|我是|用.{1,12}讲)/.test(normalizedInput) || preferenceWords.some((word) => input.includes(word))) {
+    return { route: "preference", confidence: 0.92, source: "rules", reason: "命中偏好表达关键词" };
   }
 
-  if (casualWords.some((word) => input.trim().includes(word))) {
-    return { route: "casual", confidence: 0.86, source: "rules", reason: "命中闲聊关键词" };
+  if (casualWords.some((word) => normalizedInput.includes(word))) {
+    return { route: "casual", confidence: 0.92, source: "rules", reason: "命中闲聊关键词" };
   }
 
   if (isPureNounPhrase(input)) {
@@ -136,7 +140,7 @@ export function classifyConversationByRules(input: string): RouteClassification 
   }
 
   if (knowledgeWords.some((word) => input.includes(word))) {
-    return { route: "knowledge", confidence: 0.86, source: "rules", reason: "命中知识探索关键词" };
+    return { route: "knowledge", confidence: 0.92, source: "rules", reason: "命中知识探索关键词" };
   }
 
   return { route: "casual", confidence: 0.72, source: "rules", reason: "未命中知识或偏好信号" };
@@ -147,7 +151,7 @@ export async function classifyConversationIntent(
   model?: LanguageModel | null,
 ): Promise<RouteClassification> {
   const ruleResult = classifyConversationByRules(input);
-  if (!model || ruleResult.reason === "纯名词短语默认按知识概念处理") return ruleResult;
+  if (!model || ruleResult.confidence >= 0.9) return ruleResult;
 
   try {
     const result = await generateText({

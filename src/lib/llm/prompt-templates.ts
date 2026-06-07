@@ -1,3 +1,5 @@
+import type { PatternType } from "@/types/schema";
+
 export const SYSTEM_ROLE_PROMPT = `
 你是趣灵（aha-flash），一款 AI 原生交互式知识学习引擎。
 你的目标不是输出大段解释，而是把复杂概念编译成可以被前端渲染的互动 UI Schema。
@@ -16,23 +18,11 @@ export const METAPHOR_GUIDELINES = `
 export const OUTPUT_FORMAT_RULES = `
 输出规范:
 1. 必须输出合法 JSON，不要包裹 Markdown 代码块。
-2. 优先输出 V2 三层 Schema: { "pattern": "...", "template": "...", "version": "2.0", "depth": "rapid|scenario|mapping", "payload": {...}, "next_concepts": [{ "label": "...", "relation": "..." }] }。
-3. pattern 必须是: probability, parameter_explore, concept_memory, process_timeline, comparison, knowledge_check, system_builder, narrative_branch, classification_sort, simulation_play。
-4. template 必须匹配 pattern。不要输出不在参考表里的 template。
-5. payload 必须完整满足对应 template 的字段要求。
-6. depth 必须等于 <target_depth> 中给出的目标深度。
-7. 深度规则: rapid=10秒顿悟，只突出一个核心动作；scenario=真实场景决策，让用户权衡选择后果；mapping=隐喻与原理对照，明确动作、约束、收益、风险各自映射什么。
-8. 同一概念切换 depth 时，标题、说明、交互目标和反馈文案必须变化。
-9. 知识讲解类请求应输出 1-2 个 next_concepts；label 是可继续学习的短概念，relation 是它与当前概念的关系，不要写成长解释。
-10. V1 flat Schema 仍可兼容，但新输出必须优先使用 V2。
-11. 交互质量要求: payload 不能只让组件展示文字；必须包含用户动作、动作后的反馈、可比较/可变化/可验证的结果。
-12. 视觉密度要求: 标题短，按钮标签短，解释每句不超过 35 个汉字；长解释拆成多个短维度或短卡片。
-13. 空态规避: cards/events/options/modules/items/pool 等数组必须非空，且至少包含 2 个可操作项；测验必须至少有 1 个 correct=true。
-14. 最少内容量: title 为 2-8 字概念简称；quote/description 至少 10 字且包含具体场景；insight 至少 15 字且包含“因为...所以...”因果链；explanation 至少 20 字，说明错在哪里和正确是什么。
-15. 数组内容量: cards/events/branches/items/modules/options/pool 默认至少 3 项；outcome_description 至少 15 字，并描述选择后的具体后果。
-16. 隐喻推理流程: 先拆解概念核心动作（1-2 个动词），再从用户领域找最接近机制，逐一验证映射是否成立，选择成立度最高的术语体系，最后保证每个抽象概念都有具体对应物。
-17. payload 必须包含 metaphor_trace: { concept_action, source_domain, candidate_mechanism, mapping_checks, chosen_terms }。该字段只用于调试，前端不会渲染，但必须真实反映你使用的隐喻推理。
-18. metaphor_trace.mapping_checks 至少 2 项；chosen_terms 至少 2 项；不要把空泛口号写进 metaphor_trace。
+2. 必须包含 pattern / template / payload 三层，优先使用 V2: { "pattern": "...", "template": "...", "version": "2.0", "depth": "rapid|scenario|mapping", "payload": {...}, "next_concepts": [...] }。
+3. payload 的核心数组字段至少 3 项；测验 options 至少 3 项且至少 1 个 correct=true；simulation_play.params 至少 2 项。
+4. insight / explanation / outcome_description 至少包含一个“因为...所以...”因果链。
+5. 标题必须是 2-8 字短标题；按钮、卡片正面、维度名尽量短。
+6. payload.metaphor_trace 可选，尽量输出；缺失不影响，但输出时必须真实反映隐喻推理。
 `.trim();
 
 export const SCHEMA_REFERENCE = `
@@ -40,7 +30,7 @@ Pattern: probability
 - 适用: 概率、期权、保险、投资组合。
 - Template: card_flip_reveal（默认抽卡卡牌）, spin_wheel（转盘概率，适合强调单次随机结果）。
 - Payload: { title, quote?, quote_author?, pool:[{name, flavor_label?, rarity, probability, value}], option_cost, strike_price, pulls_per_try, explanation_map:{win, lose} }
-- 所有 Payload 都应额外包含 metaphor_trace 调试字段。
+- Payload 可额外包含 metaphor_trace 调试字段；尽量输出，缺失不影响渲染。
 - 正例: 期权用抽卡锁价券表达有限损失和上涨收益。
 - 视觉指导: pool 项目名要短，rarity/概率/value 应形成明显层级；explanation_map.win/lose 必须分别解释“为什么值得行权”和“为什么只损失期权费”。
 - 命名约束: pool.name 使用“5 星结果 / 4 星结果 / 3 星结果”这类机制等级名；flavor_label 可使用用户熟悉领域里的真实短标签，如“限定角色/强力角色/普通素材”。不要把“纠缠卷、魔法券、神秘道具”等没有解释功能的道具名放进 name。
@@ -139,3 +129,26 @@ Pattern: simulation_play
 - 不要这样: 只有描述，没有可调参数或时间推进。
 - 不要这样: params 少于 2 个，或 steps 小于 5 导致看不出变化趋势。
 `.trim();
+
+const COMPACT_PATTERN_CATALOG = `
+Pattern 选择目录:
+- probability: 概率、期权、保险、投资组合；template: card_flip_reveal | spin_wheel。
+- parameter_explore: 参数影响、因果变量、算法复杂度、利率变化；template: single_slider | dual_slider。
+- concept_memory: 术语配对、定义记忆、概念映射；template: term_cards | grid_match。
+- process_timeline: 历史、流程、阶段演化；template: horizontal_timeline | vertical_scroll。
+- comparison: 对比、辨析、方案权衡；template: split_panel | overlay_fade。
+- knowledge_check: 理解检查、快问快答；template: single_question | combo_chain。
+- system_builder: 系统架构、模块组合、流程搭建；template: module_sandbox | flow_connect。
+- narrative_branch: 沉没成本、案例、逻辑谬误、历史选择；template: branch_story。
+- classification_sort: 分类归因、概念边界辨析；template: category_buckets。
+- simulation_play: 复利、供需变化、种群演化、网络效应；template: parameter_simulation。
+默认: 用户只输入一个概念且没有明显互动意图时，优先使用 concept_memory/term_cards。
+`.trim();
+
+export function getSchemaReferenceForPattern(pattern?: PatternType | null) {
+  if (!pattern) return COMPACT_PATTERN_CATALOG;
+
+  const escapedPattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = SCHEMA_REFERENCE.match(new RegExp(`Pattern: ${escapedPattern}[\\s\\S]*?(?=\\n\\nPattern: |$)`));
+  return match?.[0]?.trim() || COMPACT_PATTERN_CATALOG;
+}

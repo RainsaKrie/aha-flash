@@ -255,7 +255,7 @@ async function processChatRequest({
   const routeContext = `<route_context route="${routeInfo.route}" confidence="${routeInfo.confidence}" source="${routeInfo.source}" />`;
   await emit?.({ type: "stage", stage: "prompt", label: "整理隐喻和组件约束" });
   const systemPrompt = [
-    buildSystemPrompt(state, depth, { recentMessages, followup: followupInfo }),
+    buildSystemPrompt(state, depth, { recentMessages, followup: followupInfo, schemaIntent }),
     routeContext,
   ]
     .filter(Boolean)

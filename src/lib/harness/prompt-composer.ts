@@ -1,18 +1,21 @@
 import type { UserState } from "@/types/state";
-import type { LearningDepth } from "@/types/schema";
+import type { LearningDepth, PatternType } from "@/types/schema";
 import type { RecentMessage } from "@/types/chat";
 import { getPreferredMetaphorContext } from "@/lib/metaphor/metaphor-engine";
 import type { FollowupDetection } from "@/lib/harness/conversation-router";
 import {
   METAPHOR_GUIDELINES,
   OUTPUT_FORMAT_RULES,
-  SCHEMA_REFERENCE,
   SYSTEM_ROLE_PROMPT,
+  getSchemaReferenceForPattern,
 } from "@/lib/llm/prompt-templates";
 
 interface PromptContext {
   recentMessages?: RecentMessage[];
   followup?: FollowupDetection;
+  schemaIntent?: {
+    pattern?: PatternType;
+  } | null;
 }
 
 function truncate(value: string, max = 220) {
@@ -76,6 +79,7 @@ export function buildSystemPrompt(
 </user_state>
 `.trim();
   const depthContext = `<target_depth>${targetDepth}</target_depth>`;
+  const schemaReference = getSchemaReferenceForPattern(context.schemaIntent?.pattern);
 
   return [
     SYSTEM_ROLE_PROMPT,
@@ -86,6 +90,6 @@ export function buildSystemPrompt(
     metaphor.promptHint,
     METAPHOR_GUIDELINES,
     OUTPUT_FORMAT_RULES,
-    SCHEMA_REFERENCE,
+    schemaReference,
   ].join("\n\n");
 }
