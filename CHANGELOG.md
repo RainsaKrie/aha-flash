@@ -6,6 +6,25 @@
 
 ## 2026-06-07
 
+### Design Spec 基础层改造
+
+完成：
+- 新增并采用 `DESIGN_SPEC.md` 作为互动组件质量规范。
+- `shared.tsx` 增加 Pattern 主色映射、进入动画包装、深度切换条、统一面板/反馈/进度微交互。
+- `registry` 统一包裹所有生成组件，自动注入 Pattern 主题色、进入动画、深度切换和错误边界。
+- 首页支持组件内深度切换事件，点击快懂/场景/映射会按当前概念重新请求对应深度 Schema。
+- 全局 CSS 增加三层表面色、按钮按压、结果揭示、数值弹入、成功闪烁、失败抖动等动画。
+- Prompt 补充 payload 最少内容量、数组最少项数和每个 Pattern 的第二条反例约束。
+
+验证：
+- `npm run typecheck`
+- `npm run lint`
+- `npm run eval:score`
+- `npm run build`
+- Playwright 验证组件顶部深度切换条已出现
+
+---
+
 ### 组件质量第二阶段
 
 完成：

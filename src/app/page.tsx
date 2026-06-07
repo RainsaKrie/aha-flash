@@ -104,6 +104,17 @@ export default function HomePage() {
   }
 
   async function recordComponentEvent(event: InteractionEvent) {
+    if (event.type === "depth_switch_requested") {
+      const requestedDepth = event.payload?.depth;
+      if (requestedDepth === "rapid" || requestedDepth === "scenario" || requestedDepth === "mapping") {
+        setLearningDepth(requestedDepth);
+        const lastUserMessage = [...messages].reverse().find((message) => message.role === "user")?.content;
+        const concept = lastUserMessage || currentRenderableSchema?.config.title || "当前概念";
+        await submit(`${concept}\n请用「${LEARNING_DEPTH_LABELS[requestedDepth]}」深度重新生成互动组件。`, requestedDepth);
+      }
+      return;
+    }
+
     if (!userId || !currentSchema) return;
 
     const normalizedSchema = normalizeUISchema(currentSchema);

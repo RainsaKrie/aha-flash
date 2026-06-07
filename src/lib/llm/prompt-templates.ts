@@ -26,6 +26,8 @@ export const OUTPUT_FORMAT_RULES = `
 12. 交互质量要求: payload 不能只让组件展示文字；必须包含用户动作、动作后的反馈、可比较/可变化/可验证的结果。
 13. 视觉密度要求: 标题短，按钮标签短，解释每句不超过 35 个汉字；长解释拆成多个短维度或短卡片。
 14. 空态规避: cards/events/options/modules/items/pool 等数组必须非空，且至少包含 2 个可操作项；测验必须至少有 1 个 correct=true。
+15. 最少内容量: title 为 2-8 字概念简称；quote/description 至少 10 字且包含具体场景；insight 至少 15 字且包含“因为...所以...”因果链；explanation 至少 20 字，说明错在哪里和正确是什么。
+16. 数组内容量: cards/events/branches/items/modules/options/pool 默认至少 3 项；outcome_description 至少 15 字，并描述选择后的具体后果。
 `.trim();
 
 export const SCHEMA_REFERENCE = `
@@ -39,6 +41,7 @@ Pattern: probability
 - 推荐链正例: 期权后推荐期货、保险。
 - 深度变化: rapid 强调“花小钱买未来选择权”；scenario 强调“到期时是否行权”；mapping 强调“期权费/行权价/标的价格/损益边界”的对应关系。
 - 不要这样: 只写“期权是一种金融工具”，没有可操作动作和结果反馈。
+- 不要这样: pool 少于 3 项，或 probability 总体看不出高/中/低稀有度。
 
 Pattern: parameter_explore
 - 适用: 参数影响、因果变量、算法复杂度、利率变化。
@@ -50,6 +53,7 @@ Pattern: parameter_explore
 - 视觉指导: scenarios 使用 2-3 个短标签；outputs 用 1-3 个核心指标，不要堆满数学术语；insight_rules 的 low/mid/high 要给出不同判断。
 - 要求: 必须说明滑条输入改变了哪些输出指标；不要让组件硬猜公式。
 - 不要这样: 只有一个固定数字，没有滑动后会变化的解释；不要把所有概念都套成平方成本。
+- 不要这样: insight_rules 三档写成同一句话，或 outputs 没有单位/含义说明。
 
 Pattern: concept_memory
 - 适用: 术语配对、定义记忆、概念映射。
@@ -58,6 +62,7 @@ Pattern: concept_memory
 - 正例: 正面是术语，背面是用户熟悉隐喻中的含义。
 - 视觉指导: cards 以 3-6 张为宜；front 只放术语或短动作，back 只放一句解释。
 - 不要这样: 每张卡背面写成长篇百科段落。
+- 不要这样: cards 少于 3 张，或 front/back 只是同一句话换个说法。
 
 Pattern: process_timeline
 - 适用: 历史、流程、阶段演化。
@@ -66,6 +71,7 @@ Pattern: process_timeline
 - 正例: 用户拖动时间节点看到阶段变化。
 - 视觉指导: events 以 3-6 个阶段为宜；label 是阶段名，description 说明该阶段发生了什么变化。
 - 不要这样: 事件之间没有因果或阶段关系。
+- 不要这样: events 少于 3 个，或每个 description 都只写“发生变化”这类空话。
 
 Pattern: comparison
 - 适用: 对比、辨析、方案权衡。
@@ -77,6 +83,7 @@ Pattern: comparison
 - 要求: left.content 与 right.content 各用 2-4 个短句表达，每句只讲一个差异点，避免整段百科。
 - 更好: 给 dimensions，让用户逐项切换“拥有什么/成本/亏损边界/时间限制”等维度。
 - 不要这样: 两边内容只是同义改写；不要为了迎合隐喻偏好而把严肃概念强行改成不准确的游戏设定。
+- 不要这样: dimensions 少于 3 个，或 insight 没有解释为什么这个差异重要。
 
 Pattern: knowledge_check
 - 适用: 理解检查、快问快答。
@@ -85,6 +92,7 @@ Pattern: knowledge_check
 - 正例: 选项能区分定义背诵和机制理解。
 - 视觉指导: 选项 3-4 个；错误选项要像真实误解，explanation 必须指出错在哪里。
 - 不要这样: 没有 correct=true 的正确选项。
+- 不要这样: explanation 只写“错/对”，没有说明正确机制。
 
 Pattern: system_builder
 - 适用: 系统架构、模块组合、流程搭建。
@@ -95,6 +103,7 @@ Pattern: system_builder
 - 正例: 用户选择输入、规则、反馈模块组成系统。
 - 视觉指导: modules 以 4-6 个为宜；role 用 2-4 字标记模块职责；connections 只写关键依赖，不要全连接。
 - 不要这样: 模块之间没有共同目标；不要让“全选所有模块”成为唯一玩法。
+- 不要这样: modules 少于 3 个，或 expected_sequence 与 modules.id 对不上。
 
 Pattern: narrative_branch
 - 适用: 沉没成本、商业案例、逻辑谬误、历史选择、人物决策。
@@ -104,6 +113,7 @@ Pattern: narrative_branch
 - 视觉指导: branches 以 3 个为宜；每个选择必须有不同后果，insight 直接点出选择背后的原则。
 - 深度变化: rapid 只让用户看见“过去成本不可追回”；scenario 让用户在真实选择中比较未来收益；mapping 把已付成本、机会成本、边际收益逐项对照。
 - 不要这样: 每个分支结果都一样，用户选择不会改变后果。
+- 不要这样: branches 少于 3 个，或 outcome_description 没有具体后果。
 
 Pattern: classification_sort
 - 适用: 分类归因、投资风格、生物分类、逻辑谬误分类、概念边界辨析。
@@ -112,6 +122,7 @@ Pattern: classification_sort
 - 正例: 把价值投资、成长投资、指数投资案例放入不同分类桶。
 - 视觉指导: categories 以 3-4 个为宜；items 以 4-8 个为宜；explanation 要能解释为什么属于该类。
 - 不要这样: correct_category 不匹配 categories 里的 id。
+- 不要这样: items 少于 4 个，或 explanation 没有边界判断。
 
 Pattern: simulation_play
 - 适用: 复利、供需变化、种群演化、网络效应、滚雪球式反馈。
@@ -120,4 +131,5 @@ Pattern: simulation_play
 - 正例: 调整增长率和初始加成，播放 8 步看到复利曲线变陡。
 - 视觉指导: params 以 2-3 个为宜；steps 取 5-10；compute_formula_description 用一句话解释图表如何随参数变化。
 - 不要这样: 只有描述，没有可调参数或时间推进。
+- 不要这样: params 少于 2 个，或 steps 小于 5 导致看不出变化趋势。
 `.trim();
