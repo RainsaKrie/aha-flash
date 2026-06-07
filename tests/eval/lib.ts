@@ -30,6 +30,7 @@ export interface CaseScore {
   depth_match: boolean;
   route_match: boolean | null;
   metaphor_hit_rate: number;
+  metaphor_consistency: number;
   payload_complete: boolean;
   score: number;
   expected: {
@@ -56,6 +57,7 @@ export interface ScoreReport {
     depth_accuracy: number;
     route_accuracy: number | null;
     metaphor_fit: number;
+    metaphor_consistency: number;
     payload_completeness: number;
   };
   cases: CaseScore[];
@@ -92,6 +94,28 @@ function keywordHitRate(schema: UISchema | null, requiredKeywords: string[]) {
   return hits / requiredKeywords.length;
 }
 
+function metaphorTraceScore(config: unknown, hasPrediction: boolean) {
+  if (!hasPrediction) return 1;
+  if (!config || typeof config !== "object") return 0;
+
+  const trace = (config as Record<string, unknown>).metaphor_trace;
+  if (!trace || typeof trace !== "object") return 0;
+
+  const traceRecord = trace as Record<string, unknown>;
+  const mappingChecks = Array.isArray(traceRecord.mapping_checks) ? traceRecord.mapping_checks : [];
+  const chosenTerms = Array.isArray(traceRecord.chosen_terms) ? traceRecord.chosen_terms : [];
+
+  const dimensions = [
+    typeof traceRecord.concept_action === "string" && traceRecord.concept_action.trim().length >= 2,
+    typeof traceRecord.source_domain === "string" && traceRecord.source_domain.trim().length >= 2,
+    typeof traceRecord.candidate_mechanism === "string" && traceRecord.candidate_mechanism.trim().length >= 2,
+    mappingChecks.filter((item) => typeof item === "string" && item.trim().length >= 6).length >= 2,
+    chosenTerms.filter((item) => typeof item === "string" && item.trim().length >= 2).length >= 2,
+  ];
+
+  return average(dimensions.map((matched) => (matched ? 1 : 0)));
+}
+
 function average(values: number[]) {
   if (!values.length) return 0;
   return values.reduce((sum, value) => sum + value, 0) / values.length;
@@ -111,6 +135,7 @@ export function scorePredictions(cases: EvalCase[], predictions: Prediction[] = 
     const depthMatch = normalized?.depth === testCase.depth;
     const routeMatch = actualRoute ? actualRoute === testCase.expected_route : null;
     const metaphorHitRate = keywordHitRate(schema, testCase.required_keywords);
+    const metaphorConsistency = metaphorTraceScore(normalized?.config, Boolean(prediction));
     const payloadComplete = jsonValid && Boolean(normalized?.config);
 
     const dimensions = [
@@ -120,6 +145,7 @@ export function scorePredictions(cases: EvalCase[], predictions: Prediction[] = 
       depthMatch ? 1 : 0,
       routeMatch === null ? 1 : routeMatch ? 1 : 0,
       metaphorHitRate,
+      metaphorConsistency,
       payloadComplete ? 1 : 0,
     ];
 
@@ -131,6 +157,7 @@ export function scorePredictions(cases: EvalCase[], predictions: Prediction[] = 
       depth_match: depthMatch,
       route_match: routeMatch,
       metaphor_hit_rate: Number(metaphorHitRate.toFixed(3)),
+      metaphor_consistency: Number(metaphorConsistency.toFixed(3)),
       payload_complete: payloadComplete,
       score: Number(average(dimensions).toFixed(3)),
       expected: {
@@ -163,6 +190,7 @@ export function scorePredictions(cases: EvalCase[], predictions: Prediction[] = 
       depth_accuracy: Number(average(caseScores.map((item) => (item.depth_match ? 1 : 0))).toFixed(3)),
       route_accuracy: routeScores.length ? Number(average(routeScores).toFixed(3)) : null,
       metaphor_fit: Number(average(caseScores.map((item) => item.metaphor_hit_rate)).toFixed(3)),
+      metaphor_consistency: Number(average(caseScores.map((item) => item.metaphor_consistency)).toFixed(3)),
       payload_completeness: Number(average(caseScores.map((item) => (item.payload_complete ? 1 : 0))).toFixed(3)),
     },
     cases: caseScores,

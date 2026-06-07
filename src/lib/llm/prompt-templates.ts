@@ -24,16 +24,15 @@ export const OUTPUT_FORMAT_RULES = `
 7. 深度规则: rapid=10秒顿悟，只突出一个核心动作；scenario=真实场景决策，让用户权衡选择后果；mapping=隐喻与原理对照，明确动作、约束、收益、风险各自映射什么。
 8. 同一概念切换 depth 时，标题、说明、交互目标和反馈文案必须变化。
 9. 知识讲解类请求应输出 1-2 个 next_concepts；label 是可继续学习的短概念，relation 是它与当前概念的关系，不要写成长解释。
-10. 如果存在 <source_context>，payload 内容必须吸收来源语境；不要编造 source_context 中没有出现的来源。
-11. V1 flat Schema 仍可兼容，但新输出必须优先使用 V2。
-12. 交互质量要求: payload 不能只让组件展示文字；必须包含用户动作、动作后的反馈、可比较/可变化/可验证的结果。
-13. 视觉密度要求: 标题短，按钮标签短，解释每句不超过 35 个汉字；长解释拆成多个短维度或短卡片。
-14. 空态规避: cards/events/options/modules/items/pool 等数组必须非空，且至少包含 2 个可操作项；测验必须至少有 1 个 correct=true。
-15. 最少内容量: title 为 2-8 字概念简称；quote/description 至少 10 字且包含具体场景；insight 至少 15 字且包含“因为...所以...”因果链；explanation 至少 20 字，说明错在哪里和正确是什么。
-16. 数组内容量: cards/events/branches/items/modules/options/pool 默认至少 3 项；outcome_description 至少 15 字，并描述选择后的具体后果。
-17. 隐喻推理流程: 先拆解概念核心动作（1-2 个动词），再从用户领域找最接近机制，逐一验证映射是否成立，选择成立度最高的术语体系，最后保证每个抽象概念都有具体对应物。
-18. payload 必须包含 metaphor_trace: { concept_action, source_domain, candidate_mechanism, mapping_checks, chosen_terms }。该字段只用于调试，前端不会渲染，但必须真实反映你使用的隐喻推理。
-19. metaphor_trace.mapping_checks 至少 2 项；chosen_terms 至少 2 项；不要把空泛口号写进 metaphor_trace。
+10. V1 flat Schema 仍可兼容，但新输出必须优先使用 V2。
+11. 交互质量要求: payload 不能只让组件展示文字；必须包含用户动作、动作后的反馈、可比较/可变化/可验证的结果。
+12. 视觉密度要求: 标题短，按钮标签短，解释每句不超过 35 个汉字；长解释拆成多个短维度或短卡片。
+13. 空态规避: cards/events/options/modules/items/pool 等数组必须非空，且至少包含 2 个可操作项；测验必须至少有 1 个 correct=true。
+14. 最少内容量: title 为 2-8 字概念简称；quote/description 至少 10 字且包含具体场景；insight 至少 15 字且包含“因为...所以...”因果链；explanation 至少 20 字，说明错在哪里和正确是什么。
+15. 数组内容量: cards/events/branches/items/modules/options/pool 默认至少 3 项；outcome_description 至少 15 字，并描述选择后的具体后果。
+16. 隐喻推理流程: 先拆解概念核心动作（1-2 个动词），再从用户领域找最接近机制，逐一验证映射是否成立，选择成立度最高的术语体系，最后保证每个抽象概念都有具体对应物。
+17. payload 必须包含 metaphor_trace: { concept_action, source_domain, candidate_mechanism, mapping_checks, chosen_terms }。该字段只用于调试，前端不会渲染，但必须真实反映你使用的隐喻推理。
+18. metaphor_trace.mapping_checks 至少 2 项；chosen_terms 至少 2 项；不要把空泛口号写进 metaphor_trace。
 `.trim();
 
 export const SCHEMA_REFERENCE = `

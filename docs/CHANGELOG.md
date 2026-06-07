@@ -90,6 +90,39 @@
 
 ---
 
+### 隐喻一致性评估
+
+完成：
+- `tests/eval/lib.ts` 新增 `metaphor_consistency` 维度。
+- 评分会检查 `metaphor_trace` 是否包含核心动作、来源领域、候选机制、至少 2 条映射验证和至少 2 个统一术语。
+- 无预测文件时 mock 基线仍可作为满分基准；候选预测缺少 `metaphor_trace` 会被扣分。
+- `tests/eval/score.ts` 和 `tests/eval/compare.ts` 输出隐喻一致性均值和差异。
+
+验证：
+- `npm run eval:score`
+- `npm run typecheck`
+- `npm run build`
+
+---
+
+### 搜索与 URL 路由清理
+
+完成：
+- `/api/chat` 移除 `collectSourceContexts()` 和 `source_context` Prompt 注入。
+- 删除 `source-router`、`web-search`、`web-extractor`、`youtube-transcript` 工具实现。
+- `V1_TOOLS` 只保留 `update_user_state`。
+- 移除 `youtube-transcript`、`jsdom`、`@mozilla/readability` 等不再使用的依赖。
+- 清理聊天消息中的 `sources` 字段和旧来源展示。
+- Prompt 输出规范不再引用 `<source_context>`。
+- `TECHNICAL.md` 更新为纯文本概念输入主链路。
+
+验证：
+- `npm install`
+- `npm run typecheck`
+- `npm run build`
+
+---
+
 ### 文档目录整理
 
 完成：

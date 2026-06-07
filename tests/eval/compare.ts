@@ -38,6 +38,9 @@ const report = {
     template_accuracy: Number((candidate.averages.template_accuracy - baseline.averages.template_accuracy).toFixed(3)),
     depth_accuracy: Number((candidate.averages.depth_accuracy - baseline.averages.depth_accuracy).toFixed(3)),
     metaphor_fit: Number((candidate.averages.metaphor_fit - baseline.averages.metaphor_fit).toFixed(3)),
+    metaphor_consistency: Number(
+      (candidate.averages.metaphor_consistency - baseline.averages.metaphor_consistency).toFixed(3),
+    ),
     payload_completeness: Number(
       (candidate.averages.payload_completeness - baseline.averages.payload_completeness).toFixed(3),
     ),
@@ -56,5 +59,6 @@ if (wantsJson) {
   console.log(`delta_pattern_accuracy: ${report.delta.pattern_accuracy}`);
   console.log(`delta_template_accuracy: ${report.delta.template_accuracy}`);
   console.log(`delta_depth_accuracy: ${report.delta.depth_accuracy}`);
+  console.log(`delta_metaphor_consistency: ${report.delta.metaphor_consistency}`);
   console.log(`changed_cases: ${changed.length ? changed.map((item) => `${item.id}:${item.delta}`).join(", ") : "none"}`);
 }

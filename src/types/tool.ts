@@ -14,14 +14,3 @@ export interface ToolDefinition {
   };
   execute: (args: Record<string, unknown>) => Promise<unknown>;
 }
-
-export interface SourceContext {
-  type: "youtube" | "web" | "search";
-  url: string;
-  title?: string;
-  excerpt?: string;
-  text?: string;
-  provider?: string;
-  success: boolean;
-  error?: string;
-}

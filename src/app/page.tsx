@@ -93,7 +93,6 @@ export default function HomePage() {
         role: "assistant",
         content: data.content,
         schema: data.schema,
-        sources: data.sources || [],
         created_at: data.created_at || new Date().toISOString(),
       };
 

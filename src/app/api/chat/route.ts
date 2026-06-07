@@ -8,7 +8,6 @@ import { stateStore } from "@/lib/harness/state-store";
 import { createMockSchema } from "@/lib/llm/mock-schema";
 import { getLLMProvider } from "@/lib/llm/provider";
 import { extractSchemaFromText, getSchemaFailureReason } from "@/lib/llm/schema-validator";
-import { buildSourcePromptContext, collectSourceContexts } from "@/lib/tools/source-router";
 import {
   DEFAULT_LEARNING_DEPTH,
   isLearningDepth,
@@ -186,12 +185,8 @@ export async function POST(req: Request) {
   const model = getLLMProvider();
   const schemaIntent = inferSchemaIntent(input);
   const routeInfo = await classifyConversationIntent(input, model);
-  const sources = await collectSourceContexts(input);
-  const sourcePromptContext = buildSourcePromptContext(sources);
   const routeContext = `<route_context route="${routeInfo.route}" confidence="${routeInfo.confidence}" source="${routeInfo.source}" />`;
-  const systemPrompt = [buildSystemPrompt(state, depth), routeContext, sourcePromptContext]
-    .filter(Boolean)
-    .join("\n\n");
+  const systemPrompt = [buildSystemPrompt(state, depth), routeContext].filter(Boolean).join("\n\n");
 
   let schema = attachDepth(createMockSchema(input, depth), depth);
   let source: "mock" | "llm" = "mock";
@@ -257,7 +252,6 @@ export async function POST(req: Request) {
           ? "模型输出没有通过组件约束，先用稳定组件兜底。"
           : "先用本地示例把交互跑起来，配置 API Key 后会改由 LLM 实时生成。",
     schema,
-    sources,
     route: routeInfo,
     userId: state.user_id,
     userState: updatedState,

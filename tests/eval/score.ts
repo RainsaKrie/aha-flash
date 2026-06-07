@@ -20,6 +20,7 @@ if (wantsJson) {
   console.log(`depth_accuracy: ${report.averages.depth_accuracy}`);
   console.log(`route_accuracy: ${report.averages.route_accuracy ?? "n/a"}`);
   console.log(`metaphor_fit: ${report.averages.metaphor_fit}`);
+  console.log(`metaphor_consistency: ${report.averages.metaphor_consistency}`);
   console.log(`payload_completeness: ${report.averages.payload_completeness}`);
   console.log(`failed_cases: ${failed.length ? failed.map((item) => item.id).join(", ") : "none"}`);
 }

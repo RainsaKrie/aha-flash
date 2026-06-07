@@ -46,7 +46,7 @@ Generative UI Layer
 | LLM | Vercel AI SDK, DeepSeek provider |
 | State | Zustand client store, file/tmp JSON server state |
 | Validation | Zod |
-| Tools | Tool bridge；搜索和 URL 路由为 Round 2 待删除表面积 |
+| Tools | Tool bridge；当前仅保留用户状态更新工具 |
 | Deploy | Vercel |
 
 ## 3. 目录结构
@@ -116,8 +116,7 @@ POST /api/chat
   |
   +-- initUserState(userId)
   +-- classifyConversationIntent(input)
-  +-- collectSourceContexts(input)        # Round 2 待删除
-  +-- buildSystemPrompt(state + route + target_depth + source_context)
+  +-- buildSystemPrompt(state + route + target_depth)
   +-- generateSchemaWithLLM()
       |
       +-- if model unavailable or invalid output: createMockSchema()
@@ -227,19 +226,17 @@ POST /api/chat
 
 ## 8. Tool 与来源输入
 
-历史工具：
+当前工具：
 
 | Tool | 当前判断 |
 |---|---|
-| `youtube_transcript_fetch` | 只适合作为用户明确给 URL 的辅助入口 |
-| `web_content_extract` | URL 抓取备用能力 |
-| `web_search` | Round 2 标记为待删除 |
 | `update_user_state` | 保留，用于服务端注入 `user_id` 后增量更新用户画像 |
 
 来源输入技术原则：
 
 - 文字输入是当前主路径。
-- 搜索、URL 自动路由不作为核心链路。
+- 搜索、URL 自动路由、网页抓取和 YouTube 字幕抓取已经从聊天主链路和 Tool 注册中移除。
+- 用户看到外部内容时，近期优先通过直接复制文本进入输入框。
 - 图片、音频、剪贴板、系统分享属于远期自然入口，需要多模态或转录能力支持。
 
 ## 9. 前端状态和交互反馈
@@ -281,6 +278,7 @@ POST /api/chat
 - Pattern/Template/Depth 准确率
 - Route 准确率
 - 隐喻关键词贴合度
+- 隐喻一致性，检查 `metaphor_trace` 是否包含核心动作、来源领域、候选机制、映射验证和统一术语
 - Payload 完整度
 
 命令：
@@ -373,7 +371,7 @@ AHA_FLASH_STATE_DIR=
 
 - 没有 `DEEPSEEK_API_KEY` 时使用 mock schema fallback。
 - Vercel demo 默认写 `/tmp/aha-flash/states`，不保证长期持久。
-- 搜索相关环境变量是历史表面积，Round 2 计划移除。
+- 搜索和 URL 抓取相关环境变量已不再使用。
 
 ## 17. 关键决策
 
@@ -389,6 +387,5 @@ AHA_FLASH_STATE_DIR=
 
 - Vercel `/tmp` 状态不持久，不能作为生产记忆。
 - 当前 mock schema 仍承担较多验收输入路由。
-- 搜索和 URL 自动路由与最新产品判断冲突，需要按 Round 2 T00 删除。
 - 对话追问依赖压缩摘要，缺少短期原文窗口和线程级摘要。
 - 互动组件已经开始按 Design Spec 改造，但仍需要逐组件完成质量统一。

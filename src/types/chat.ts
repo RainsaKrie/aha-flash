@@ -1,5 +1,5 @@
 import type { UISchema } from "./schema";
-import type { SourceContext, ToolCall } from "./tool";
+import type { ToolCall } from "./tool";
 
 export type MessageRole = "user" | "assistant" | "system" | "tool";
 
@@ -9,6 +9,5 @@ export interface Message {
   content: string;
   schema?: UISchema;
   tool_calls?: ToolCall[];
-  sources?: SourceContext[];
   created_at: string;
 }
