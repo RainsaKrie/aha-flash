@@ -4,6 +4,7 @@ import { Gauge } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { InteractionEvent, SliderExplorerConfig } from "@/types/schema";
+import { EmptyState } from "./shared";
 
 type SliderOutput = NonNullable<SliderExplorerConfig["outputs"]>[number];
 
@@ -42,6 +43,7 @@ export function SliderExplorer({
         ];
   const band = getValueBand(value, config.min, config.max);
   const insight = config.insight_rules?.find((rule) => rule.when === band)?.text;
+  const invalidRange = config.max <= config.min;
 
   return (
     <section className="grid h-full min-h-[520px] grid-rows-[auto_1fr] gap-6 p-5">
@@ -52,6 +54,10 @@ export function SliderExplorer({
         <h2 className="mt-1 text-2xl font-semibold">{config.title}</h2>
       </header>
       <div className="grid content-center gap-6">
+        {invalidRange ? (
+          <EmptyState detail="模型给出的滑块范围无效，重新生成后最大值必须大于最小值。" />
+        ) : (
+          <>
         <label className="grid gap-4 rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-5">
           <div className="flex items-end justify-between gap-4">
             <span className="text-sm text-[var(--muted)]">{config.variable_label}</span>
@@ -111,6 +117,8 @@ export function SliderExplorer({
         <p className="ui-result rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-4 text-sm leading-6 text-[var(--muted)]">
           {insight || config.explanation_template.replace("{{value}}", String(value))}
         </p>
+          </>
+        )}
       </div>
     </section>
   );

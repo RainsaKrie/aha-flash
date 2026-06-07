@@ -209,7 +209,7 @@ export default function SandboxPage() {
                         </div>
                         <button
                           type="button"
-                          className="tool-button min-h-9 px-3 text-xs"
+                          className="tool-button min-h-11 px-3 text-xs"
                           title={`导出 ${asset.concept} 知识卡`}
                           onClick={() => downloadKnowledgeCard(asset)}
                         >

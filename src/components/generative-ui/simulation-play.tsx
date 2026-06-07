@@ -1,10 +1,10 @@
 "use client";
 
-import { Activity, Pause, Play, RotateCcw, StepForward } from "lucide-react";
+import { Activity, Play, RotateCcw, StepForward } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { InteractionEvent, SimulationPlayConfig } from "@/types/schema";
-import { ComponentFrame, EmptyState, FeedbackPanel, Panel, ProgressMeter } from "./shared";
+import { ComponentFrame, EmptyState, FeedbackPanel, InlineSpinner, Panel, ProgressMeter } from "./shared";
 
 export function SimulationPlay({
   config,
@@ -34,6 +34,7 @@ export function SimulationPlay({
   const currentValue = series[Math.min(step, series.length - 1)];
   const finalValue = series[maxSteps];
   const peak = Math.max(...series, 1);
+  const hasEnoughParams = config.params.length >= 2;
 
   useEffect(() => {
     if (!playing) return;
@@ -89,9 +90,11 @@ export function SimulationPlay({
         </FeedbackPanel>
       }
     >
+      {hasEnoughParams ? (
+        <>
       <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="grid content-center gap-4">
-          {config.params.length ? (
+          {config.params.length >= 2 ? (
             config.params.map((param) => (
               <Panel key={param.label} className="grid gap-4 p-4">
                 <label className="grid gap-4">
@@ -115,7 +118,7 @@ export function SimulationPlay({
               </Panel>
             ))
           ) : (
-            <EmptyState detail="模型没有给出可调参数，重新生成后应至少包含 1 个参数。" />
+            <EmptyState detail="模型没有给出足够的可调参数，重新生成后应至少包含 2 个参数。" />
           )}
         </div>
 
@@ -150,10 +153,14 @@ export function SimulationPlay({
             <StepForward size={16} />
           </Button>
           <Button type="button" onClick={() => setPlaying((value) => !value)} title={playing ? "暂停" : "播放"}>
-            {playing ? <Pause size={16} /> : <Play size={16} />}
+            {playing ? <InlineSpinner label="播放中" /> : <Play size={16} />}
           </Button>
         </div>
       </Panel>
+        </>
+      ) : (
+        <EmptyState detail="模型没有给出足够的可调参数，重新生成后应至少包含 2 个参数。" />
+      )}
     </ComponentFrame>
   );
 }

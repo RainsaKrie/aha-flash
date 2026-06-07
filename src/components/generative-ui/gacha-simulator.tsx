@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_LEARNING_DEPTH, LEARNING_DEPTH_LABELS } from "@/types/schema";
 import type { GachaPoolItem, GachaSimulatorConfig, InteractionEvent, LearningDepth } from "@/types/schema";
+import { EmptyState, InlineSpinner } from "./shared";
 
 type Phase = "idle" | "pulling" | "result";
 
@@ -50,7 +51,7 @@ export function GachaSimulator({
   const best = useMemo(() => results.reduce<GachaPoolItem | null>((acc, item) => (!acc || item.value > acc.value ? item : acc), null), [results]);
   const profit = best ? Math.max(best.value - config.strike_price - config.option_cost, -config.option_cost) : 0;
   const won = Boolean(best && best.value > config.strike_price);
-  const pool = config.pool.length ? config.pool : [{ name: "未知结果", flavor_label: "兜底结果", rarity: "3", probability: 1, value: 0 }];
+  const pool = config.pool || [];
 
   function pull() {
     setPhase("pulling");
@@ -128,9 +129,9 @@ export function GachaSimulator({
             </div>
           </dl>
           <div className="mt-4 grid gap-2">
-            <Button onClick={pull} disabled={phase === "pulling"} title="抽取" className={phase === "idle" ? "ui-breathe" : ""}>
+            <Button onClick={pull} disabled={phase === "pulling" || pool.length === 0} title="抽取" className={phase === "idle" && pool.length > 0 ? "ui-breathe" : ""}>
               <Sparkles size={16} />
-              {phase === "pulling" ? "结算中" : "买入并抽取"}
+              {phase === "pulling" ? <InlineSpinner label="结算中" /> : "买入并抽取"}
             </Button>
             <Button onClick={reset} className="bg-transparent" title="重置">
               <RotateCcw size={16} />
@@ -150,12 +151,13 @@ export function GachaSimulator({
               </div>
             </div>
             <div className="rounded-lg border border-[var(--line)] bg-[var(--pattern-raised)] px-3 py-2 text-xs text-[var(--muted)]">
-              最高价值 {Math.max(...pool.map((item) => item.value))}
+              最高价值 {pool.length ? Math.max(...pool.map((item) => item.value)) : "-"}
             </div>
           </div>
 
-          <div className="grid min-h-52 place-content-center gap-4 [grid-template-columns:repeat(auto-fit,minmax(120px,160px))]">
-            {displayItems.map((item, index) => (
+          {pool.length ? (
+            <div className="grid min-h-52 place-content-center gap-4 [grid-template-columns:repeat(auto-fit,minmax(120px,160px))]">
+              {displayItems.map((item, index) => (
               <div
                 key={`${item.name}-${index}`}
                 className={[
@@ -179,10 +181,13 @@ export function GachaSimulator({
                   <span className="mt-2 block text-xs text-[var(--accent-2)]">价值 {item.value}</span>
                 </span>
               </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState detail="模型没有给出概率奖池，重新生成后应至少包含 3 个结果。" />
+          )}
 
-          {!results.length && (
+          {!results.length && pool.length > 0 && (
             <div className="grid gap-2 sm:grid-cols-3">
               {pool.slice(0, 3).map((item) => (
                 <div key={`${item.name}-odds`} className="rounded-lg border border-[var(--line)] bg-[var(--pattern-raised)] p-3 text-xs">

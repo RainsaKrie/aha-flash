@@ -3,7 +3,7 @@
 import { Blend } from "lucide-react";
 import { useState } from "react";
 import type { ComparisonSplitConfig, InteractionEvent } from "@/types/schema";
-import { ComponentFrame, FeedbackPanel, Panel } from "./shared";
+import { ChoiceButton, ComponentFrame, FeedbackPanel, Panel } from "./shared";
 
 export function ComparisonOverlay({
   config,
@@ -13,11 +13,27 @@ export function ComparisonOverlay({
   onInteraction?: (event: InteractionEvent) => void;
 }) {
   const [ratio, setRatio] = useState(50);
+  const [dimensionIndex, setDimensionIndex] = useState(0);
+  const dimensions = config.dimensions || [];
+  const activeDimension = dimensions[dimensionIndex];
+  const leftLabel = config.subject_a || config.left.label;
+  const rightLabel = config.subject_b || config.right.label;
 
   function update(value: number) {
     setRatio(value);
     onInteraction?.({ type: "comparison_ratio_changed", payload: { ratio: value, left: config.left.label, right: config.right.label } });
   }
+
+  function selectDimension(index: number) {
+    setDimensionIndex(index);
+    onInteraction?.({
+      type: "comparison_dimension_selected",
+      payload: { index, label: dimensions[index]?.label, left: leftLabel, right: rightLabel },
+    });
+  }
+
+  const leftContent = activeDimension?.a || config.left.content;
+  const rightContent = activeDimension?.b || config.right.content;
 
   return (
     <ComponentFrame
@@ -28,11 +44,26 @@ export function ComparisonOverlay({
       footer={config.summary ? <FeedbackPanel tone="neutral">{config.summary}</FeedbackPanel> : undefined}
     >
       <div className="grid gap-6">
+        {dimensions.length > 0 && (
+          <div className="grid gap-4 sm:grid-cols-4">
+            {dimensions.map((dimension, index) => (
+              <ChoiceButton
+                key={`${dimension.label}-${index}`}
+                active={dimensionIndex === index}
+                className="p-3 text-xs"
+                onClick={() => selectDimension(index)}
+              >
+                {dimension.label}
+              </ChoiceButton>
+            ))}
+          </div>
+        )}
+
         <Panel className="grid gap-4 p-4">
           <div className="flex items-center justify-between gap-4 text-xs text-[var(--muted)]">
-            <span>{config.left.label}</span>
+            <span>{leftLabel}</span>
             <strong className="animate-value-pop text-[var(--accent)]">{ratio}%</strong>
-            <span>{config.right.label}</span>
+            <span>{rightLabel}</span>
           </div>
           <input
             aria-label="叠加强度"
@@ -47,17 +78,19 @@ export function ComparisonOverlay({
 
         <Panel className="relative min-h-80 overflow-hidden">
           <article className="absolute inset-0 grid content-center gap-4 p-6" style={{ opacity: (100 - ratio) / 100 }}>
-            <h3 className="text-2xl font-semibold text-[var(--accent-2)]">{config.left.label}</h3>
-            <p className="text-sm leading-6 text-[var(--muted)]">{config.left.content}</p>
+            <h3 className="text-2xl font-semibold text-[var(--accent-2)]">{leftLabel}</h3>
+            <p className="text-sm leading-6 text-[var(--muted)]">{leftContent}</p>
           </article>
           <article
             className="absolute inset-0 grid content-center gap-4 bg-[var(--pattern-raised)] p-6"
             style={{ opacity: ratio / 100 }}
           >
-            <h3 className="text-2xl font-semibold text-[var(--accent)]">{config.right.label}</h3>
-            <p className="text-sm leading-6 text-[var(--muted)]">{config.right.content}</p>
+            <h3 className="text-2xl font-semibold text-[var(--accent)]">{rightLabel}</h3>
+            <p className="text-sm leading-6 text-[var(--muted)]">{rightContent}</p>
           </article>
         </Panel>
+
+        {activeDimension && <FeedbackPanel tone="warning">{activeDimension.insight}</FeedbackPanel>}
       </div>
     </ComponentFrame>
   );

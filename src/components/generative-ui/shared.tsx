@@ -2,7 +2,7 @@
 
 import type { CSSProperties } from "react";
 import type { LucideIcon } from "lucide-react";
-import { AlertTriangle, RotateCcw } from "lucide-react";
+import { AlertTriangle, Loader2, RotateCcw } from "lucide-react";
 import { Component, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_LEARNING_DEPTH, LEARNING_DEPTH_LABELS, type LearningDepth, type PatternType } from "@/types/schema";
@@ -196,6 +196,15 @@ export function EmptyState({ title = "还没有可渲染内容", detail }: { tit
         {detail && <p className="mt-2 max-w-md text-sm leading-6 text-[var(--muted)]">{detail}</p>}
       </div>
     </Panel>
+  );
+}
+
+export function InlineSpinner({ label = "处理中" }: { label?: string }) {
+  return (
+    <span className="inline-flex items-center gap-2">
+      <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+      {label}
+    </span>
   );
 }
 

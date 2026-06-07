@@ -3,6 +3,7 @@
 import { SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import type { InteractionEvent, SliderExplorerConfig } from "@/types/schema";
+import { EmptyState } from "./shared";
 
 type SliderOutput = NonNullable<SliderExplorerConfig["outputs"]>[number];
 
@@ -31,6 +32,7 @@ export function DualSliderExplorer({
       ? config.outputs
       : [{ label: "平方成本", model: "quadratic" as const, expression_label: "n²" }];
   const primaryOutput = outputs[0];
+  const invalidRange = config.max <= config.min;
 
   function update(side: "left" | "right", value: number) {
     if (side === "left") setLeft(value);
@@ -46,8 +48,12 @@ export function DualSliderExplorer({
         </p>
         <h2 className="mt-1 text-2xl font-semibold">{config.title}</h2>
       </header>
+      {invalidRange ? (
+        <EmptyState detail="模型给出的滑块范围无效，重新生成后最大值必须大于最小值。" />
+      ) : (
+        <>
       <div className="grid content-center gap-6 lg:grid-cols-2">
-        {[
+          {[
           { label: "方案 A", value: left, side: "left" as const },
           { label: "方案 B", value: right, side: "right" as const },
         ].map((item) => (
@@ -79,11 +85,13 @@ export function DualSliderExplorer({
               </div>
             </div>
           </label>
-        ))}
+          ))}
       </div>
       <p className="ui-result rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-4 text-sm leading-6 text-[var(--muted)]">
         {config.explanation_template.replace("{{value}}", `${left} vs ${right}`)}
       </p>
+        </>
+      )}
     </section>
   );
 }

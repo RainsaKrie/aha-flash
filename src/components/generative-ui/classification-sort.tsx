@@ -25,7 +25,8 @@ export function ClassificationSort({
   const items = config.items || [];
   const categories = config.categories || [];
   const answeredCount = Object.keys(answers).length;
-  const currentItem = items.find((item) => !answers[item.label]) || items[0];
+  const allAnswered = items.length > 0 && answeredCount >= items.length;
+  const currentItem = allAnswered ? null : items.find((item) => !answers[item.label]) || null;
   const score = items.filter((item) => answers[item.label] === item.correct_category).length;
 
   useEffect(() => {
@@ -38,7 +39,7 @@ export function ClassificationSort({
   }, [answeredCount, items.length, onComplete, score]);
 
   function chooseCategory(categoryId: string) {
-    if (!currentItem) return;
+    if (!currentItem || allAnswered) return;
     const correct = currentItem.correct_category === categoryId;
     setAnswers((value) => ({ ...value, [currentItem.label]: categoryId }));
     setLastAnswer({
@@ -113,20 +114,31 @@ export function ClassificationSort({
             {answeredCount >= items.length ? "全部分类完成，可以看下方回顾。" : "把它放进最贴切的分类桶。"}
           </p>
           </Panel>
+        ) : allAnswered ? (
+          <Panel className="p-5">
+            <div className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">completed</div>
+            <h3 className="mt-2 text-base font-medium leading-7">分类完成</h3>
+            <p className="mt-3 text-sm leading-6 text-[var(--muted)]">答案已锁定，可以查看下方回顾。</p>
+          </Panel>
         ) : (
           <EmptyState detail="模型没有给出待分类条目，重新生成后应包含 4-8 个项目。" />
         )}
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          {categories.map((category) => (
-            <ChoiceButton
-              key={category.id}
-              onClick={() => chooseCategory(category.id)}
-            >
-              {category.name}
-            </ChoiceButton>
-          ))}
-        </div>
+        {categories.length ? (
+          <div className="grid gap-4 sm:grid-cols-3">
+            {categories.map((category) => (
+              <ChoiceButton
+                key={category.id}
+                disabled={allAnswered || !currentItem}
+                onClick={() => chooseCategory(category.id)}
+              >
+                {category.name}
+              </ChoiceButton>
+            ))}
+          </div>
+        ) : (
+          <EmptyState detail="模型没有给出分类桶，重新生成后应包含 3-4 个分类。" />
+        )}
       </div>
     </ComponentFrame>
   );

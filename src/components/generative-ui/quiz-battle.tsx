@@ -36,7 +36,8 @@ export function QuizBattle({
             <ChoiceButton
               key={option.label}
               active={selected === index}
-              correct={selected === null ? undefined : option.correct}
+              correct={selected === index ? option.correct : undefined}
+              className={selected !== null && selected !== index && option.correct ? "border-[rgba(53,230,155,0.42)] bg-transparent" : ""}
               onClick={() => {
                 setSelected(index);
                 onComplete?.({

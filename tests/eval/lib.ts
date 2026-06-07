@@ -65,6 +65,7 @@ export interface ScoreReport {
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const defaultCasesPath = path.join(rootDir, "tests/fixtures/test-cases.json");
+const evalSchemaOptions = { metaphorTraceMode: "reject" as const };
 
 export function readJsonFile<T>(filePath: string): T {
   return JSON.parse(fs.readFileSync(filePath, "utf8").replace(/^\uFEFF/, "")) as T;
@@ -82,8 +83,8 @@ function inferRouteByRules(input: string): EvalCase["expected_route"] {
 
 function schemaFromPrediction(testCase: EvalCase, prediction?: Prediction) {
   if (!prediction) return { ...createMockSchema(testCase.input, testCase.depth), depth: testCase.depth };
-  if (prediction.schema) return validateSchema(prediction.schema);
-  if (prediction.rawOutput) return extractSchemaFromText(prediction.rawOutput);
+  if (prediction.schema) return validateSchema(prediction.schema, evalSchemaOptions);
+  if (prediction.rawOutput) return extractSchemaFromText(prediction.rawOutput, evalSchemaOptions);
   return null;
 }
 

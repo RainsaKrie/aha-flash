@@ -1,6 +1,12 @@
 import { z } from "zod";
 import type { UISchema } from "@/types/schema";
 
+export type MetaphorTraceValidationMode = "off" | "warn" | "reject";
+
+export interface SchemaValidationOptions {
+  metaphorTraceMode?: MetaphorTraceValidationMode;
+}
+
 const DepthZod = z.enum(["rapid", "scenario", "mapping"]).optional();
 
 const MetaphorTraceZod = z
@@ -180,7 +186,7 @@ const SimulationPlayConfigZod = payloadObject({
       default: z.number(),
       unit: z.string().optional(),
     }),
-  ),
+  ).min(2),
   compute_formula_description: z.string(),
   steps: z.number(),
 });
@@ -345,15 +351,65 @@ export const V2UISchemaZod = z.union([
 
 export const UISchemaZod = z.union([V2UISchemaZod, V1UISchemaZod]);
 
-export function validateSchema(raw: unknown): UISchema | null {
-  const result = UISchemaZod.safeParse(raw);
-  return result.success ? (result.data as UISchema) : null;
+function getMetaphorTraceIssues(schema: UISchema) {
+  const config = "pattern" in schema && typeof schema.pattern === "string" ? schema.payload : schema.config;
+  const trace = config && typeof config === "object" ? (config as Record<string, unknown>).metaphor_trace : null;
+  if (!trace || typeof trace !== "object") return ["payload.metaphor_trace is required"];
+
+  const traceRecord = trace as Record<string, unknown>;
+  const mappingChecks = Array.isArray(traceRecord.mapping_checks) ? traceRecord.mapping_checks : [];
+  const chosenTerms = Array.isArray(traceRecord.chosen_terms) ? traceRecord.chosen_terms : [];
+  const issues: string[] = [];
+
+  if (typeof traceRecord.concept_action !== "string" || traceRecord.concept_action.trim().length < 2) {
+    issues.push("metaphor_trace.concept_action must be a meaningful string");
+  }
+  if (typeof traceRecord.source_domain !== "string" || traceRecord.source_domain.trim().length < 2) {
+    issues.push("metaphor_trace.source_domain must be a meaningful string");
+  }
+  if (typeof traceRecord.candidate_mechanism !== "string" || traceRecord.candidate_mechanism.trim().length < 2) {
+    issues.push("metaphor_trace.candidate_mechanism must be a meaningful string");
+  }
+  if (mappingChecks.filter((item) => typeof item === "string" && item.trim().length >= 6).length < 2) {
+    issues.push("metaphor_trace.mapping_checks must contain at least 2 concrete checks");
+  }
+  if (chosenTerms.filter((item) => typeof item === "string" && item.trim().length >= 2).length < 2) {
+    issues.push("metaphor_trace.chosen_terms must contain at least 2 terms");
+  }
+
+  return issues;
 }
 
-export function getSchemaErrors(raw: unknown) {
+export function getSchemaWarnings(raw: unknown, options: SchemaValidationOptions = {}) {
+  const mode = options.metaphorTraceMode ?? "warn";
+  if (mode === "off") return [];
+
   const result = UISchemaZod.safeParse(raw);
-  if (result.success) return "";
-  return JSON.stringify(result.error.flatten(), null, 2);
+  if (!result.success) return [];
+  return getMetaphorTraceIssues(result.data as UISchema);
+}
+
+export function validateSchema(raw: unknown, options: SchemaValidationOptions = {}): UISchema | null {
+  const result = UISchemaZod.safeParse(raw);
+  if (!result.success) return null;
+  const schema = result.data as UISchema;
+  if ((options.metaphorTraceMode ?? "warn") === "reject" && getMetaphorTraceIssues(schema).length > 0) {
+    return null;
+  }
+
+  return schema;
+}
+
+export function getSchemaErrors(raw: unknown, options: SchemaValidationOptions = {}) {
+  const result = UISchemaZod.safeParse(raw);
+  if (!result.success) return JSON.stringify(result.error.flatten(), null, 2);
+
+  if ((options.metaphorTraceMode ?? "warn") === "reject") {
+    const issues = getMetaphorTraceIssues(result.data as UISchema);
+    if (issues.length) return JSON.stringify({ metaphor_trace: issues }, null, 2);
+  }
+
+  return "";
 }
 
 function extractJsonObjects(text: string) {
@@ -400,13 +456,13 @@ function extractJsonObjects(text: string) {
   return candidates;
 }
 
-export function parseSchemaCandidate(text: string) {
+export function parseSchemaCandidate(text: string, options: SchemaValidationOptions = {}) {
   try {
     const parsed = JSON.parse(text);
     return {
       parsed,
-      schema: validateSchema(parsed),
-      error: getSchemaErrors(parsed),
+      schema: validateSchema(parsed, options),
+      error: getSchemaErrors(parsed, options),
     };
   } catch (error) {
     return {
@@ -417,27 +473,27 @@ export function parseSchemaCandidate(text: string) {
   }
 }
 
-export function extractSchemaFromText(text: string): UISchema | null {
+export function extractSchemaFromText(text: string, options: SchemaValidationOptions = {}): UISchema | null {
   const jsonBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*```/g;
   const matches = [...text.matchAll(jsonBlockRegex)];
 
   for (const match of matches) {
-    const result = parseSchemaCandidate(match[1]);
+    const result = parseSchemaCandidate(match[1], options);
     if (result.schema) return result.schema;
   }
 
-  const direct = parseSchemaCandidate(text.trim());
+  const direct = parseSchemaCandidate(text.trim(), options);
   if (direct.schema) return direct.schema;
 
   for (const candidate of extractJsonObjects(text)) {
-    const result = parseSchemaCandidate(candidate);
+    const result = parseSchemaCandidate(candidate, options);
     if (result.schema) return result.schema;
   }
 
   return null;
 }
 
-export function getSchemaFailureReason(text: string) {
+export function getSchemaFailureReason(text: string, options: SchemaValidationOptions = {}) {
   const jsonBlockRegex = /```(?:json)?\s*([\s\S]*?)\s*```/g;
   const candidates = [
     ...[...text.matchAll(jsonBlockRegex)].map((match) => match[1]),
@@ -446,7 +502,7 @@ export function getSchemaFailureReason(text: string) {
   ].filter(Boolean);
 
   for (const candidate of candidates) {
-    const result = parseSchemaCandidate(candidate);
+    const result = parseSchemaCandidate(candidate, options);
     if (result.error) return result.error;
   }
 
