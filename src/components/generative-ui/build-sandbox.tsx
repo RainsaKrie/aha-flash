@@ -3,6 +3,7 @@
 import { Boxes, Check } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { BuildSandboxConfig, InteractionEvent } from "@/types/schema";
+import { ChoiceButton, ComponentFrame, EmptyState, FeedbackPanel, Panel, ProgressMeter } from "./shared";
 
 export function BuildSandbox({
   config,
@@ -33,53 +34,59 @@ export function BuildSandbox({
   }
 
   return (
-    <section className="grid h-full min-h-[520px] grid-rows-[auto_1fr_auto] gap-5 p-5">
-      <header className="border-b border-[var(--line)] pb-4">
-        <p className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--accent)]">
-          <Boxes size={15} /> build sandbox
-        </p>
-        <h2 className="mt-1 text-2xl font-semibold">{config.title}</h2>
-      </header>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {config.modules.map((module) => {
-          const active = selected.includes(module.id);
-          return (
-            <button
-              key={module.id}
-              onClick={() => toggle(module.id)}
-              className={[
-                "min-h-36 rounded-[8px] border p-4 text-left transition hover:border-[var(--accent)]",
-                active ? "border-[var(--accent)] bg-[rgba(53,230,155,0.12)]" : "border-[var(--line)] bg-[#07120f]",
-              ].join(" ")}
-            >
-              <span className="flex items-center justify-between gap-3">
-                <strong>{module.label}</strong>
-                {active && <Check size={18} className="text-[var(--accent)]" />}
-              </span>
-              {module.role && <span className="mt-2 block text-xs uppercase tracking-[0.16em] text-[var(--accent)]">{module.role}</span>}
-              <span className="mt-3 block text-sm leading-6 text-[var(--muted)]">{module.description}</span>
-            </button>
-          );
-        })}
-      </div>
-      <div className="rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4 text-sm text-[var(--muted)]">
-        <div className="flex items-center justify-between gap-3">
-          <span>{complete ? config.success_summary || `已组装完成：${config.target}` : `目标：${config.target}`}</span>
-          <strong className="text-[var(--accent)]">
-            {selectedRequiredCount} / {requiredIds.length}
-          </strong>
+    <ComponentFrame
+      icon={Boxes}
+      label="module sandbox"
+      title={config.title}
+      depth={config.depth}
+      description={`目标：${config.target}`}
+      footer={
+        <FeedbackPanel tone={complete ? "success" : "neutral"}>
+          <div className="grid gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <span>{complete ? config.success_summary || `已组装完成：${config.target}` : `先选出达成目标所必需的模块。`}</span>
+              <strong className="animate-value-pop text-[var(--accent)]">
+                {selectedRequiredCount} / {requiredIds.length}
+              </strong>
+            </div>
+            <ProgressMeter value={selectedRequiredCount} total={requiredIds.length} />
+          </div>
+        </FeedbackPanel>
+      }
+    >
+      {config.modules.length ? (
+        <div className="grid content-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {config.modules.map((module) => {
+            const active = selected.includes(module.id);
+            return (
+              <ChoiceButton key={module.id} active={active} onClick={() => toggle(module.id)} className="min-h-36">
+                <span className="flex items-center justify-between gap-4">
+                  <strong className="text-base font-medium">{module.label}</strong>
+                  {active && <Check size={18} className="text-[var(--accent)]" />}
+                </span>
+                {module.role && <span className="mt-2 block text-xs uppercase tracking-[0.16em] text-[var(--accent)]">{module.role}</span>}
+                <span className="mt-3 block text-sm leading-6 text-[var(--muted)]">{module.description}</span>
+              </ChoiceButton>
+            );
+          })}
         </div>
-        {config.connections && config.connections.length > 0 && (
+      ) : (
+        <EmptyState detail="模型没有给出可组装模块，重新生成后应包含 3-6 个模块。" />
+      )}
+
+      {config.connections && config.connections.length > 0 && (
+        <Panel className="mt-4 p-4">
+          <div className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">连接提示</div>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
             {config.connections.map((connection) => (
-              <span key={`${connection.from}-${connection.to}`} className="rounded-[8px] border border-[var(--line)] bg-[#0c1915] px-2 py-1">
+              <span key={`${connection.from}-${connection.to}`} className="rounded-md border border-[var(--line)] bg-[var(--pattern-raised)] px-3 py-2">
                 {connection.from} → {connection.to}
                 {connection.label ? ` · ${connection.label}` : ""}
               </span>
             ))}
           </div>
-        )}
-      </div>
-    </section>
+        </Panel>
+      )}
+    </ComponentFrame>
   );
 }

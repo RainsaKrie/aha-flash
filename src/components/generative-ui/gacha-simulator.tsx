@@ -163,8 +163,8 @@ export function GachaSimulator({
                   item.rarity === "5"
                     ? "border-[var(--accent-2)] bg-[rgba(247,201,72,0.14)]"
                     : item.rarity === "4"
-                      ? "border-[#78a6ff] bg-[rgba(120,166,255,0.12)]"
-                      : "border-[var(--line)] bg-[#0e1d19]",
+                      ? "border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent),transparent_88%)]"
+                      : "border-[var(--line)] bg-[var(--pattern-raised)]",
                   phase === "pulling" ? "ui-breathe border-[var(--accent)]" : "",
                 ].join(" ")}
               >

@@ -23,7 +23,7 @@ import { QuizComboChain } from "./quiz-combo-chain";
 import { SandboxFlowConnect } from "./sandbox-flow-connect";
 import { SimulationPlay } from "./simulation-play";
 import { SliderExplorer } from "./slider-explorer";
-import { DepthSwitcher, GenerativeUIErrorBoundary, StateTransition, patternStyle } from "./shared";
+import { GenerativeUIErrorBoundary, StateTransition, patternStyle } from "./shared";
 import { TimelineScrubber } from "./timeline-scrubber";
 import { VerticalTimeline } from "./vertical-timeline";
 
@@ -106,17 +106,6 @@ export function renderBySchema(
         className="generative-component-shell"
       >
         <div className="generative-component-theme" data-pattern={normalized.pattern} style={patternStyle(normalized.pattern)}>
-          <div className="generative-depth-bar">
-            <DepthSwitcher
-              depth={normalized.depth}
-              onChange={(depth) =>
-                handlers?.onInteraction?.({
-                  type: "depth_switch_requested",
-                  payload: { depth, pattern: normalized.pattern, template: normalized.template },
-                })
-              }
-            />
-          </div>
           <Component config={config as never} {...handlers} />
         </div>
       </StateTransition>

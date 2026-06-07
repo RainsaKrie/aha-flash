@@ -279,7 +279,7 @@ npm run eval:compare -- baseline.json candidate.json
 3. 先合并到 `PRODUCT.md` / `TECHNICAL.md` / `CHANGELOG.md`。
 4. 再按合并后的文档开发。
 5. 开发完成后提交并推送。
-6. 将已处理输入文档归档到 `docs/input-docs/archive/`。
+6. 审查已处理输入的去留：已整合、重复、过期或无独立追溯价值的直接删除；只有仍需追溯来源的材料才进入 `docs/input-docs/archive/`。
 
 ## 12. 验证命令
 
@@ -298,7 +298,17 @@ npm run build
 rg -n "旧入口文档|待处理输入|archive" docs/README.md docs/PRODUCT.md docs/TECHNICAL.md docs/input-docs/README.md
 ```
 
-## 13. 环境变量
+## 13. 首页布局约束
+
+首页采用产品级工作台布局，不再展示开发调试侧栏：
+
+- `src/app/page.tsx` 只渲染顶栏、组件舞台和底部输入栏。
+- 用户状态、输出 pattern/template、交互次数、会话摘要只作为内部状态和 API 上下文，不在首页展示。
+- 对话历史不作为首页主要信息架构。
+- 下一步概念推荐和深度引导出现在组件下方/输入框上方。
+- `src/app/globals.css` 的 `body` 背景保持纯背景色，不使用网格线装饰。
+
+## 14. 环境变量
 
 ```env
 DEEPSEEK_API_KEY=
@@ -314,7 +324,7 @@ AHA_FLASH_STATE_DIR=
 - Vercel demo 默认写 `/tmp/aha-flash/states`，不保证长期持久。
 - 搜索相关环境变量是历史表面积，Round 2 计划移除。
 
-## 14. 关键决策
+## 15. 关键决策
 
 | 决策 | 当前选择 | 原因 |
 |---|---|---|
@@ -324,7 +334,7 @@ AHA_FLASH_STATE_DIR=
 | UI 组件 | 自建 React 组件 | 控制交互体验和协议映射 |
 | 路由分类 | LLM 优先，规则 fallback | 有 key 时更准，无 key 时稳定可演示 |
 
-## 15. 已知技术债
+## 16. 已知技术债
 
 - Vercel `/tmp` 状态不持久，不能作为生产记忆。
 - 当前 mock schema 仍承担较多验收输入路由。

@@ -4,6 +4,7 @@ import { RotateCcw, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { GachaPoolItem, GachaSimulatorConfig, InteractionEvent } from "@/types/schema";
+import { ComponentFrame, FeedbackPanel, Panel } from "./shared";
 
 function draw(pool: GachaPoolItem[]) {
   const roll = Math.random();
@@ -64,23 +65,33 @@ export function GachaSpinWheel({
   }
 
   return (
-    <section className="grid h-full min-h-[560px] grid-rows-[auto_1fr_auto] gap-5 p-5">
-      <header className="border-b border-[var(--line)] pb-4">
-        <p className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--accent)]">
-          <Sparkles size={15} /> spin wheel
-        </p>
-        <h2 className="mt-1 text-2xl font-semibold">{config.title}</h2>
-        {config.quote && <p className="mt-2 text-sm text-[var(--muted)]">{config.quote}</p>}
-      </header>
-
+    <ComponentFrame
+      icon={Sparkles}
+      label="spin wheel"
+      title={config.title}
+      depth={config.depth}
+      description={config.quote}
+      minHeight="min-h-[560px]"
+      footer={
+        <FeedbackPanel tone={result ? (won ? "success" : "warning") : "neutral"}>
+          {result
+            ? won
+              ? config.explanation_map.win
+                  .replace("{{market_price}}", String(result.value))
+                  .replace("{{strike_price}}", String(config.strike_price))
+              : config.explanation_map.lose.replace("{{option_cost}}", String(config.option_cost))
+            : "转盘让你先感受“付费保留机会”的动作，再看结果是否值得执行。"}
+        </FeedbackPanel>
+      }
+    >
       <div className="grid content-center gap-6 lg:grid-cols-[1fr_280px] lg:items-center">
         <div className="grid place-items-center">
-          <div className="relative grid aspect-square w-full max-w-sm place-items-center rounded-full border border-[var(--line)] bg-[#07120f]">
+          <div className="relative grid aspect-square w-full max-w-sm place-items-center rounded-full border border-[var(--line)] bg-[var(--pattern-panel)]">
             <div
-              className="absolute inset-8 rounded-full border border-[var(--accent)] bg-[conic-gradient(from_0deg,#35e69b,#f7c948,#78a6ff,#35e69b)] opacity-80 transition-transform duration-700"
+              className="absolute inset-8 rounded-full border border-[var(--accent)] bg-[conic-gradient(from_0deg,var(--accent),var(--accent-2),var(--pattern-raised),var(--accent))] opacity-80 transition-transform duration-700"
               style={{ transform: `rotate(${rotation}deg)` }}
             />
-            <div className="relative grid h-32 w-32 place-items-center rounded-full border border-[var(--line)] bg-[#08130f] p-4 text-center">
+            <div className="relative grid h-32 w-32 place-items-center rounded-full border border-[var(--line)] bg-[var(--pattern-surface)] p-4 text-center">
               <span>
                 <strong className="block text-sm leading-5">{spinning ? "转动中" : result ? tierLabel(result) : tierLabel(topPrize)}</strong>
                 {!spinning && result && flavorLabel(result) && (
@@ -91,28 +102,24 @@ export function GachaSpinWheel({
           </div>
         </div>
 
-        <aside className="grid gap-3 rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4">
-          <div className="text-sm text-[var(--muted)]">期权费 {config.option_cost}</div>
-          <div className="text-sm text-[var(--muted)]">锁定价 {config.strike_price}</div>
-          <Button onClick={spin} disabled={spinning} title="转动">
+        <Panel className="grid gap-4 p-4">
+          <div className="flex justify-between gap-4 text-sm text-[var(--muted)]">
+            <span>期权费</span>
+            <strong className="text-[var(--accent)]">{config.option_cost}</strong>
+          </div>
+          <div className="flex justify-between gap-4 text-sm text-[var(--muted)]">
+            <span>锁定价</span>
+            <strong className="text-[var(--accent)]">{config.strike_price}</strong>
+          </div>
+          <Button onClick={spin} disabled={spinning} title="转动" className={!result ? "ui-breathe" : ""}>
             <Sparkles size={16} />
             {spinning ? "结算中" : "转动一次"}
           </Button>
           <Button onClick={() => setResult(null)} className="bg-transparent" title="重置">
             <RotateCcw size={16} />
           </Button>
-        </aside>
+        </Panel>
       </div>
-
-      <footer className="rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4 text-sm text-[var(--muted)]">
-        {result
-          ? won
-            ? config.explanation_map.win
-                .replace("{{market_price}}", String(result.value))
-                .replace("{{strike_price}}", String(config.strike_price))
-            : config.explanation_map.lose.replace("{{option_cost}}", String(config.option_cost))
-          : "转盘让你先感受“付费保留机会”的动作，再看结果是否值得执行。"}
-      </footer>
-    </section>
+    </ComponentFrame>
   );
 }

@@ -3,6 +3,7 @@
 import { Workflow } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { BuildSandboxConfig, InteractionEvent } from "@/types/schema";
+import { ChoiceButton, ComponentFrame, EmptyState, FeedbackPanel, Panel, ProgressMeter } from "./shared";
 
 export function SandboxFlowConnect({
   config,
@@ -30,61 +31,69 @@ export function SandboxFlowConnect({
   }
 
   return (
-    <section className="grid h-full min-h-[520px] grid-rows-[auto_1fr_auto] gap-5 p-5">
-      <header className="border-b border-[var(--line)] pb-4">
-        <p className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--accent)]">
-          <Workflow size={15} /> flow connect
-        </p>
-        <h2 className="mt-1 text-2xl font-semibold">{config.title}</h2>
-      </header>
-      <div className="grid content-center gap-5">
-        <div className="flex flex-wrap items-center gap-2 rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4">
-          {sequence.length ? (
-            sequence.map((id, index) => {
-              const flowModule = config.modules.find((item) => item.id === id);
-              return (
-                <span key={id} className="flex items-center gap-2">
-                  <strong className="rounded-[8px] border border-[var(--line)] bg-[#0c1915] px-3 py-2 text-sm">
-                    {flowModule?.label || id}
-                  </strong>
-                  {index < sequence.length - 1 && <span className="text-[var(--accent)]">→</span>}
-                </span>
-              );
-            })
-          ) : (
-            <span className="text-sm text-[var(--muted)]">按流程顺序点击模块，连出系统路径。</span>
-          )}
-        </div>
+    <ComponentFrame
+      icon={Workflow}
+      label="flow connect"
+      title={config.title}
+      depth={config.depth}
+      description={`目标：${config.target}`}
+      footer={
+        <FeedbackPanel tone={complete ? "success" : sequence.length > 0 && !orderedMatches ? "danger" : "neutral"}>
+          <div className="grid gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <span>
+                {complete
+                  ? config.success_summary || "流程连接正确。"
+                  : sequence.length > 0 && !orderedMatches
+                    ? "顺序还不对，试着按输入 → 处理 → 反馈的依赖关系连接。"
+                    : "按流程顺序点击模块，连出系统路径。"}
+              </span>
+              <strong className="animate-value-pop text-[var(--accent)]">
+                {sequence.length} / {expectedSequence.length}
+              </strong>
+            </div>
+            <ProgressMeter value={sequence.length} total={expectedSequence.length} />
+          </div>
+        </FeedbackPanel>
+      }
+    >
+      <div className="grid content-center gap-6">
+        <Panel className="min-h-24 p-4">
+          <div className="flex flex-wrap items-center gap-2">
+            {sequence.length ? (
+              sequence.map((id, index) => {
+                const flowModule = config.modules.find((item) => item.id === id);
+                return (
+                  <span key={id} className="flex items-center gap-2">
+                    <strong className="rounded-md border border-[var(--line)] bg-[var(--pattern-raised)] px-3 py-2 text-sm">
+                      {flowModule?.label || id}
+                    </strong>
+                    {index < sequence.length - 1 && <span className="text-[var(--accent)]">→</span>}
+                  </span>
+                );
+              })
+            ) : (
+              <span className="text-sm text-[var(--muted)]">还没有连接模块。</span>
+            )}
+          </div>
+        </Panel>
 
-        <div className="grid gap-3 sm:grid-cols-3">
-          {config.modules.map((flowModule) => {
-            const active = sequence.includes(flowModule.id);
-            return (
-              <button
-                key={flowModule.id}
-                onClick={() => add(flowModule.id)}
-                className={`min-h-32 rounded-[8px] border p-4 text-left transition hover:border-[var(--accent)] ${
-                  active ? "border-[var(--accent)] bg-[rgba(53,230,155,0.12)]" : "border-[var(--line)] bg-[#07120f]"
-                }`}
-              >
-                <strong>{flowModule.label}</strong>
-                <span className="mt-3 block text-sm leading-6 text-[var(--muted)]">{flowModule.description}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      <div className="rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4 text-sm text-[var(--muted)]">
-        <div className="flex items-center justify-between gap-3">
-          <span>{complete ? config.success_summary || "流程连接正确。" : `目标：${config.target}`}</span>
-          <strong className={orderedMatches ? "text-[var(--accent)]" : "text-[var(--danger)]"}>
-            {sequence.length} / {expectedSequence.length}
-          </strong>
-        </div>
-        {sequence.length > 0 && !orderedMatches && (
-          <p className="mt-2 text-xs text-[var(--danger)]">顺序还不对，试着按输入 → 处理 → 反馈的依赖关系连接。</p>
+        {config.modules.length ? (
+          <div className="grid gap-4 sm:grid-cols-3">
+            {config.modules.map((flowModule) => {
+              const active = sequence.includes(flowModule.id);
+              return (
+                <ChoiceButton key={flowModule.id} active={active} onClick={() => add(flowModule.id)} className="min-h-32">
+                  <strong className="text-base font-medium">{flowModule.label}</strong>
+                  <span className="mt-3 block text-sm leading-6 text-[var(--muted)]">{flowModule.description}</span>
+                </ChoiceButton>
+              );
+            })}
+          </div>
+        ) : (
+          <EmptyState detail="模型没有给出流程模块，重新生成后应包含 3-6 个可连接模块。" />
         )}
       </div>
-    </section>
+    </ComponentFrame>
   );
 }

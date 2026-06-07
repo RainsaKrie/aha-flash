@@ -4,6 +4,7 @@ import { Activity, Pause, Play, RotateCcw, StepForward } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { InteractionEvent, SimulationPlayConfig } from "@/types/schema";
+import { ComponentFrame, EmptyState, FeedbackPanel, Panel, ProgressMeter } from "./shared";
 
 export function SimulationPlay({
   config,
@@ -68,43 +69,61 @@ export function SimulationPlay({
   }
 
   return (
-    <section className="grid h-full min-h-[520px] grid-rows-[auto_1fr_auto] gap-5 p-5">
-      <header className="border-b border-[var(--line)] pb-4">
-        <p className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--accent)]">
-          <Activity size={15} /> simulation play
-        </p>
-        <h2 className="mt-1 text-2xl font-semibold">{config.title}</h2>
-      </header>
-
+    <ComponentFrame
+      icon={Activity}
+      label="simulation play"
+      title={config.title}
+      depth={config.depth}
+      description={config.compute_formula_description}
+      footer={
+        <FeedbackPanel tone={step >= maxSteps ? "success" : playing ? "warning" : "neutral"}>
+          <div className="grid gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <span>{step >= maxSteps ? "模拟完成，观察最终结果和参数之间的关系。" : "逐步推进，看看结果如何被参数放大或拖慢。"}</span>
+              <strong className="animate-value-pop text-[var(--accent)]">
+                {step} / {maxSteps}
+              </strong>
+            </div>
+            <ProgressMeter value={step} total={maxSteps} />
+          </div>
+        </FeedbackPanel>
+      }
+    >
       <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
         <div className="grid content-center gap-4">
-          {config.params.map((param) => (
-            <label key={param.label} className="grid gap-3 rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4">
-              <div className="flex items-end justify-between gap-3">
-                <span className="text-sm text-[var(--muted)]">{param.label}</span>
-                <strong className="text-2xl text-[var(--accent-2)]">
-                  {values[param.label]}
-                  {param.unit}
-                </strong>
-              </div>
-              <input
-                aria-label={param.label}
-                type="range"
-                min={param.min}
-                max={param.max}
-                value={values[param.label]}
-                onChange={(event) => updateParam(param.label, Number(event.target.value))}
-                className="w-full accent-[var(--accent)]"
-              />
-            </label>
-          ))}
+          {config.params.length ? (
+            config.params.map((param) => (
+              <Panel key={param.label} className="grid gap-4 p-4">
+                <label className="grid gap-4">
+                  <div className="flex items-end justify-between gap-4">
+                    <span className="text-sm text-[var(--muted)]">{param.label}</span>
+                    <strong className="animate-value-pop text-3xl font-bold text-[var(--accent)]">
+                      {values[param.label]}
+                      {param.unit}
+                    </strong>
+                  </div>
+                  <input
+                    aria-label={param.label}
+                    type="range"
+                    min={param.min}
+                    max={param.max}
+                    value={values[param.label]}
+                    onChange={(event) => updateParam(param.label, Number(event.target.value))}
+                    className="w-full accent-[var(--accent)]"
+                  />
+                </label>
+              </Panel>
+            ))
+          ) : (
+            <EmptyState detail="模型没有给出可调参数，重新生成后应至少包含 1 个参数。" />
+          )}
         </div>
 
-        <div className="grid content-center gap-4 rounded-[8px] border border-[var(--line)] bg-[#07120f] p-5">
+        <Panel className="grid content-center gap-4 p-5">
           <div className="flex items-end justify-between gap-4">
             <div>
               <div className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">step {step}</div>
-              <div className="mt-2 text-4xl font-semibold text-[var(--accent)]">{currentValue}</div>
+              <div className="mt-2 animate-value-pop text-3xl font-bold text-[var(--accent)]">{currentValue}</div>
             </div>
             <div className="text-right text-sm text-[var(--muted)]">基准 100</div>
           </div>
@@ -112,20 +131,17 @@ export function SimulationPlay({
             {series.map((value, index) => (
               <div
                 key={index}
-                className={`min-w-0 flex-1 rounded-t-[8px] ${index <= step ? "bg-[var(--accent)]" : "bg-[#153127]"}`}
+                className={`min-w-0 flex-1 rounded-t-lg ${index <= step ? "bg-[var(--accent)]" : "bg-[var(--pattern-raised)]"}`}
                 style={{ height: `${Math.max(8, (value / peak) * 100)}%` }}
                 title={`step ${index}: ${value}`}
               />
             ))}
           </div>
-          <p className="text-sm leading-6 text-[var(--muted)]">{config.compute_formula_description}</p>
-        </div>
+        </Panel>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4">
-        <div className="text-sm text-[var(--muted)]">
-          进度 {step} / {maxSteps}
-        </div>
+      <Panel className="flex flex-wrap items-center justify-between gap-4 p-4">
+        <div className="text-sm text-[var(--muted)]">{playing ? "自动播放中" : "手动推进或自动播放模拟。"}</div>
         <div className="flex gap-2">
           <Button type="button" onClick={reset} title="重置">
             <RotateCcw size={16} />
@@ -137,7 +153,7 @@ export function SimulationPlay({
             {playing ? <Pause size={16} /> : <Play size={16} />}
           </Button>
         </div>
-      </div>
-    </section>
+      </Panel>
+    </ComponentFrame>
   );
 }

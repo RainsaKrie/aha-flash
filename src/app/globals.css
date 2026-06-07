@@ -25,12 +25,7 @@ body {
 
 body {
   margin: 0;
-  background:
-    linear-gradient(rgba(53, 230, 155, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(53, 230, 155, 0.05) 1px, transparent 1px),
-    radial-gradient(circle at 70% 10%, rgba(247, 201, 72, 0.1), transparent 28rem),
-    var(--background);
-  background-size: 34px 34px, 34px 34px, auto, auto;
+  background: var(--background);
   color: var(--text);
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -59,20 +54,50 @@ button:disabled {
 
 .app-shell {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  height: 48px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(7, 18, 15, 0.94);
+  padding: 0 20px;
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.brand-mark__icon {
   display: grid;
-  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(53, 230, 155, 0.12);
+  color: var(--accent);
 }
 
-.sidebar {
-  border-right: 1px solid var(--line);
-  background: rgba(7, 18, 15, 0.84);
-  backdrop-filter: blur(14px);
-  padding: 24px;
+.brand-mark__text {
+  font-size: 18px;
+  font-weight: 650;
 }
 
-.workbench {
-  min-width: 0;
-  padding: 24px;
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .panel {
@@ -113,11 +138,54 @@ button:disabled {
   color: var(--muted);
 }
 
-.schema-stage {
-  min-height: calc(100vh - 48px);
+.component-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.component-stage__inner {
+  position: relative;
+  width: min(100%, 1120px);
+}
+
+.empty-stage {
+  min-height: min(560px, calc(100vh - 220px));
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 16px;
+  place-items: center;
+  align-content: center;
+  gap: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.empty-stage h1 {
+  margin: 0;
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 650;
+}
+
+.empty-stage p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.stage-loading {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-strong);
+  padding: 10px 12px;
+  color: var(--accent);
+  font-size: 12px;
+  animation: ui-breathe 2s ease-in-out infinite;
 }
 
 .widget-surface {
@@ -136,12 +204,9 @@ button:disabled {
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--accent), transparent 94%), transparent 42%),
     var(--pattern-surface);
-}
-
-.generative-depth-bar {
-  display: flex;
-  justify-content: flex-end;
-  padding: 16px 20px 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .depth-switcher {
@@ -186,8 +251,56 @@ button:disabled {
   animation: ui-enter 250ms ease-out both;
 }
 
-.generative-component-theme [class*="animate-pulse"] {
-  animation: ui-breathe 2s ease-in-out infinite;
+.input-bar {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--line);
+  background: rgba(7, 18, 15, 0.96);
+  padding: 12px 20px 20px;
+}
+
+.learning-guides {
+  margin: 0 auto 10px;
+  display: flex;
+  max-width: 1120px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.learning-guide {
+  min-height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  padding: 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.learning-guide:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent), transparent 88%);
+  color: var(--text);
+}
+
+.learning-guide:active {
+  transform: scale(0.96);
+}
+
+.input-error {
+  margin: 0 auto 10px;
+  max-width: 1120px;
+  border: 1px solid rgba(255, 107, 107, 0.42);
+  border-radius: 8px;
+  background: rgba(255, 107, 107, 0.08);
+  padding: 10px 12px;
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.input-bar form {
+  margin: 0 auto;
+  max-width: 1120px;
 }
 
 .ui-enter {
@@ -285,16 +398,22 @@ button:disabled {
 }
 
 @media (max-width: 900px) {
-  .app-shell {
-    grid-template-columns: 1fr;
+  .topbar {
+    padding: 0 12px;
   }
 
-  .sidebar {
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
+  .topbar-actions .tool-button {
+    min-height: 36px;
+    padding: 0 10px;
+    font-size: 12px;
   }
 
-  .workbench {
-    padding: 16px;
+  .component-stage {
+    align-items: stretch;
+    padding: 12px;
+  }
+
+  .input-bar {
+    padding: 10px 12px 14px;
   }
 }

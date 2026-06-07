@@ -3,6 +3,7 @@
 import { Columns2, Eye, Lightbulb } from "lucide-react";
 import { useState } from "react";
 import type { ComparisonSplitConfig, InteractionEvent } from "@/types/schema";
+import { ChoiceButton, ComponentFrame, FeedbackPanel, Panel } from "./shared";
 
 type FocusMode = "both" | "left" | "right";
 
@@ -47,105 +48,96 @@ export function ComparisonSplit({
   }
 
   return (
-    <section className="grid h-full min-h-[520px] grid-rows-[auto_auto_1fr] gap-5 p-5">
-      <header className="border-b border-[var(--line)] pb-4">
-        <p className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--accent)]">
-          <Columns2 size={15} /> comparison split
-        </p>
-        <h2 className="mt-1 text-2xl font-semibold">{config.title}</h2>
-      </header>
-
+    <ComponentFrame
+      icon={Columns2}
+      label="comparison split"
+      title={config.title}
+      depth={config.depth}
+      footer={config.summary ? <FeedbackPanel tone="neutral">{config.summary}</FeedbackPanel> : undefined}
+    >
       {dimensions.length > 0 ? (
-        <div className="grid gap-2 sm:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-4">
           {dimensions.map((dimension, index) => (
-            <button
+            <ChoiceButton
               key={`${dimension.label}-${index}`}
-              type="button"
-              className={[
-                "tool-button min-h-10 justify-start px-3 text-left text-xs",
-                dimensionIndex === index ? "border-[var(--accent)] bg-[rgba(53,230,155,0.16)] text-[var(--text)]" : "",
-              ].join(" ")}
+              active={dimensionIndex === index}
+              className="min-h-11 p-3 text-xs"
               onClick={() => selectDimension(index)}
             >
               {dimension.label}
-            </button>
+            </ChoiceButton>
           ))}
         </div>
       ) : (
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-3">
           {[
             { value: "both" as const, label: "并排" },
             { value: "left" as const, label: subjectA },
             { value: "right" as const, label: subjectB },
           ].map((option) => (
-            <button
+            <ChoiceButton
               key={option.value}
-              type="button"
-              className={[
-                "tool-button min-h-9 justify-center px-3 text-xs",
-                focus === option.value ? "border-[var(--accent)] bg-[rgba(53,230,155,0.16)] text-[var(--text)]" : "",
-              ].join(" ")}
+              active={focus === option.value}
+              className="min-h-11 p-3 text-center text-xs"
               onClick={() => updateFocus(option.value)}
             >
               <Eye size={14} />
               {option.label}
-            </button>
+            </ChoiceButton>
           ))}
         </div>
       )}
 
       {activeDimension ? (
-        <div className="grid min-h-80 gap-4 rounded-[8px] border border-[var(--line)] bg-[#07120f] p-5">
-          <div className="grid gap-3 md:grid-cols-[1fr_auto_1fr] md:items-stretch">
-            <article className="rounded-[8px] border border-[var(--line)] bg-[#0b1814] p-4">
+        <Panel className="mt-4 grid min-h-80 gap-4 p-5">
+          <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-stretch">
+            <article className="rounded-xl border border-[var(--line)] bg-[var(--pattern-raised)] p-4">
               <div className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">{subjectA}</div>
-              <h3 className="mt-2 text-lg font-semibold text-[var(--accent-2)]">{activeDimension.a}</h3>
+              <h3 className="mt-2 text-base font-medium text-[var(--accent-2)]">{activeDimension.a}</h3>
             </article>
             <div className="grid place-items-center px-2 text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
               {activeDimension.label}
             </div>
-            <article className="rounded-[8px] border border-[var(--line)] bg-[#0e1d19] p-4">
+            <article className="rounded-xl border border-[var(--line)] bg-[var(--pattern-raised)] p-4">
               <div className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">{subjectB}</div>
-              <h3 className="mt-2 text-lg font-semibold text-[var(--accent)]">{activeDimension.b}</h3>
+              <h3 className="mt-2 text-base font-medium text-[var(--accent)]">{activeDimension.b}</h3>
             </article>
           </div>
 
-          <div className="flex items-start gap-3 rounded-[8px] border border-[rgba(247,201,72,0.32)] bg-[rgba(247,201,72,0.08)] p-4 text-sm leading-6 text-[var(--accent-2)]">
+          <div className="ui-result flex items-start gap-4 rounded-xl border border-[rgba(247,201,72,0.32)] bg-[rgba(247,201,72,0.08)] p-4 text-sm leading-6 text-[var(--accent-2)]">
             <Lightbulb size={18} className="mt-0.5 shrink-0" />
             <strong>{activeDimension.insight}</strong>
           </div>
-
-          {config.summary && <p className="text-sm leading-6 text-[var(--muted)]">{config.summary}</p>}
-        </div>
+        </Panel>
       ) : (
-        <div className="grid min-h-80 overflow-hidden rounded-[8px] border border-[var(--line)] md:grid-cols-2">
+        <Panel className="mt-4 grid min-h-80 overflow-hidden md:grid-cols-2">
           <article
             className={[
-              "border-b border-[var(--line)] bg-[#07120f] p-5 transition md:border-b-0 md:border-r",
+              "border-b border-[var(--line)] bg-[var(--pattern-panel)] p-5 transition md:border-b-0 md:border-r",
               focus === "right" ? "opacity-35" : "opacity-100",
             ].join(" ")}
           >
-            <h3 className="text-lg font-semibold text-[var(--accent-2)]">{config.left.label}</h3>
-            <ul className="mt-4 grid gap-3 text-sm leading-6 text-[var(--muted)]">
+            <h3 className="text-base font-medium text-[var(--accent-2)]">{config.left.label}</h3>
+            <ul className="mt-4 grid gap-4 text-sm leading-6 text-[var(--muted)]">
               {(leftPoints.length ? leftPoints : [config.left.content]).map((point, index) => (
-                <li key={`${point}-${index}`} className="rounded-[8px] border border-[var(--line)] bg-[#0b1814] p-3">
+                <li key={`${point}-${index}`} className="rounded-xl border border-[var(--line)] bg-[var(--pattern-raised)] p-3">
                   {point}
                 </li>
               ))}
             </ul>
           </article>
-          <article className={["bg-[#0e1d19] p-5 transition", focus === "left" ? "opacity-35" : "opacity-100"].join(" ")}>
-            <h3 className="text-lg font-semibold text-[var(--accent)]">{config.right.label}</h3>
-            <ul className="mt-4 grid gap-3 text-sm leading-6 text-[var(--muted)]">
+          <article className={["bg-[var(--pattern-raised)] p-5 transition", focus === "left" ? "opacity-35" : "opacity-100"].join(" ")}>
+            <h3 className="text-base font-medium text-[var(--accent)]">{config.right.label}</h3>
+            <ul className="mt-4 grid gap-4 text-sm leading-6 text-[var(--muted)]">
               {(rightPoints.length ? rightPoints : [config.right.content]).map((point, index) => (
-                <li key={`${point}-${index}`} className="rounded-[8px] border border-[var(--line)] bg-[#07120f] p-3">
+                <li key={`${point}-${index}`} className="rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-3">
                   {point}
                 </li>
               ))}
             </ul>
           </article>
-        </div>
+        </Panel>
       )}
-    </section>
+    </ComponentFrame>
   );
 }
