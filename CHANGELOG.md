@@ -39,6 +39,22 @@
 - `npm run build`
 - Playwright 验证默认期权组件正常渲染
 
+### Design Spec 记忆/时间线/分类精修
+
+完成：
+- `card_flip` 清理标题层级，翻转内容加入结果揭示动画。
+- `card_grid_match` 统一 select 控件、圆角、间距，并为正确/错误匹配增加闪烁/抖动反馈。
+- `vertical_timeline` 清理非规范间距。
+- `quiz_combo_chain` 统一问题层级、选项间距和 combo 数值弹入。
+- `classification_sort` 迁移到 `ComponentFrame`、`ChoiceButton`、`FeedbackPanel`、`ProgressMeter`，补齐空态、进度、正确/错误反馈和结果回顾。
+
+验证：
+- `npm run typecheck`
+- `npm run lint`
+- `npm run eval:score`
+- `npm run build`
+- Playwright 验证分类组件正常渲染
+
 ---
 
 ### 组件质量第二阶段

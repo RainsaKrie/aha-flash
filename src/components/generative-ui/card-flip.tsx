@@ -38,7 +38,7 @@ export function CardFlip({
             <span className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
               {flipped[index] ? "meaning" : "term"}
             </span>
-            <span className="mt-5 block text-lg font-semibold leading-7">
+            <span className="ui-result mt-4 block text-base font-medium leading-7">
               {flipped[index] ? card.back : card.front}
             </span>
           </ChoiceButton>

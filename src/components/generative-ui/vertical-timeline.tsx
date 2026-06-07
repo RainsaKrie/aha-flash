@@ -42,7 +42,7 @@ export function VerticalTimeline({
         )
       }
     >
-      <div className="grid content-center gap-3">
+      <div className="grid content-center gap-4">
         {events.length ? (
           events.map((event, index) => {
           const active = index === activeIndex;

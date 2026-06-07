@@ -44,14 +44,14 @@ export function CardGridMatch({
             return (
           <Panel
             key={card.front}
-            className={`grid gap-3 p-4 ${correct === true ? "border-[var(--accent)] bg-[rgba(53,230,155,0.1)]" : correct === false ? "border-[var(--danger)] bg-[rgba(255,107,107,0.08)]" : ""}`}
+            className={`grid gap-4 p-4 ${correct === true ? "animate-success-flash border-[var(--accent)] bg-[rgba(53,230,155,0.1)]" : correct === false ? "animate-error-shake border-[var(--danger)] bg-[rgba(255,107,107,0.08)]" : ""}`}
           >
             <strong className="min-h-12 text-base leading-6">{card.front}</strong>
             <select
               aria-label={`匹配 ${card.front}`}
               value={selected[index] ?? ""}
               onChange={(event) => setSelected((value) => ({ ...value, [index]: Number(event.target.value) }))}
-              className="rounded-[8px] border border-[var(--line)] bg-[#0c1915] p-3 text-sm outline-none"
+              className="min-h-11 rounded-lg border border-[var(--line)] bg-[var(--pattern-raised)] p-3 text-sm outline-none focus:border-[var(--accent)]"
             >
               <option value="">选择含义</option>
               {backs.map((back, backIndex) => (
