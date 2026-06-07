@@ -1,8 +1,6 @@
-# 趣灵 aha-flash — 技术架构文档
+# 趣灵 aha-flash — 技术与实现
 
-> 文档定位：记录当前技术真相和关键决策。任务拆解放 `BACKLOG.md`，完成记录放 `CHANGELOG.md`。
-
----
+> 文档定位：记录当前技术真相、实现约束和验证规则。产品路线见 `PRODUCT.md`，完成记录见 `CHANGELOG.md`。
 
 ## 1. 架构总览
 
@@ -39,8 +37,6 @@ Generative UI Layer
   +-- Registry maps pattern/template to React components
 ```
 
----
-
 ## 2. 技术栈
 
 | 层 | 技术 |
@@ -50,10 +46,8 @@ Generative UI Layer
 | LLM | Vercel AI SDK, DeepSeek provider |
 | State | Zustand client store, file/tmp JSON server state |
 | Validation | Zod |
-| Tools | Web search providers, web extraction, auxiliary YouTube transcript |
+| Tools | Tool bridge；搜索和 URL 路由为 Round 2 待删除表面积 |
 | Deploy | Vercel |
-
----
 
 ## 3. 目录结构
 
@@ -88,13 +82,12 @@ tests/
     compare.ts
 ```
 
----
-
 ## 4. 用户状态
 
 核心类型在 `src/types/state.ts`。
 
 状态包含：
+
 - `profile`
 - `conversation_compressed`
 - `knowledge_assets`
@@ -102,19 +95,19 @@ tests/
 - `updated_at`
 
 存储策略：
+
 - 本地开发：`data/states/{user_id}.json`
 - Vercel demo：`/tmp/aha-flash/states`
 - 可通过 `AHA_FLASH_STATE_DIR` 覆盖
 - 长期生产应迁移到 Vercel KV、Postgres、Redis 或其他持久化服务
 
 重要约束：
+
 - 不保存全量历史文本。
 - 每轮对话只写入压缩摘要和关键洞察。
-- 每个知识资产只保存概念名、`pattern/template`、理解深度、主题域和学习时间。
+- Round 2 需要增加短期对话窗口，携带最近 3 轮原文，以减少追问时的信息丢失。
 - 同一概念重复学习时覆盖旧资产，避免状态列表膨胀。
 - 状态体积保持小而可读。
-
----
 
 ## 5. 对话生命周期
 
@@ -123,7 +116,7 @@ POST /api/chat
   |
   +-- initUserState(userId)
   +-- classifyConversationIntent(input)
-  +-- collectSourceContexts(input)
+  +-- collectSourceContexts(input)        # Round 2 待删除
   +-- buildSystemPrompt(state + route + target_depth + source_context)
   +-- generateSchemaWithLLM()
       |
@@ -135,7 +128,21 @@ POST /api/chat
   +-- return schema + depth + next concepts + route + userState
 ```
 
----
+Round 2 目标生命周期：
+
+```text
+POST /api/chat
+  |
+  +-- initUserState(userId)
+  +-- attach recent_messages
+  +-- detect follow-up vs new topic
+  +-- classifyConversationIntent(input, thread context)
+  +-- buildSystemPrompt(state + recent_messages + thread + target_depth)
+  +-- generate / stream schema
+  +-- normalize schema
+  +-- reflect turn and update current thread
+  +-- archive thread summary when topic breaks
+```
 
 ## 6. Schema 协议
 
@@ -178,60 +185,48 @@ POST /api/chat
 }
 ```
 
-`next_concepts` 是可选输入字段，归一化后始终是数组。前端在工作台组件下方展示前两个推荐概念，点击后触发下一轮学习。
-
-`depth` 是可选输入字段，归一化后默认为 `rapid`。`/api/chat` 会把请求中的目标深度注入 Prompt，并将最终 schema 附上该深度。知识资产理解深度按 `rapid -> shallow`、`scenario -> moderate`、`mapping -> deep` 写入。
-
 组件 payload 允许携带交互意图字段，而不仅是展示文案：
-- `comparison` 可携带 `subject_a`、`subject_b`、`dimensions`、`summary`，用于生成可切换的多维对比，而不是固定左右两栏。
-- `parameter_explore` 可携带 `outputs`、`insight_rules`，用于把滑块值映射成明确指标和分段反馈。
-- `system_builder` 可携带 `required_module_ids`、`expected_sequence`、`connections`、`success_summary`，用于判断必要模块、顺序和连接关系。
 
-这些字段都是可选增强项；缺失时组件仍保留兼容兜底，但 Prompt 应优先输出带交互结构的 payload。
+- `comparison` 可携带 `subject_a`、`subject_b`、`dimensions`、`summary`。
+- `parameter_explore` 可携带 `outputs`、`insight_rules`。
+- `system_builder` 可携带 `required_module_ids`、`expected_sequence`、`connections`、`success_summary`。
 
----
+这些字段是可选增强项；缺失时组件仍保留兼容兜底，但 Prompt 应优先输出带交互结构的 payload。
 
 ## 7. Pattern / Template 注册
 
-Schema 的 Pattern / Template 产品清单见 `PRD.md`。代码侧以 `src/types/schema.ts` 中的 `SCHEMA_CATALOG` 作为协议映射源，并由 `src/components/generative-ui/registry.tsx` 将 `pattern/template` 映射到 React 组件。
+代码侧以 `src/types/schema.ts` 中的 `SCHEMA_CATALOG` 作为协议映射源，并由 `src/components/generative-ui/registry.tsx` 将 `pattern/template` 映射到 React 组件。
 
 原则：
+
 - 新增 Pattern 时，先更新类型和 `SCHEMA_CATALOG`。
 - 新增 Template 时，保持 Schema 校验、mock、Prompt 示例和组件注册同步。
 - V1 类型只保留兼容入口，新能力优先走 V2 `pattern/template/payload`。
+- 组件质量规则由 `PRODUCT.md` 的互动组件质量标准约束，具体实现优先落在 `src/components/generative-ui/shared.tsx`。
 
----
+## 8. Tool 与来源输入
 
-## 8. Tool 系统
+历史工具：
 
-当前工具：
-
-| Tool | 作用 |
+| Tool | 当前判断 |
 |---|---|
-| `youtube_transcript_fetch` | 辅助抓取 YouTube 字幕；仅在用户明确提供 URL 时使用 |
-| `web_content_extract` | 提取网页正文 |
-| `web_search` | 通过 Brave / Google / Tavily 搜索外部网页，返回短摘要和 URL |
-| `update_user_state` | 服务端注入 `user_id` 后增量更新用户画像 |
+| `youtube_transcript_fetch` | 只适合作为用户明确给 URL 的辅助入口 |
+| `web_content_extract` | URL 抓取备用能力 |
+| `web_search` | Round 2 标记为待删除 |
+| `update_user_state` | 保留，用于服务端注入 `user_id` 后增量更新用户画像 |
 
-来源路由：
-- 用户输入中含 URL 时，`source-router.ts` 会尝试抓取。
-- 用户输入不含 URL 但包含外部信息信号时，`source-router.ts` 会触发 `web_search`。
-- 搜索结果只注入 Prompt 上下文，不长期保存全文。
-- `WEB_SEARCH_PROVIDER=auto` 时按 Brave -> Google -> Tavily 顺序尝试。
-- 未配置搜索 API key 时，搜索工具返回可控失败，聊天来源中展示失败状态。
+来源输入技术原则：
 
-输入设计原则：
-- URL 抓取是备用入口，不是主入口。
-- YouTube URL 粘贴不应作为核心使用路径。
-- 下一阶段输入层应优先支持截图/图片、音频/视频文件、剪贴板内容和系统分享入口。
-
----
+- 文字输入是当前主路径。
+- 搜索、URL 自动路由不作为核心链路。
+- 图片、音频、剪贴板、系统分享属于远期自然入口，需要多模态或转录能力支持。
 
 ## 9. 前端状态和交互反馈
 
-客户端 store：`src/stores/app-store.ts`
+客户端 store：`src/stores/app-store.ts`。
 
 前端保存：
+
 - `userId`
 - `userState`
 - `messages`
@@ -242,6 +237,7 @@ Schema 的 Pattern / Template 产品清单见 `PRD.md`。代码侧以 `src/types
 `/sandbox` 页面通过同一个 localStorage 用户 ID 读取 `/api/state`，将 `knowledge_assets` 按 `topic_area` 分组，展示概念卡片、`pattern/template`、理解深度和学习时间。
 
 组件交互通过 `/api/interaction` 回写摘要：
+
 - 抽卡完成
 - 滑块变化
 - 时间线查看
@@ -250,16 +246,16 @@ Schema 的 Pattern / Template 产品清单见 `PRD.md`。代码侧以 `src/types
 - 模拟完成
 - 模块构建完成
 
----
-
 ## 10. 质量评估
 
 质量体系包含：
+
 - `tests/fixtures/test-cases.json`：固定输入集合，覆盖全部 Pattern、深度和意图。
 - `tests/eval/score.ts`：评分单个预测文件；无预测文件时使用 mock schema 作为基线。
 - `tests/eval/compare.ts`：对比两个预测文件，输出总分和逐 case 分数差异。
 
 评分维度：
+
 - JSON 合法率
 - Pattern/Template/Depth 准确率
 - Route 准确率
@@ -274,9 +270,51 @@ npm run eval:score -- --json
 npm run eval:compare -- baseline.json candidate.json
 ```
 
----
+## 11. 开发工作流
 
-## 11. 关键决策
+新增规划统一进入 `docs/input-docs/`。处理顺序：
+
+1. 读取 `docs/input-docs/` 根目录的新文档。
+2. 判断新增、重复、过期和仅归档内容。
+3. 先合并到 `PRODUCT.md` / `TECHNICAL.md` / `CHANGELOG.md`。
+4. 再按合并后的文档开发。
+5. 开发完成后提交并推送。
+6. 将已处理输入文档归档到 `docs/input-docs/archive/`。
+
+## 12. 验证命令
+
+每次功能提交前至少运行：
+
+```bash
+npm run typecheck
+npm run build
+```
+
+涉及前端交互时，启动本地服务并用浏览器或 Playwright 验证至少一个真实路径。
+
+文档-only 修改可不跑构建，但必须扫描引用：
+
+```bash
+rg -n "旧入口文档|待处理输入|archive" docs/README.md docs/PRODUCT.md docs/TECHNICAL.md docs/input-docs/README.md
+```
+
+## 13. 环境变量
+
+```env
+DEEPSEEK_API_KEY=
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+NEXT_PUBLIC_APP_NAME=趣灵
+NEXT_PUBLIC_MAX_STEPS=5
+AHA_FLASH_STATE_DIR=
+```
+
+说明：
+
+- 没有 `DEEPSEEK_API_KEY` 时使用 mock schema fallback。
+- Vercel demo 默认写 `/tmp/aha-flash/states`，不保证长期持久。
+- 搜索相关环境变量是历史表面积，Round 2 计划移除。
+
+## 14. 关键决策
 
 | 决策 | 当前选择 | 原因 |
 |---|---|---|
@@ -286,9 +324,10 @@ npm run eval:compare -- baseline.json candidate.json
 | UI 组件 | 自建 React 组件 | 控制交互体验和协议映射 |
 | 路由分类 | LLM 优先，规则 fallback | 有 key 时更准，无 key 时稳定可演示 |
 
----
-
-## 12. 已知技术债
+## 15. 已知技术债
 
 - Vercel `/tmp` 状态不持久，不能作为生产记忆。
 - 当前 mock schema 仍承担较多验收输入路由。
+- 搜索和 URL 自动路由与最新产品判断冲突，需要按 Round 2 T00 删除。
+- 对话追问依赖压缩摘要，缺少短期原文窗口和线程级摘要。
+- 互动组件已经开始按 Design Spec 改造，但仍需要逐组件完成质量统一。
