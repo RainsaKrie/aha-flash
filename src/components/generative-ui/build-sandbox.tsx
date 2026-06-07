@@ -13,15 +13,20 @@ export function BuildSandbox({
 }) {
   const [selected, setSelected] = useState<string[]>([]);
   const completedRef = useRef(false);
+  const requiredIds = config.required_module_ids?.length
+    ? config.required_module_ids
+    : config.modules.map((module) => module.id);
+  const selectedRequiredCount = requiredIds.filter((id) => selected.includes(id)).length;
+  const complete = selectedRequiredCount >= requiredIds.length;
 
   useEffect(() => {
-    if (completedRef.current || selected.length < config.modules.length) return;
+    if (completedRef.current || !complete) return;
     completedRef.current = true;
     onComplete?.({
       type: "build_sandbox_completed",
-      payload: { modules: selected.length, target: config.target },
+      payload: { modules: selected.length, required_modules: requiredIds.length, target: config.target },
     });
-  }, [config.modules.length, config.target, onComplete, selected.length]);
+  }, [complete, config.target, onComplete, requiredIds.length, selected.length]);
 
   function toggle(id: string) {
     setSelected((value) => (value.includes(id) ? value.filter((item) => item !== id) : [...value, id]));
@@ -42,19 +47,38 @@ export function BuildSandbox({
             <button
               key={module.id}
               onClick={() => toggle(module.id)}
-              className="min-h-36 rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4 text-left transition hover:border-[var(--accent)]"
+              className={[
+                "min-h-36 rounded-[8px] border p-4 text-left transition hover:border-[var(--accent)]",
+                active ? "border-[var(--accent)] bg-[rgba(53,230,155,0.12)]" : "border-[var(--line)] bg-[#07120f]",
+              ].join(" ")}
             >
               <span className="flex items-center justify-between gap-3">
                 <strong>{module.label}</strong>
                 {active && <Check size={18} className="text-[var(--accent)]" />}
               </span>
+              {module.role && <span className="mt-2 block text-xs uppercase tracking-[0.16em] text-[var(--accent)]">{module.role}</span>}
               <span className="mt-3 block text-sm leading-6 text-[var(--muted)]">{module.description}</span>
             </button>
           );
         })}
       </div>
       <div className="rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4 text-sm text-[var(--muted)]">
-        {selected.length >= config.modules.length ? `已组装完成：${config.target}` : `目标：${config.target}`}
+        <div className="flex items-center justify-between gap-3">
+          <span>{complete ? config.success_summary || `已组装完成：${config.target}` : `目标：${config.target}`}</span>
+          <strong className="text-[var(--accent)]">
+            {selectedRequiredCount} / {requiredIds.length}
+          </strong>
+        </div>
+        {config.connections && config.connections.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2 text-xs">
+            {config.connections.map((connection) => (
+              <span key={`${connection.from}-${connection.to}`} className="rounded-[8px] border border-[var(--line)] bg-[#0c1915] px-2 py-1">
+                {connection.from} → {connection.to}
+                {connection.label ? ` · ${connection.label}` : ""}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

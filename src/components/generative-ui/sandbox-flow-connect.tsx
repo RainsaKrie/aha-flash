@@ -13,12 +13,17 @@ export function SandboxFlowConnect({
 }) {
   const [sequence, setSequence] = useState<string[]>([]);
   const completedRef = useRef(false);
+  const expectedSequence = config.expected_sequence?.length
+    ? config.expected_sequence
+    : config.modules.map((module) => module.id);
+  const orderedMatches = expectedSequence.every((id, index) => sequence[index] === id);
+  const complete = sequence.length >= expectedSequence.length && orderedMatches;
 
   useEffect(() => {
-    if (completedRef.current || sequence.length < config.modules.length) return;
+    if (completedRef.current || !complete) return;
     completedRef.current = true;
     onComplete?.({ type: "build_sandbox_completed", payload: { modules: sequence.length, target: config.target, mode: "flow_connect" } });
-  }, [config.modules.length, config.target, onComplete, sequence.length]);
+  }, [complete, config.target, onComplete, sequence.length]);
 
   function add(id: string) {
     setSequence((value) => (value.includes(id) ? value.filter((item) => item !== id) : [...value, id]));
@@ -70,7 +75,15 @@ export function SandboxFlowConnect({
         </div>
       </div>
       <div className="rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4 text-sm text-[var(--muted)]">
-        目标：{config.target}
+        <div className="flex items-center justify-between gap-3">
+          <span>{complete ? config.success_summary || "流程连接正确。" : `目标：${config.target}`}</span>
+          <strong className={orderedMatches ? "text-[var(--accent)]" : "text-[var(--danger)]"}>
+            {sequence.length} / {expectedSequence.length}
+          </strong>
+        </div>
+        {sequence.length > 0 && !orderedMatches && (
+          <p className="mt-2 text-xs text-[var(--danger)]">顺序还不对，试着按输入 → 处理 → 反馈的依赖关系连接。</p>
+        )}
       </div>
     </section>
   );

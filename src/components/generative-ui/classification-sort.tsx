@@ -14,6 +14,12 @@ export function ClassificationSort({
   onComplete?: (result: InteractionEvent) => void;
 }) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [lastAnswer, setLastAnswer] = useState<{
+    item: string;
+    category: string;
+    correct: boolean;
+    explanation: string;
+  } | null>(null);
   const completedRef = useRef(false);
   const answeredCount = Object.keys(answers).length;
   const currentItem = config.items.find((item) => !answers[item.label]) || config.items[0];
@@ -32,6 +38,12 @@ export function ClassificationSort({
     if (!currentItem) return;
     const correct = currentItem.correct_category === categoryId;
     setAnswers((value) => ({ ...value, [currentItem.label]: categoryId }));
+    setLastAnswer({
+      item: currentItem.label,
+      category: categoryId,
+      correct,
+      explanation: currentItem.explanation,
+    });
     onInteraction?.({
       type: "classification_item_sorted",
       payload: { item: currentItem.label, category: categoryId, correct },
@@ -54,7 +66,7 @@ export function ClassificationSort({
           </div>
           <h3 className="mt-2 text-xl font-semibold">{currentItem.label}</h3>
           <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
-            {answers[currentItem.label] ? currentItem.explanation : "把它放进最贴切的分类桶。"}
+            {answeredCount >= config.items.length ? "全部分类完成，可以看下方回顾。" : "把它放进最贴切的分类桶。"}
           </p>
         </div>
 
@@ -72,6 +84,19 @@ export function ClassificationSort({
       </div>
 
       <div className="grid gap-2 rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4 text-sm text-[var(--muted)]">
+        {lastAnswer && (
+          <div
+            className={[
+              "rounded-[8px] border p-3",
+              lastAnswer.correct
+                ? "border-[rgba(53,230,155,0.42)] bg-[rgba(53,230,155,0.1)] text-[var(--accent)]"
+                : "border-[rgba(255,107,107,0.42)] bg-[rgba(255,107,107,0.08)] text-[var(--danger)]",
+            ].join(" ")}
+          >
+            <strong>{lastAnswer.correct ? "分类正确" : "分类偏了"}</strong>
+            <span className="mt-1 block text-[var(--muted)]">{lastAnswer.explanation}</span>
+          </div>
+        )}
         <div className="flex items-center justify-between gap-3">
           <span>当前正确数</span>
           <strong className="text-[var(--accent)]">
@@ -84,6 +109,24 @@ export function ClassificationSort({
             style={{ width: `${(answeredCount / config.items.length) * 100}%` }}
           />
         </div>
+        {answeredCount > 0 && (
+          <div className="mt-2 grid gap-2">
+            {config.items
+              .filter((item) => answers[item.label])
+              .map((item) => {
+                const selectedCategory = config.categories.find((category) => category.id === answers[item.label]);
+                const correct = answers[item.label] === item.correct_category;
+                return (
+                  <div key={item.label} className="flex items-center justify-between gap-3 text-xs">
+                    <span className="truncate">{item.label}</span>
+                    <span className={correct ? "text-[var(--accent)]" : "text-[var(--danger)]"}>
+                      {selectedCategory?.name || answers[item.label]}
+                    </span>
+                  </div>
+                );
+              })}
+          </div>
+        )}
       </div>
     </section>
   );

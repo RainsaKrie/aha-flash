@@ -4,6 +4,31 @@
 
 ---
 
+## 2026-06-07
+
+### 组件质量第一阶段
+
+完成：
+- `comparison/split_panel` 支持维度式对比：主题 A/B、维度按钮、差异说明和总结，不再依赖无意义的顶部比例滑条。
+- `parameter_explore/slider` 和 `parameter_explore/dual_slider` 支持 schema 驱动输出指标与分段洞察，避免所有概念都被硬编码成平方成本示例。
+- `classification/sort` 增加即时正确/错误反馈、解释文案和已回答回顾。
+- `system_builder/module_sandbox` 和 `system_builder/flow_connect` 支持必要模块、期望顺序、连接关系和完成反馈。
+- 扩展 `src/types/schema.ts`、Zod 校验、mock schema 和 Prompt SCHEMA_REFERENCE，使 LLM 输出具备更明确的视觉与交互约束。
+
+验收：
+- 股票 vs. 期权 mock 渲染为多维对比卡片，包含“你拥有什么 / 先付成本 / 亏损边界 / 时间限制”维度切换。
+- Prompt 约束明确要求对比优先给出 dimensions，参数探索给出 outputs / insight_rules，系统构建给出 required_module_ids / expected_sequence。
+- DeepSeek 输出未通过组件约束时，页面仍能稳定落到 mock 兜底组件并展示可测试状态。
+
+验证：
+- `npm run typecheck`
+- `npm run lint`
+- `npm run eval:score`
+- `npm run build`
+- Playwright 生产服务快照验收
+
+---
+
 ## 2026-06-06
 
 ### 文档与代码整理

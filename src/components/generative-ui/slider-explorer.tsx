@@ -5,6 +5,26 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { InteractionEvent, SliderExplorerConfig } from "@/types/schema";
 
+type SliderOutput = NonNullable<SliderExplorerConfig["outputs"]>[number];
+
+function computeOutput(output: SliderOutput, value: number) {
+  const multiplier = output.multiplier ?? 1;
+  const offset = output.offset ?? 0;
+
+  if (output.model === "quadratic") return Math.round(multiplier * value * value + offset);
+  if (output.model === "exponential") return Math.round(multiplier * 1.08 ** value + offset);
+  if (output.model === "inverse") return Number((multiplier / Math.max(value, 1) + offset).toFixed(2));
+  if (output.model === "logarithmic") return Number((multiplier * Math.log(Math.max(value, 1)) + offset).toFixed(2));
+  return Math.round(multiplier * value + offset);
+}
+
+function getValueBand(value: number, min: number, max: number): "low" | "mid" | "high" {
+  const ratio = (value - min) / Math.max(max - min, 1);
+  if (ratio < 0.34) return "low";
+  if (ratio > 0.67) return "high";
+  return "mid";
+}
+
 export function SliderExplorer({
   config,
   onInteraction,
@@ -13,7 +33,15 @@ export function SliderExplorer({
   onInteraction?: (event: InteractionEvent) => void;
 }) {
   const [value, setValue] = useState(config.default_value);
-  const quadratic = value * value;
+  const outputs =
+    config.outputs && config.outputs.length > 0
+      ? config.outputs
+      : [
+          { label: "线性成本", model: "linear" as const, expression_label: "n" },
+          { label: "平方成本", model: "quadratic" as const, expression_label: "n²" },
+        ];
+  const band = getValueBand(value, config.min, config.max);
+  const insight = config.insight_rules?.find((rule) => rule.when === band)?.text;
 
   return (
     <section className="grid h-full min-h-[520px] grid-rows-[auto_1fr] gap-5 p-5">
@@ -66,17 +94,22 @@ export function SliderExplorer({
           ))}
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4">
-            <div className="text-sm text-[var(--muted)]">线性成本</div>
-            <div className="mt-2 text-2xl font-semibold">{value}</div>
-          </div>
-          <div className="rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4">
-            <div className="text-sm text-[var(--muted)]">平方成本</div>
-            <div className="mt-2 text-2xl font-semibold">{quadratic}</div>
-          </div>
+          {outputs.slice(0, 4).map((output) => (
+            <div key={output.label} className="rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-sm text-[var(--muted)]">{output.label}</div>
+                {output.expression_label && <div className="text-xs text-[var(--accent)]">{output.expression_label}</div>}
+              </div>
+              <div className="mt-2 text-2xl font-semibold">
+                {computeOutput(output, value)}
+                {output.unit}
+              </div>
+              {output.description && <p className="mt-2 text-xs leading-5 text-[var(--muted)]">{output.description}</p>}
+            </div>
+          ))}
         </div>
         <p className="rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4 text-sm text-[var(--muted)]">
-          {config.explanation_template.replace("{{value}}", String(value))}
+          {insight || config.explanation_template.replace("{{value}}", String(value))}
         </p>
       </div>
     </section>

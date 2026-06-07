@@ -204,6 +204,16 @@ export interface SliderExplorerConfig {
   unit?: string;
   scenarios?: Array<{ label: string; value: number }>;
   explanation_template: string;
+  outputs?: Array<{
+    label: string;
+    model: "linear" | "quadratic" | "exponential" | "inverse" | "logarithmic";
+    expression_label?: string;
+    multiplier?: number;
+    offset?: number;
+    unit?: string;
+    description?: string;
+  }>;
+  insight_rules?: Array<{ when: "low" | "mid" | "high"; text: string }>;
 }
 
 export interface CardFlipConfig {
@@ -215,6 +225,15 @@ export interface ComparisonSplitConfig {
   title: string;
   left: { label: string; content: string };
   right: { label: string; content: string };
+  subject_a?: string;
+  subject_b?: string;
+  dimensions?: Array<{
+    label: string;
+    a: string;
+    b: string;
+    insight: string;
+  }>;
+  summary?: string;
 }
 
 export interface TimelineScrubberConfig {
@@ -230,8 +249,12 @@ export interface QuizBattleConfig {
 
 export interface BuildSandboxConfig {
   title: string;
-  modules: Array<{ id: string; label: string; description: string }>;
+  modules: Array<{ id: string; label: string; description: string; role?: string }>;
   target: string;
+  required_module_ids?: string[];
+  expected_sequence?: string[];
+  connections?: Array<{ from: string; to: string; label?: string }>;
+  success_summary?: string;
 }
 
 export interface NarrativeBranchConfig {

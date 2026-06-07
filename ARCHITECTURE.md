@@ -182,6 +182,13 @@ POST /api/chat
 
 `depth` 是可选输入字段，归一化后默认为 `rapid`。`/api/chat` 会把请求中的目标深度注入 Prompt，并将最终 schema 附上该深度。知识资产理解深度按 `rapid -> shallow`、`scenario -> moderate`、`mapping -> deep` 写入。
 
+组件 payload 允许携带交互意图字段，而不仅是展示文案：
+- `comparison` 可携带 `subject_a`、`subject_b`、`dimensions`、`summary`，用于生成可切换的多维对比，而不是固定左右两栏。
+- `parameter_explore` 可携带 `outputs`、`insight_rules`，用于把滑块值映射成明确指标和分段反馈。
+- `system_builder` 可携带 `required_module_ids`、`expected_sequence`、`connections`、`success_summary`，用于判断必要模块、顺序和连接关系。
+
+这些字段都是可选增强项；缺失时组件仍保留兼容兜底，但 Prompt 应优先输出带交互结构的 payload。
+
 ---
 
 ## 7. Pattern / Template 注册

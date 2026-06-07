@@ -4,6 +4,19 @@ import { SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import type { InteractionEvent, SliderExplorerConfig } from "@/types/schema";
 
+type SliderOutput = NonNullable<SliderExplorerConfig["outputs"]>[number];
+
+function computeOutput(output: SliderOutput, value: number) {
+  const multiplier = output.multiplier ?? 1;
+  const offset = output.offset ?? 0;
+
+  if (output.model === "quadratic") return Math.round(multiplier * value * value + offset);
+  if (output.model === "exponential") return Math.round(multiplier * 1.08 ** value + offset);
+  if (output.model === "inverse") return Number((multiplier / Math.max(value, 1) + offset).toFixed(2));
+  if (output.model === "logarithmic") return Number((multiplier * Math.log(Math.max(value, 1)) + offset).toFixed(2));
+  return Math.round(multiplier * value + offset);
+}
+
 export function DualSliderExplorer({
   config,
   onInteraction,
@@ -13,15 +26,17 @@ export function DualSliderExplorer({
 }) {
   const [left, setLeft] = useState(config.default_value);
   const [right, setRight] = useState(Math.min(config.max, Math.max(config.min, config.default_value * 2)));
+  const outputs =
+    config.outputs && config.outputs.length > 0
+      ? config.outputs
+      : [{ label: "平方成本", model: "quadratic" as const, expression_label: "n²" }];
+  const primaryOutput = outputs[0];
 
   function update(side: "left" | "right", value: number) {
     if (side === "left") setLeft(value);
     else setRight(value);
     onInteraction?.({ type: "slider_value_changed", payload: { side, value, label: config.variable_label } });
   }
-
-  const leftCost = left * left;
-  const rightCost = right * right;
 
   return (
     <section className="grid h-full min-h-[520px] grid-rows-[auto_1fr_auto] gap-5 p-5">
@@ -33,8 +48,8 @@ export function DualSliderExplorer({
       </header>
       <div className="grid content-center gap-5 lg:grid-cols-2">
         {[
-          { label: "方案 A", value: left, cost: leftCost, side: "left" as const },
-          { label: "方案 B", value: right, cost: rightCost, side: "right" as const },
+          { label: "方案 A", value: left, side: "left" as const },
+          { label: "方案 B", value: right, side: "right" as const },
         ].map((item) => (
           <label key={item.side} className="grid gap-4 rounded-[8px] border border-[var(--line)] bg-[#07120f] p-5">
             <div className="flex items-end justify-between gap-3">
@@ -54,8 +69,14 @@ export function DualSliderExplorer({
               className="w-full accent-[var(--accent)]"
             />
             <div className="rounded-[8px] border border-[var(--line)] bg-[#0c1915] p-4">
-              <div className="text-xs text-[var(--muted)]">平方成本</div>
-              <div className="mt-1 text-2xl font-semibold">{item.cost}</div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-xs text-[var(--muted)]">{primaryOutput.label}</div>
+                {primaryOutput.expression_label && <div className="text-xs text-[var(--accent)]">{primaryOutput.expression_label}</div>}
+              </div>
+              <div className="mt-1 text-2xl font-semibold">
+                {computeOutput(primaryOutput, item.value)}
+                {primaryOutput.unit}
+              </div>
             </div>
           </label>
         ))}

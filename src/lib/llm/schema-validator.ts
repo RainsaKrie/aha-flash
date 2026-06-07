@@ -52,6 +52,22 @@ const SliderConfigZod = z.object({
   unit: z.string().optional(),
   scenarios: z.array(z.object({ label: z.string(), value: z.number() })).optional(),
   explanation_template: z.string(),
+  outputs: z
+    .array(
+      z.object({
+        label: z.string(),
+        model: z.enum(["linear", "quadratic", "exponential", "inverse", "logarithmic"]),
+        expression_label: z.string().optional(),
+        multiplier: z.number().optional(),
+        offset: z.number().optional(),
+        unit: z.string().optional(),
+        description: z.string().optional(),
+      }),
+    )
+    .optional(),
+  insight_rules: z
+    .array(z.object({ when: z.enum(["low", "mid", "high"]), text: z.string() }))
+    .optional(),
 });
 
 const CardFlipConfigZod = z.object({
@@ -68,6 +84,19 @@ const ComparisonConfigZod = z.object({
   title: z.string(),
   left: z.object({ label: z.string(), content: z.string() }),
   right: z.object({ label: z.string(), content: z.string() }),
+  subject_a: z.string().optional(),
+  subject_b: z.string().optional(),
+  dimensions: z
+    .array(
+      z.object({
+        label: z.string(),
+        a: z.string(),
+        b: z.string(),
+        insight: z.string(),
+      }),
+    )
+    .optional(),
+  summary: z.string().optional(),
 });
 
 const QuizConfigZod = z.object({
@@ -90,8 +119,13 @@ const SandboxConfigZod = z.object({
       id: z.string(),
       label: z.string(),
       description: z.string(),
+      role: z.string().optional(),
     }),
   ),
+  required_module_ids: z.array(z.string()).optional(),
+  expected_sequence: z.array(z.string()).optional(),
+  connections: z.array(z.object({ from: z.string(), to: z.string(), label: z.string().optional() })).optional(),
+  success_summary: z.string().optional(),
 });
 
 const NarrativeBranchConfigZod = z.object({

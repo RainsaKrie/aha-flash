@@ -38,9 +38,12 @@ Pattern: probability
 Pattern: parameter_explore
 - 适用: 参数影响、因果变量、算法复杂度、利率变化。
 - Template: single_slider（默认单变量探索）, dual_slider（两个参数/方案并排比较）。
-- Payload: { title, variable_label, min, max, default_value, unit?, scenarios?, explanation_template }
+- Payload: { title, variable_label, min, max, default_value, unit?, scenarios?, explanation_template, outputs?, insight_rules? }
+- outputs: [{ label, model:"linear|quadratic|exponential|inverse|logarithmic", expression_label?, multiplier?, offset?, unit?, description? }]
+- insight_rules: [{ when:"low|mid|high", text }]
 - 正例: 拖动 n 看线性成本和平方成本变化。
-- 不要这样: 只有一个固定数字，没有滑动后会变化的解释。
+- 要求: 必须说明滑条输入改变了哪些输出指标；不要让组件硬猜公式。
+- 不要这样: 只有一个固定数字，没有滑动后会变化的解释；不要把所有概念都套成平方成本。
 
 Pattern: concept_memory
 - 适用: 术语配对、定义记忆、概念映射。
@@ -59,9 +62,11 @@ Pattern: process_timeline
 Pattern: comparison
 - 适用: 对比、辨析、方案权衡。
 - Template: split_panel（默认左右分栏，适合逐项辨析）, overlay_fade（叠加淡入，适合强调视角切换）。
-- Payload: { title, left:{label, content}, right:{label, content} }
+- Payload: { title, left:{label, content}, right:{label, content}, subject_a?, subject_b?, dimensions?, summary? }
+- dimensions: [{ label, a, b, insight }]，每个维度只比较一个问题。
 - 正例: 左右面板逐项比较股票和期权的权利/义务、成本、收益边界和风险来源。
 - 要求: left.content 与 right.content 各用 2-4 个短句表达，每句只讲一个差异点，避免整段百科。
+- 更好: 给 dimensions，让用户逐项切换“拥有什么/成本/亏损边界/时间限制”等维度。
 - 不要这样: 两边内容只是同义改写；不要为了迎合隐喻偏好而把严肃概念强行改成不准确的游戏设定。
 
 Pattern: knowledge_check
@@ -74,9 +79,11 @@ Pattern: knowledge_check
 Pattern: system_builder
 - 适用: 系统架构、模块组合、流程搭建。
 - Template: module_sandbox（默认模块选择）, flow_connect（按流程连接模块）。
-- Payload: { title, target, modules:[{id, label, description}] }
+- Payload: { title, target, modules:[{id, label, description, role?}], required_module_ids?, expected_sequence?, connections?, success_summary? }
+- connections: [{ from, to, label? }] 表示模块依赖或数据流。
+- expected_sequence: flow_connect 的正确流程顺序。
 - 正例: 用户选择输入、规则、反馈模块组成系统。
-- 不要这样: 模块之间没有共同目标。
+- 不要这样: 模块之间没有共同目标；不要让“全选所有模块”成为唯一玩法。
 
 Pattern: narrative_branch
 - 适用: 沉没成本、商业案例、逻辑谬误、历史选择、人物决策。

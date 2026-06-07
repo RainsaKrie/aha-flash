@@ -173,6 +173,20 @@ export function createMockSchema(input: string, depth: LearningDepth = "rapid"):
         ],
         explanation_template:
           "当变量变成 {{value}} 时，影响不是只多一点点；某些系统会因为乘法效应突然变重。",
+        outputs: includesAny(input, ["算法", "复杂度"])
+          ? [
+              { label: "线性成本", model: "linear", expression_label: "n", description: "每多一个输入，只多一份工作。" },
+              { label: "平方成本", model: "quadratic", expression_label: "n²", description: "输入彼此配对比较，规模会快速放大。" },
+            ]
+          : [
+              { label: "直接影响", model: "linear", expression_label: "x" },
+              { label: "放大影响", model: "exponential", expression_label: "1.08^x" },
+            ],
+        insight_rules: [
+          { when: "low", text: "低区间里，两种影响看起来差距不大。" },
+          { when: "mid", text: "中间区间开始出现分叉，复杂系统会逐步拉开距离。" },
+          { when: "high", text: "高区间里，非线性影响会突然变成主要负担。" },
+        ],
       },
     };
   }
@@ -292,6 +306,8 @@ export function createMockSchema(input: string, depth: LearningDepth = "rapid"):
         version: "2.0",
         payload: {
           title: "股票 vs. 期权 · 权利和风险边界",
+          subject_a: "股票",
+          subject_b: "期权",
           left: {
             label: "股票",
             content:
@@ -302,6 +318,33 @@ export function createMockSchema(input: string, depth: LearningDepth = "rapid"):
             content:
               "买期权是在买一个未来按约定价格交易的权利。先付期权费，之后可以选择行权或放弃。买方最大损失通常锁定为期权费。期权有到期日，时间本身会消耗价值。",
           },
+          dimensions: [
+            {
+              label: "你拥有什么",
+              a: "公司的一小份权益",
+              b: "未来按约定价格交易的选择权",
+              insight: "股票是持有资产，期权是购买选择权。",
+            },
+            {
+              label: "先付成本",
+              a: "买入股票本金",
+              b: "期权费",
+              insight: "期权用较小前置成本换未来机会。",
+            },
+            {
+              label: "亏损边界",
+              a: "股价下跌会侵蚀本金",
+              b: "买方通常最多亏掉期权费",
+              insight: "期权把买方最大损失提前封顶。",
+            },
+            {
+              label: "时间限制",
+              a: "没有固定到期日，可以长期持有",
+              b: "有到期日，时间会消耗价值",
+              insight: "期权不仅看方向，也看时间。",
+            },
+          ],
+          summary: "一句话：股票是拥有，期权是保留未来选择权。",
         },
         next_concepts: [
           { label: "期权费", relation: "理解期权成本和最大亏损边界" },
@@ -365,10 +408,16 @@ export function createMockSchema(input: string, depth: LearningDepth = "rapid"):
           title: "系统结构 · 流程连线",
           target: "把输入、规则、反馈三个模块连接成一个可学习系统",
           modules: [
-            { id: "input", label: "输入", description: "用户提出问题、粘贴材料或提供外部链接。" },
-            { id: "rules", label: "规则", description: "Harness 读取状态，选择隐喻域和组件类型。" },
-            { id: "feedback", label: "反馈", description: "用户交互结果回流，更新状态记忆。" },
+            { id: "input", label: "输入", role: "source", description: "用户提出问题或提供材料。" },
+            { id: "rules", label: "规则", role: "transform", description: "Harness 读取状态，选择隐喻域和组件类型。" },
+            { id: "feedback", label: "反馈", role: "loop", description: "用户交互结果回流，更新状态记忆。" },
           ],
+          expected_sequence: ["input", "rules", "feedback"],
+          connections: [
+            { from: "input", to: "rules", label: "进入理解管道" },
+            { from: "rules", to: "feedback", label: "生成并回收交互" },
+          ],
+          success_summary: "输入、规则、反馈连成闭环后，系统才能越用越贴合用户。",
         },
       };
     }
@@ -380,10 +429,16 @@ export function createMockSchema(input: string, depth: LearningDepth = "rapid"):
         title: "系统结构 · 模块沙盒",
         target: "把输入、规则、反馈三个模块组合成一个可学习系统",
         modules: [
-          { id: "input", label: "输入", description: "用户提出问题、粘贴材料或提供外部链接。" },
-          { id: "rules", label: "规则", description: "Harness 读取状态，选择隐喻域和组件类型。" },
-          { id: "feedback", label: "反馈", description: "用户交互结果回流，更新状态记忆。" },
+          { id: "input", label: "输入", role: "source", description: "用户提出问题或提供材料。" },
+          { id: "rules", label: "规则", role: "transform", description: "Harness 读取状态，选择隐喻域和组件类型。" },
+          { id: "feedback", label: "反馈", role: "loop", description: "用户交互结果回流，更新状态记忆。" },
         ],
+        required_module_ids: ["input", "rules", "feedback"],
+        connections: [
+          { from: "input", to: "rules", label: "进入理解管道" },
+          { from: "rules", to: "feedback", label: "生成并回收交互" },
+        ],
+        success_summary: "输入、规则、反馈都在场时，系统闭环才成立。",
       },
     };
   }
