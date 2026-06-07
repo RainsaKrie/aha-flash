@@ -120,6 +120,7 @@ POST /api/chat
   +-- detectFollowupIntent(input, current_thread)
   +-- classifyConversationIntent(input)
   +-- buildSystemPrompt(state + recent_messages + thread + route + target_depth)
+  +-- stream stage events when requested
   +-- generateSchemaWithLLM()
       |
       +-- if model unavailable or invalid output: createMockSchema()
@@ -239,6 +240,7 @@ POST /api/chat
 - `currentSchema`
 - 当前学习深度
 - loading/error
+- 分段生成状态
 - 当前组件质量反馈状态
 
 `/sandbox` 页面通过同一个 localStorage 用户 ID 读取 `/api/state`，将 `knowledge_assets` 按 `topic_area` 分组，展示概念卡片、`pattern/template`、理解深度和学习时间。
@@ -380,4 +382,4 @@ AHA_FLASH_STATE_DIR=
 - Vercel `/tmp` 状态不持久，不能作为生产记忆。
 - 当前 mock schema 仍承担较多验收输入路由。
 - 追问检测仍是规则 + 轻量 LLM 判别，后续需要真实对话样本回归。
-- 流式生成仍未完成，需要进一步设计 API 响应形态和前端 loading 分段反馈。
+- 当前流式生成是 `/api/chat` 的 NDJSON 阶段事件流，最后仍以完整 Schema 渲染；后续如需边生成边预览，需要重新设计增量 Schema 协议。

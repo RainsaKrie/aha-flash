@@ -30,6 +30,14 @@ interface SchemaIntent {
   reason: string;
 }
 
+interface ChatStageEvent {
+  type: "stage";
+  stage: string;
+  label: string;
+}
+
+type EmitChatEvent = (event: ChatStageEvent) => Promise<void> | void;
+
 function inferConcept(input: string) {
   const withoutUrls = input.replace(/https?:\/\/[^\s)）]+/g, "");
   const firstSentence = withoutUrls.split(/[。！？!?]/)[0] || withoutUrls;
@@ -198,19 +206,24 @@ async function generateSchemaWithLLM({
   return schemaMatchesIntent(repairedSchema, intent) ? repairedSchema : null;
 }
 
-export async function POST(req: Request) {
-  const { message, userId, depth: rawDepth, recent_messages } = await req.json();
-  const input = String(message || "").trim();
-  const depth = normalizeDepth(rawDepth);
-  const recentMessages = normalizeRecentMessages(recent_messages);
-
-  if (!input) {
-    return NextResponse.json({ error: "message is required" }, { status: 400 });
-  }
-
+async function processChatRequest({
+  input,
+  userId,
+  depth,
+  recentMessages,
+  emit,
+}: {
+  input: string;
+  userId?: string | null;
+  depth: LearningDepth;
+  recentMessages: RecentMessage[];
+  emit?: EmitChatEvent;
+}) {
+  await emit?.({ type: "stage", stage: "state", label: "读取你的学习状态" });
   const state = await initUserState(userId);
   const model = getLLMProvider();
   const schemaIntent = inferSchemaIntent(input);
+  await emit?.({ type: "stage", stage: "routing", label: "判断这是不是接着刚才问" });
   const followupInfo = await detectFollowupIntent(
     input,
     state.conversation_compressed.current_thread,
@@ -223,9 +236,10 @@ export async function POST(req: Request) {
           ...classifiedRoute,
           route: "knowledge" as const,
           reason: `延续当前线程：${followupInfo.reason}`,
-        }
+    }
       : classifiedRoute;
   const routeContext = `<route_context route="${routeInfo.route}" confidence="${routeInfo.confidence}" source="${routeInfo.source}" />`;
+  await emit?.({ type: "stage", stage: "prompt", label: "整理隐喻和组件约束" });
   const systemPrompt = [
     buildSystemPrompt(state, depth, { recentMessages, followup: followupInfo }),
     routeContext,
@@ -236,6 +250,7 @@ export async function POST(req: Request) {
   let schema = attachDepth(createMockSchema(input, depth), depth);
   let source: "mock" | "llm" = "mock";
 
+  await emit?.({ type: "stage", stage: "generating", label: model ? "生成互动组件结构" : "准备本地稳定组件" });
   if (model) {
     try {
       const generated = await generateSchemaWithLLM({ model, system: systemPrompt, input, intent: schemaIntent });
@@ -248,6 +263,7 @@ export async function POST(req: Request) {
     }
   }
 
+  await emit?.({ type: "stage", stage: "validating", label: "校验组件能否渲染" });
   const normalizedSchema = normalizeUISchema(schema);
   const concept =
     followupInfo.is_followup && state.conversation_compressed.current_thread?.concept
@@ -275,6 +291,7 @@ export async function POST(req: Request) {
         : rawReflection.summary,
   };
   let updatedState = state;
+  await emit?.({ type: "stage", stage: "memory", label: "更新学习线程和记忆" });
   if (routeInfo.route === "knowledge") {
     updatedState = await stateStore.updateCurrentThread(state.user_id, {
       concept: topic,
@@ -300,7 +317,9 @@ export async function POST(req: Request) {
     });
   }
 
-  return NextResponse.json({
+  await emit?.({ type: "stage", stage: "done", label: "组件准备好了" });
+
+  return {
     id: crypto.randomUUID(),
     role: "assistant",
     content:
@@ -316,5 +335,52 @@ export async function POST(req: Request) {
     userState: updatedState,
     source,
     created_at: new Date().toISOString(),
-  });
+  };
+}
+
+export async function POST(req: Request) {
+  const { message, userId, depth: rawDepth, recent_messages, stream } = await req.json();
+  const input = String(message || "").trim();
+  const depth = normalizeDepth(rawDepth);
+  const recentMessages = normalizeRecentMessages(recent_messages);
+
+  if (!input) {
+    return NextResponse.json({ error: "message is required" }, { status: 400 });
+  }
+
+  if (stream === true) {
+    const encoder = new TextEncoder();
+    const readable = new ReadableStream({
+      async start(controller) {
+        const send = (event: unknown) => {
+          controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+        };
+
+        try {
+          const payload = await processChatRequest({
+            input,
+            userId,
+            depth,
+            recentMessages,
+            emit: send,
+          });
+          send({ type: "final", payload });
+        } catch {
+          send({ type: "error", message: "生成失败，请稍后重试。" });
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(readable, {
+      headers: {
+        "Content-Type": "application/x-ndjson; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+      },
+    });
+  }
+
+  const payload = await processChatRequest({ input, userId, depth, recentMessages });
+  return NextResponse.json(payload);
 }

@@ -9,7 +9,7 @@ import { readUserId, writeUserId } from "@/lib/utils/storage";
 import { useAppStore } from "@/stores/app-store";
 import type { Message } from "@/types/chat";
 import { DEFAULT_LEARNING_DEPTH, LEARNING_DEPTH_LABELS, normalizeUISchema } from "@/types/schema";
-import type { InteractionEvent, LearningDepth } from "@/types/schema";
+import type { InteractionEvent, LearningDepth, UISchema } from "@/types/schema";
 import type { UserState } from "@/types/state";
 
 function nextDepth(depth: LearningDepth): LearningDepth | null {
@@ -21,6 +21,50 @@ function nextDepth(depth: LearningDepth): LearningDepth | null {
 function depthGuideCopy(depth: LearningDepth) {
   if (depth === "scenario") return "还不够清楚？代入真实场景试试";
   return "想不想拆开看看原理？";
+}
+
+type ChatStreamEvent =
+  | { type: "stage"; label: string }
+  | { type: "final"; payload: Record<string, unknown> }
+  | { type: "error"; message?: string };
+
+async function readChatStream(
+  response: Response,
+  onStage: (label: string) => void,
+): Promise<Record<string, unknown>> {
+  if (!response.body) return (await response.json()) as Record<string, unknown>;
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let finalPayload: Record<string, unknown> | null = null;
+
+  while (true) {
+    const { value, done } = await reader.read();
+    buffer += decoder.decode(value, { stream: !done });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const event = JSON.parse(line) as ChatStreamEvent;
+      if (event.type === "stage") onStage(event.label);
+      if (event.type === "final") finalPayload = event.payload;
+      if (event.type === "error") throw new Error(event.message || "Chat stream failed");
+    }
+
+    if (done) break;
+  }
+
+  if (buffer.trim()) {
+    const event = JSON.parse(buffer) as ChatStreamEvent;
+    if (event.type === "stage") onStage(event.label);
+    if (event.type === "final") finalPayload = event.payload;
+    if (event.type === "error") throw new Error(event.message || "Chat stream failed");
+  }
+
+  if (!finalPayload) throw new Error("Chat stream ended without final payload");
+  return finalPayload;
 }
 
 export default function HomePage() {
@@ -40,6 +84,7 @@ export default function HomePage() {
   const [learningDepth, setLearningDepth] = useState<LearningDepth>(DEFAULT_LEARNING_DEPTH);
   const [componentCompleted, setComponentCompleted] = useState(false);
   const [componentFeedback, setComponentFeedback] = useState<"helpful" | "off" | null>(null);
+  const [loadingStage, setLoadingStage] = useState("正在生成互动组件...");
 
   useEffect(() => {
     async function boot() {
@@ -79,35 +124,37 @@ export default function HomePage() {
     setError(null);
     setComponentCompleted(false);
     setComponentFeedback(null);
+    setLoadingStage("读取你的学习状态");
 
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: value, userId, depth, recent_messages: recentMessages }),
+        body: JSON.stringify({ message: value, userId, depth, recent_messages: recentMessages, stream: true }),
       });
       if (!response.ok) throw new Error(`Chat request failed: ${response.status}`);
-      const data = await response.json();
+      const data = await readChatStream(response, setLoadingStage);
 
       if (data.userId) {
-        writeUserId(data.userId);
-        setUserId(data.userId);
+        writeUserId(String(data.userId));
+        setUserId(String(data.userId));
       }
 
       if (data.userState) {
-        setUserState(data.userState);
+        setUserState(data.userState as UserState);
       }
+      const schema = data.schema as UISchema;
 
       const assistantMessage: Message = {
-        id: data.id || crypto.randomUUID(),
+        id: typeof data.id === "string" ? data.id : crypto.randomUUID(),
         role: "assistant",
-        content: data.content,
-        schema: data.schema,
-        created_at: data.created_at || new Date().toISOString(),
+        content: typeof data.content === "string" ? data.content : "已生成互动组件。",
+        schema,
+        created_at: typeof data.created_at === "string" ? data.created_at : new Date().toISOString(),
       };
 
       addMessage(assistantMessage);
-      setCurrentSchema(data.schema);
+      setCurrentSchema(schema);
     } catch {
       const fallbackMessage: Message = {
         id: crypto.randomUUID(),
@@ -119,6 +166,7 @@ export default function HomePage() {
       setError("聊天请求失败，没有更新当前互动组件。");
     } finally {
       setLoading(false);
+      setLoadingStage("正在生成互动组件...");
     }
   }
 
@@ -242,7 +290,7 @@ export default function HomePage() {
           )}
           {isLoading && (
             <div className="stage-loading" role="status">
-              正在生成互动组件...
+              {loadingStage}
             </div>
           )}
         </div>
