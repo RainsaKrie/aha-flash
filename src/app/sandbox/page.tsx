@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, BrainCircuit, Boxes, Clock3, Layers3, Map, Sparkles } from "lucide-react";
+import { ArrowLeft, BrainCircuit, Boxes, Clock3, Download, Layers3, Map, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
@@ -32,6 +32,39 @@ function formatDate(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+}
+
+function buildKnowledgeCardMarkdown(asset: KnowledgeAsset) {
+  return [
+    `# ${asset.concept}`,
+    "",
+    `- 主题：${asset.topic_area || "未分组"}`,
+    `- 理解深度：${understandingLabel[asset.understanding]}`,
+    `- Pattern：${asset.pattern}`,
+    `- Template：${asset.template}`,
+    `- 学习时间：${formatDate(asset.learned_at)}`,
+    "",
+    "## 回看提示",
+    "",
+    `用「${asset.pattern}/${asset.template}」重新生成互动组件，复盘这个概念的关键机制。`,
+    "",
+  ].join("\n");
+}
+
+function safeFilename(value: string) {
+  return value.replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, "-").slice(0, 48) || "knowledge-card";
+}
+
+function downloadKnowledgeCard(asset: KnowledgeAsset) {
+  const blob = new Blob([buildKnowledgeCardMarkdown(asset)], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${safeFilename(asset.concept)}.md`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 export default function SandboxPage() {
@@ -170,8 +203,19 @@ export default function SandboxPage() {
                       </dl>
 
                       <div className="flex items-center gap-2 border-t border-[var(--line)] pt-3 text-xs text-[var(--muted)]">
-                        <Clock3 size={14} />
-                        {formatDate(asset.learned_at)}
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                          <Clock3 size={14} />
+                          {formatDate(asset.learned_at)}
+                        </div>
+                        <button
+                          type="button"
+                          className="tool-button min-h-9 px-3 text-xs"
+                          title={`导出 ${asset.concept} 知识卡`}
+                          onClick={() => downloadKnowledgeCard(asset)}
+                        >
+                          <Download size={14} />
+                          导出
+                        </button>
                       </div>
                     </Card>
                   ))}

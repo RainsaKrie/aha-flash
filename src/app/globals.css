@@ -287,6 +287,40 @@ button:disabled {
   transform: scale(0.96);
 }
 
+.component-feedback {
+  margin: 0 auto 10px;
+  display: flex;
+  max-width: 1120px;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.component-feedback__button {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  padding: 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.component-feedback__button:hover,
+.component-feedback__button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent), transparent 88%);
+  color: var(--text);
+}
+
+.component-feedback__button:active {
+  transform: scale(0.96);
+}
+
 .input-error {
   margin: 0 auto 10px;
   max-width: 1120px;

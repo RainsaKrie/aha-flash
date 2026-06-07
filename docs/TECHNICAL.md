@@ -239,6 +239,7 @@ POST /api/chat
 - `currentSchema`
 - 当前学习深度
 - loading/error
+- 当前组件质量反馈状态
 
 `/sandbox` 页面通过同一个 localStorage 用户 ID 读取 `/api/state`，将 `knowledge_assets` 按 `topic_area` 分组，展示概念卡片、`pattern/template`、理解深度和学习时间。
 
@@ -250,6 +251,9 @@ POST /api/chat
 - 测验回答
 - 分类完成
 - 模拟完成
+- 组件质量反馈：有帮助 / 不准确
+
+知识沙盒支持将单张知识卡导出为 Markdown 文件，内容包括概念、主题、理解深度、Pattern、Template 和学习时间。
 - 模块构建完成
 
 ## 10. 质量评估
@@ -376,4 +380,4 @@ AHA_FLASH_STATE_DIR=
 - Vercel `/tmp` 状态不持久，不能作为生产记忆。
 - 当前 mock schema 仍承担较多验收输入路由。
 - 追问检测仍是规则 + 轻量 LLM 判别，后续需要真实对话样本回归。
-- 流式生成、反馈调优和知识卡片导出仍未完成。
+- 流式生成仍未完成，需要进一步设计 API 响应形态和前端 loading 分段反馈。

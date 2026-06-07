@@ -62,6 +62,12 @@ function summarizeInteraction(schemaType: string, eventType: string, payload: Re
     return `用户完成模拟推演，终值 ${payload.final_value ?? ""}`;
   }
 
+  if (eventType === "component_feedback") {
+    const rating = payload.rating === "helpful" ? "有帮助" : "不够准确";
+    const reason = typeof payload.reason === "string" && payload.reason.trim() ? `：${payload.reason}` : "";
+    return `用户反馈当前互动组件${rating}${reason}`;
+  }
+
   return `用户触发 ${schemaType} 的 ${eventType} 事件`;
 }
 

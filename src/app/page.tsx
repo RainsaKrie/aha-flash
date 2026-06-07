@@ -1,6 +1,6 @@
 "use client";
 
-import { BrainCircuit, Map, Settings2 } from "lucide-react";
+import { BrainCircuit, Map, Settings2, ThumbsDown, ThumbsUp } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ChatInput } from "@/components/chat/chat-input";
@@ -39,6 +39,7 @@ export default function HomePage() {
   } = useAppStore();
   const [learningDepth, setLearningDepth] = useState<LearningDepth>(DEFAULT_LEARNING_DEPTH);
   const [componentCompleted, setComponentCompleted] = useState(false);
+  const [componentFeedback, setComponentFeedback] = useState<"helpful" | "off" | null>(null);
 
   useEffect(() => {
     async function boot() {
@@ -77,6 +78,7 @@ export default function HomePage() {
     setLoading(true);
     setError(null);
     setComponentCompleted(false);
+    setComponentFeedback(null);
 
     try {
       const response = await fetch("/api/chat", {
@@ -162,6 +164,38 @@ export default function HomePage() {
     }
   }
 
+  async function recordComponentFeedback(rating: "helpful" | "off") {
+    setComponentFeedback(rating);
+    if (!userId || !currentSchema) return;
+
+    const normalizedSchema = normalizeUISchema(currentSchema);
+
+    try {
+      const response = await fetch("/api/interaction", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          schemaType: normalizedSchema.type,
+          eventType: "component_feedback",
+          payload: {
+            rating,
+            pattern: normalizedSchema.pattern,
+            template: normalizedSchema.template,
+            depth: normalizedSchema.depth,
+          },
+        }),
+      });
+      if (!response.ok) throw new Error("Feedback request failed");
+      const data = await response.json();
+      if (data.userState) {
+        setUserState(data.userState);
+      }
+    } catch {
+      setError("反馈暂时没有写入状态记忆。");
+    }
+  }
+
   async function followNextConcept(label: string, relation: string) {
     await submit(`${label}是什么？它和刚才的关系是：${relation}`, learningDepth);
   }
@@ -238,6 +272,30 @@ export default function HomePage() {
                 下一步：{concept.label}
               </button>
             ))}
+          </div>
+        )}
+        {currentSchema && !isLoading && (
+          <div className="component-feedback" aria-label="互动组件反馈">
+            <button
+              type="button"
+              className="component-feedback__button"
+              aria-pressed={componentFeedback === "helpful"}
+              title="这个组件有帮助"
+              onClick={() => void recordComponentFeedback("helpful")}
+            >
+              <ThumbsUp size={15} />
+              有帮助
+            </button>
+            <button
+              type="button"
+              className="component-feedback__button"
+              aria-pressed={componentFeedback === "off"}
+              title="这个组件不够准确"
+              onClick={() => void recordComponentFeedback("off")}
+            >
+              <ThumbsDown size={15} />
+              不准确
+            </button>
           </div>
         )}
         {errorMessage && <div className="input-error">{errorMessage}</div>}
