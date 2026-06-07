@@ -2,6 +2,7 @@
 
 import { CopyCheck } from "lucide-react";
 import { useState } from "react";
+import { ChoiceButton, ComponentFrame, EmptyState } from "./shared";
 import type { CardFlipConfig, InteractionEvent } from "@/types/schema";
 
 export function CardFlip({
@@ -12,29 +13,26 @@ export function CardFlip({
   onComplete?: (result: InteractionEvent) => void;
 }) {
   const [flipped, setFlipped] = useState<Record<number, boolean>>({});
+  const cards = config.cards || [];
 
   return (
-    <section className="grid h-full min-h-[520px] grid-rows-[auto_1fr] gap-5 p-5">
-      <header className="border-b border-[var(--line)] pb-4">
-        <p className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--accent)]">
-          <CopyCheck size={15} /> card flip
-        </p>
-        <h2 className="mt-1 text-2xl font-semibold">{config.title}</h2>
-      </header>
+    <ComponentFrame icon={CopyCheck} label="card flip" title={config.title} depth={config.depth}>
       <div className="grid content-center gap-4 sm:grid-cols-3">
-        {config.cards.map((card, index) => (
-          <button
+        {cards.length ? (
+          cards.map((card, index) => (
+          <ChoiceButton
             key={card.front}
+            active={flipped[index]}
             onClick={() =>
               setFlipped((value) => {
                 const next = { ...value, [index]: !value[index] };
-                if (Object.values(next).filter(Boolean).length === config.cards.length) {
-                  onComplete?.({ type: "card_flip_completed", payload: { cards: config.cards.length } });
+                if (Object.values(next).filter(Boolean).length === cards.length) {
+                  onComplete?.({ type: "card_flip_completed", payload: { cards: cards.length } });
                 }
                 return next;
               })
             }
-            className="min-h-44 rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4 text-left transition hover:border-[var(--accent)]"
+            className="min-h-44"
             title="翻转"
           >
             <span className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
@@ -43,9 +41,12 @@ export function CardFlip({
             <span className="mt-5 block text-lg font-semibold leading-7">
               {flipped[index] ? card.back : card.front}
             </span>
-          </button>
-        ))}
+          </ChoiceButton>
+          ))
+        ) : (
+          <EmptyState detail="模型没有给出术语卡片，重新生成后应至少包含 2 张卡。" />
+        )}
       </div>
-    </section>
+    </ComponentFrame>
   );
 }

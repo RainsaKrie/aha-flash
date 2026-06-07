@@ -1,3 +1,5 @@
+"use client";
+
 import type {
   GenerativeUIComponentProps,
   NormalizedUISchema,
@@ -21,6 +23,7 @@ import { QuizComboChain } from "./quiz-combo-chain";
 import { SandboxFlowConnect } from "./sandbox-flow-connect";
 import { SimulationPlay } from "./simulation-play";
 import { SliderExplorer } from "./slider-explorer";
+import { GenerativeUIErrorBoundary } from "./shared";
 import { TimelineScrubber } from "./timeline-scrubber";
 import { VerticalTimeline } from "./vertical-timeline";
 
@@ -97,5 +100,9 @@ export function renderBySchema(
     depth: normalized.depth,
   };
 
-  return <Component config={config as never} {...handlers} />;
+  return (
+    <GenerativeUIErrorBoundary>
+      <Component config={config as never} {...handlers} />
+    </GenerativeUIErrorBoundary>
+  );
 }

@@ -179,11 +179,14 @@ export interface GachaPoolItem {
   value: number;
 }
 
-export interface GachaSimulatorConfig {
+export interface ComponentDepthConfig {
+  depth?: LearningDepth;
+}
+
+export interface GachaSimulatorConfig extends ComponentDepthConfig {
   title: string;
   quote?: string;
   quote_author?: string;
-  depth?: LearningDepth;
   pool: GachaPoolItem[];
   option_cost: number;
   strike_price: number;
@@ -195,7 +198,7 @@ export interface GachaSimulatorConfig {
   };
 }
 
-export interface SliderExplorerConfig {
+export interface SliderExplorerConfig extends ComponentDepthConfig {
   title: string;
   variable_label: string;
   min: number;
@@ -216,12 +219,12 @@ export interface SliderExplorerConfig {
   insight_rules?: Array<{ when: "low" | "mid" | "high"; text: string }>;
 }
 
-export interface CardFlipConfig {
+export interface CardFlipConfig extends ComponentDepthConfig {
   title: string;
   cards: Array<{ front: string; back: string }>;
 }
 
-export interface ComparisonSplitConfig {
+export interface ComparisonSplitConfig extends ComponentDepthConfig {
   title: string;
   left: { label: string; content: string };
   right: { label: string; content: string };
@@ -236,18 +239,18 @@ export interface ComparisonSplitConfig {
   summary?: string;
 }
 
-export interface TimelineScrubberConfig {
+export interface TimelineScrubberConfig extends ComponentDepthConfig {
   title: string;
   events: Array<{ label: string; description: string }>;
 }
 
-export interface QuizBattleConfig {
+export interface QuizBattleConfig extends ComponentDepthConfig {
   title: string;
   question: string;
   options: Array<{ label: string; correct: boolean; explanation: string }>;
 }
 
-export interface BuildSandboxConfig {
+export interface BuildSandboxConfig extends ComponentDepthConfig {
   title: string;
   modules: Array<{ id: string; label: string; description: string; role?: string }>;
   target: string;
@@ -257,9 +260,8 @@ export interface BuildSandboxConfig {
   success_summary?: string;
 }
 
-export interface NarrativeBranchConfig {
+export interface NarrativeBranchConfig extends ComponentDepthConfig {
   title: string;
-  depth?: LearningDepth;
   opening: string;
   branches: Array<{
     choice_label: string;
@@ -268,7 +270,7 @@ export interface NarrativeBranchConfig {
   }>;
 }
 
-export interface ClassificationSortConfig {
+export interface ClassificationSortConfig extends ComponentDepthConfig {
   title: string;
   categories: Array<{ id: string; name: string }>;
   items: Array<{
@@ -278,7 +280,7 @@ export interface ClassificationSortConfig {
   }>;
 }
 
-export interface SimulationPlayConfig {
+export interface SimulationPlayConfig extends ComponentDepthConfig {
   title: string;
   params: Array<{
     label: string;

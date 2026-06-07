@@ -2,6 +2,7 @@
 
 import { Flame } from "lucide-react";
 import { useState } from "react";
+import { ChoiceButton, ComponentFrame, EmptyState, FeedbackPanel, Panel } from "./shared";
 import type { InteractionEvent, QuizBattleConfig } from "@/types/schema";
 
 export function QuizComboChain({
@@ -14,6 +15,7 @@ export function QuizComboChain({
   const [answered, setAnswered] = useState<Record<number, boolean>>({});
   const [combo, setCombo] = useState(0);
   const [feedback, setFeedback] = useState("连续答对会累积 combo。");
+  const options = config.options || [];
 
   function answer(index: number, correct: boolean, explanation: string) {
     const nextCombo = correct ? combo + 1 : 0;
@@ -24,38 +26,35 @@ export function QuizComboChain({
   }
 
   return (
-    <section className="grid h-full min-h-[520px] grid-rows-[auto_1fr_auto] gap-5 p-5">
-      <header className="border-b border-[var(--line)] pb-4">
-        <p className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--accent)]">
-          <Flame size={15} /> combo chain
-        </p>
-        <h2 className="mt-1 text-2xl font-semibold">{config.title}</h2>
-      </header>
+    <ComponentFrame
+      icon={Flame}
+      label="combo chain"
+      title={config.title}
+      depth={config.depth}
+      footer={<FeedbackPanel tone={combo > 0 ? "success" : "neutral"}>{feedback}</FeedbackPanel>}
+    >
       <div className="grid content-center gap-5">
-        <div className="rounded-[8px] border border-[var(--line)] bg-[#07120f] p-5">
+        <Panel className="p-5">
           <div className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">combo</div>
           <div className="mt-2 text-5xl font-semibold text-[var(--accent)]">{combo}</div>
-        </div>
+        </Panel>
         <h3 className="text-xl font-semibold">{config.question}</h3>
         <div className="grid gap-3 sm:grid-cols-3">
-          {config.options.map((option, index) => (
-            <button
+          {options.length ? (
+            options.map((option, index) => (
+            <ChoiceButton
               key={option.label}
               onClick={() => answer(index, option.correct, option.explanation)}
-              className={`rounded-[8px] border p-4 text-left text-sm transition hover:border-[var(--accent)] ${
-                answered[index] === true
-                  ? "border-[var(--accent)] bg-[rgba(53,230,155,0.12)]"
-                  : "border-[var(--line)] bg-[#07120f]"
-              }`}
+              correct={answered[index]}
             >
               {option.label}
-            </button>
-          ))}
+            </ChoiceButton>
+            ))
+          ) : (
+            <EmptyState detail="模型没有给出连答选项，重新生成后应包含至少一个正确选项。" />
+          )}
         </div>
       </div>
-      <p className="rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4 text-sm text-[var(--muted)]">
-        {feedback}
-      </p>
-    </section>
+    </ComponentFrame>
   );
 }

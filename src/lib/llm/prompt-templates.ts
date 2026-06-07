@@ -23,6 +23,9 @@ export const OUTPUT_FORMAT_RULES = `
 9. 知识讲解类请求应输出 1-2 个 next_concepts；label 是可继续学习的短概念，relation 是它与当前概念的关系，不要写成长解释。
 10. 如果存在 <source_context>，payload 内容必须吸收来源语境；不要编造 source_context 中没有出现的来源。
 11. V1 flat Schema 仍可兼容，但新输出必须优先使用 V2。
+12. 交互质量要求: payload 不能只让组件展示文字；必须包含用户动作、动作后的反馈、可比较/可变化/可验证的结果。
+13. 视觉密度要求: 标题短，按钮标签短，解释每句不超过 35 个汉字；长解释拆成多个短维度或短卡片。
+14. 空态规避: cards/events/options/modules/items/pool 等数组必须非空，且至少包含 2 个可操作项；测验必须至少有 1 个 correct=true。
 `.trim();
 
 export const SCHEMA_REFERENCE = `
@@ -31,6 +34,7 @@ Pattern: probability
 - Template: card_flip_reveal（默认抽卡卡牌）, spin_wheel（转盘概率，适合强调单次随机结果）。
 - Payload: { title, quote?, quote_author?, pool:[{name, rarity, probability, value}], option_cost, strike_price, pulls_per_try, explanation_map:{win, lose} }
 - 正例: 期权用抽卡锁价券表达有限损失和上涨收益。
+- 视觉指导: pool 项目名要短，rarity/概率/value 应形成明显层级；explanation_map.win/lose 必须分别解释“为什么值得行权”和“为什么只损失期权费”。
 - 推荐链正例: 期权后推荐期货、保险。
 - 深度变化: rapid 强调“花小钱买未来选择权”；scenario 强调“到期时是否行权”；mapping 强调“期权费/行权价/标的价格/损益边界”的对应关系。
 - 不要这样: 只写“期权是一种金融工具”，没有可操作动作和结果反馈。
@@ -42,6 +46,7 @@ Pattern: parameter_explore
 - outputs: [{ label, model:"linear|quadratic|exponential|inverse|logarithmic", expression_label?, multiplier?, offset?, unit?, description? }]
 - insight_rules: [{ when:"low|mid|high", text }]
 - 正例: 拖动 n 看线性成本和平方成本变化。
+- 视觉指导: scenarios 使用 2-3 个短标签；outputs 用 1-3 个核心指标，不要堆满数学术语；insight_rules 的 low/mid/high 要给出不同判断。
 - 要求: 必须说明滑条输入改变了哪些输出指标；不要让组件硬猜公式。
 - 不要这样: 只有一个固定数字，没有滑动后会变化的解释；不要把所有概念都套成平方成本。
 
@@ -50,6 +55,7 @@ Pattern: concept_memory
 - Template: term_cards（默认翻牌记忆）, grid_match（术语与含义配对）。
 - Payload: { title, cards:[{front, back}] }
 - 正例: 正面是术语，背面是用户熟悉隐喻中的含义。
+- 视觉指导: cards 以 3-6 张为宜；front 只放术语或短动作，back 只放一句解释。
 - 不要这样: 每张卡背面写成长篇百科段落。
 
 Pattern: process_timeline
@@ -57,6 +63,7 @@ Pattern: process_timeline
 - Template: horizontal_timeline（默认横向拖动）, vertical_scroll（纵向阶段展开）。
 - Payload: { title, events:[{label, description}] }
 - 正例: 用户拖动时间节点看到阶段变化。
+- 视觉指导: events 以 3-6 个阶段为宜；label 是阶段名，description 说明该阶段发生了什么变化。
 - 不要这样: 事件之间没有因果或阶段关系。
 
 Pattern: comparison
@@ -65,6 +72,7 @@ Pattern: comparison
 - Payload: { title, left:{label, content}, right:{label, content}, subject_a?, subject_b?, dimensions?, summary? }
 - dimensions: [{ label, a, b, insight }]，每个维度只比较一个问题。
 - 正例: 左右面板逐项比较股票和期权的权利/义务、成本、收益边界和风险来源。
+- 视觉指导: 优先输出 dimensions；每个维度的 a/b 必须短到能放进卡片标题，insight 是一句可记住的差异结论。
 - 要求: left.content 与 right.content 各用 2-4 个短句表达，每句只讲一个差异点，避免整段百科。
 - 更好: 给 dimensions，让用户逐项切换“拥有什么/成本/亏损边界/时间限制”等维度。
 - 不要这样: 两边内容只是同义改写；不要为了迎合隐喻偏好而把严肃概念强行改成不准确的游戏设定。
@@ -74,6 +82,7 @@ Pattern: knowledge_check
 - Template: single_question（默认单题）, combo_chain（连答 combo，适合快速巩固）。
 - Payload: { title, question, options:[{label, correct, explanation}] }
 - 正例: 选项能区分定义背诵和机制理解。
+- 视觉指导: 选项 3-4 个；错误选项要像真实误解，explanation 必须指出错在哪里。
 - 不要这样: 没有 correct=true 的正确选项。
 
 Pattern: system_builder
@@ -83,6 +92,7 @@ Pattern: system_builder
 - connections: [{ from, to, label? }] 表示模块依赖或数据流。
 - expected_sequence: flow_connect 的正确流程顺序。
 - 正例: 用户选择输入、规则、反馈模块组成系统。
+- 视觉指导: modules 以 4-6 个为宜；role 用 2-4 字标记模块职责；connections 只写关键依赖，不要全连接。
 - 不要这样: 模块之间没有共同目标；不要让“全选所有模块”成为唯一玩法。
 
 Pattern: narrative_branch
@@ -90,6 +100,7 @@ Pattern: narrative_branch
 - Template: branch_story。
 - Payload: { title, opening, branches:[{choice_label, outcome_description, insight}] }
 - 正例: 沉没成本用“继续排队/及时离开/换目标”的分支故事揭示成本不可追回。
+- 视觉指导: branches 以 3 个为宜；每个选择必须有不同后果，insight 直接点出选择背后的原则。
 - 深度变化: rapid 只让用户看见“过去成本不可追回”；scenario 让用户在真实选择中比较未来收益；mapping 把已付成本、机会成本、边际收益逐项对照。
 - 不要这样: 每个分支结果都一样，用户选择不会改变后果。
 
@@ -98,6 +109,7 @@ Pattern: classification_sort
 - Template: category_buckets。
 - Payload: { title, categories:[{id, name}], items:[{label, correct_category, explanation}] }
 - 正例: 把价值投资、成长投资、指数投资案例放入不同分类桶。
+- 视觉指导: categories 以 3-4 个为宜；items 以 4-8 个为宜；explanation 要能解释为什么属于该类。
 - 不要这样: correct_category 不匹配 categories 里的 id。
 
 Pattern: simulation_play
@@ -105,5 +117,6 @@ Pattern: simulation_play
 - Template: parameter_simulation。
 - Payload: { title, params:[{label, min, max, default, unit?}], compute_formula_description, steps }
 - 正例: 调整增长率和初始加成，播放 8 步看到复利曲线变陡。
+- 视觉指导: params 以 2-3 个为宜；steps 取 5-10；compute_formula_description 用一句话解释图表如何随参数变化。
 - 不要这样: 只有描述，没有可调参数或时间推进。
 `.trim();

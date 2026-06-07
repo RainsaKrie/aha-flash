@@ -6,6 +6,22 @@
 
 ## 2026-06-07
 
+### 组件质量第二阶段
+
+完成：
+- 新增 `src/components/generative-ui/shared.tsx`，提供统一组件外壳、深度标签、面板、反馈面板、进度条、选项按钮、空态和组件级错误边界。
+- `registry` 接入组件错误边界，单个互动组件渲染失败时展示可重试降级，不再拖垮整个工作台。
+- `concept_memory`、`knowledge_check`、`process_timeline` 相关旧组件接入统一标题区、深度标签、空态、进度和选中/正确/错误反馈。
+- 所有组件 config 类型统一支持 `depth`，匹配 registry 注入学习深度的运行时行为。
+- `SCHEMA_REFERENCE` 增加跨 Pattern 的交互质量、视觉密度、空态规避规则，并为各 Pattern 补充视觉指导。
+- 扩展隐喻映射表，覆盖内容创作、软件工程、产品设计、投资、教育、法律、医学、运动和更多游戏兴趣域。
+
+验证：
+- `npm run typecheck`
+- `npm run lint`
+
+---
+
 ### 组件质量第一阶段
 
 完成：

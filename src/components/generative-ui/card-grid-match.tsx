@@ -2,6 +2,7 @@
 
 import { Grid2X2Check } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { ComponentFrame, EmptyState, FeedbackPanel, Panel, ProgressMeter } from "./shared";
 import type { CardFlipConfig, InteractionEvent } from "@/types/schema";
 
 export function CardGridMatch({
@@ -13,26 +14,38 @@ export function CardGridMatch({
 }) {
   const [selected, setSelected] = useState<Record<number, number>>({});
   const completedRef = useRef(false);
-  const backs = config.cards.map((card) => card.back);
-  const matched = config.cards.filter((card, index) => backs[selected[index]] === card.back).length;
+  const cards = config.cards || [];
+  const backs = cards.map((card) => card.back);
+  const matched = cards.filter((card, index) => backs[selected[index]] === card.back).length;
 
   useEffect(() => {
-    if (completedRef.current || matched < config.cards.length) return;
+    if (completedRef.current || matched < cards.length || cards.length === 0) return;
     completedRef.current = true;
-    onComplete?.({ type: "card_flip_completed", payload: { cards: config.cards.length, mode: "grid_match" } });
-  }, [config.cards.length, matched, onComplete]);
+    onComplete?.({ type: "card_flip_completed", payload: { cards: cards.length, mode: "grid_match" } });
+  }, [cards.length, matched, onComplete]);
 
   return (
-    <section className="grid h-full min-h-[520px] grid-rows-[auto_1fr_auto] gap-5 p-5">
-      <header className="border-b border-[var(--line)] pb-4">
-        <p className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--accent)]">
-          <Grid2X2Check size={15} /> grid match
-        </p>
-        <h2 className="mt-1 text-2xl font-semibold">{config.title}</h2>
-      </header>
+    <ComponentFrame
+      icon={Grid2X2Check}
+      label="grid match"
+      title={config.title}
+      depth={config.depth}
+      footer={
+        <FeedbackPanel tone={matched === cards.length && cards.length > 0 ? "success" : "neutral"}>
+          <ProgressMeter value={matched} total={cards.length} />
+        </FeedbackPanel>
+      }
+    >
       <div className="grid content-center gap-4 sm:grid-cols-3">
-        {config.cards.map((card, index) => (
-          <div key={card.front} className="grid gap-3 rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4">
+        {cards.length ? (
+          cards.map((card, index) => {
+            const selectedBack = selected[index];
+            const correct = selectedBack !== undefined ? backs[selectedBack] === card.back : undefined;
+            return (
+          <Panel
+            key={card.front}
+            className={`grid gap-3 p-4 ${correct === true ? "border-[var(--accent)] bg-[rgba(53,230,155,0.1)]" : correct === false ? "border-[var(--danger)] bg-[rgba(255,107,107,0.08)]" : ""}`}
+          >
             <strong className="min-h-12 text-base leading-6">{card.front}</strong>
             <select
               aria-label={`匹配 ${card.front}`}
@@ -47,12 +60,13 @@ export function CardGridMatch({
                 </option>
               ))}
             </select>
-          </div>
-        ))}
+          </Panel>
+            );
+          })
+        ) : (
+          <EmptyState detail="模型没有给出配对卡片，重新生成后应至少包含 2 组术语和含义。" />
+        )}
       </div>
-      <div className="rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4 text-sm text-[var(--muted)]">
-        已匹配 {matched} / {config.cards.length}
-      </div>
-    </section>
+    </ComponentFrame>
   );
 }
