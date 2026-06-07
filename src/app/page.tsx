@@ -302,15 +302,21 @@ export default function HomePage() {
 
           <Card className="widget-surface">
             {currentSchema ? (
-              <div className="grid h-full gap-4">
+              <div className="grid gap-4">
                 {renderBySchema(currentSchema, {
                   onInteraction: (event) => void recordComponentEvent(event),
                   onComplete: (event) => void recordComponentEvent(event),
                 })}
                 {nextConcepts.length > 0 && (
-                  <div className="grid gap-3 border-t border-[var(--line)] pt-4">
-                    <div className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent)]">
-                      下一步
+                  <aside className="mx-5 mb-5 grid gap-3 rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4">
+                    <div className="flex flex-wrap items-end justify-between gap-2">
+                      <div>
+                        <div className="text-xs font-medium uppercase tracking-[0.18em] text-[var(--accent)]">
+                          next concepts
+                        </div>
+                        <h3 className="mt-1 text-base font-semibold">下一步</h3>
+                      </div>
+                      <div className="text-xs text-[var(--muted)]">沿着刚才的概念继续展开</div>
                     </div>
                     <div className="grid gap-2 sm:grid-cols-2">
                       {nextConcepts.map((concept) => (
@@ -326,7 +332,7 @@ export default function HomePage() {
                         </button>
                       ))}
                     </div>
-                  </div>
+                  </aside>
                 )}
               </div>
             ) : (

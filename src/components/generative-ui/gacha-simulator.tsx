@@ -39,12 +39,13 @@ export function GachaSimulator({
   const best = useMemo(() => results.reduce<GachaPoolItem | null>((acc, item) => (!acc || item.value > acc.value ? item : acc), null), [results]);
   const profit = best ? Math.max(best.value - config.strike_price - config.option_cost, -config.option_cost) : 0;
   const won = Boolean(best && best.value > config.strike_price);
+  const pool = config.pool.length ? config.pool : [{ name: "未知结果", rarity: "3", probability: 1, value: 0 }];
 
   function pull() {
     setPhase("pulling");
     setBalance((value) => value - config.option_cost);
     window.setTimeout(() => {
-      const next = Array.from({ length: config.pulls_per_try }, () => draw(config.pool));
+      const next = Array.from({ length: config.pulls_per_try }, () => draw(pool));
       const bestItem = next.reduce<GachaPoolItem | null>(
         (acc, item) => (!acc || item.value > acc.value ? item : acc),
         null,
@@ -72,8 +73,10 @@ export function GachaSimulator({
     setResults([]);
   }
 
+  const displayItems = results.length ? results : pool.slice(0, Math.max(3, Math.min(pool.length, 6)));
+
   return (
-    <section className="grid h-full min-h-[560px] grid-rows-[auto_1fr_auto] gap-5 p-5">
+    <section className="grid min-h-[520px] gap-5 p-5">
       <header className="flex flex-wrap items-start justify-between gap-3 border-b border-[var(--line)] pb-4">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--accent)]">gacha simulator</p>
@@ -92,7 +95,7 @@ export function GachaSimulator({
         </div>
       </header>
 
-      <div className="grid gap-5 lg:grid-cols-[280px_1fr]">
+      <div className="grid gap-5 lg:grid-cols-[260px_1fr]">
         <aside className="rounded-[8px] border border-[var(--line)] bg-[#07120f] p-4">
           <div className="mb-3 flex items-center gap-2 text-sm font-medium">
             <Ticket size={16} />
@@ -124,13 +127,27 @@ export function GachaSimulator({
           </div>
         </aside>
 
-        <div className="rounded-[8px] border border-[var(--line)] bg-[#091611] p-4">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-            {(results.length ? results : config.pool.slice(0, 10)).map((item, index) => (
+        <div className="grid gap-4 rounded-[8px] border border-[var(--line)] bg-[#091611] p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
+                {results.length ? "抽取结果" : "奖池预览"}
+              </div>
+              <div className="mt-1 text-sm text-[var(--muted)]">
+                {results.length ? "结果揭晓后，再判断这张券是否值得执行。" : "先看可能结果，再决定是否付出期权费。"}
+              </div>
+            </div>
+            <div className="rounded-[8px] border border-[var(--line)] bg-[#0c1915] px-3 py-2 text-xs text-[var(--muted)]">
+              最高价值 {Math.max(...pool.map((item) => item.value))}
+            </div>
+          </div>
+
+          <div className="grid min-h-52 place-content-center gap-3 [grid-template-columns:repeat(auto-fit,minmax(120px,160px))]">
+            {displayItems.map((item, index) => (
               <div
                 key={`${item.name}-${index}`}
                 className={[
-                  "grid aspect-[4/5] place-items-center rounded-[8px] border p-3 text-center text-sm transition",
+                  "grid aspect-[4/5] place-items-center rounded-[8px] border p-3 text-center text-sm shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition",
                   item.rarity === "5"
                     ? "border-[var(--accent-2)] bg-[rgba(247,201,72,0.14)]"
                     : item.rarity === "4"
@@ -139,10 +156,29 @@ export function GachaSimulator({
                   phase === "pulling" ? "animate-pulse" : "",
                 ].join(" ")}
               >
-                <span className="font-medium">{phase === "pulling" ? "..." : item.name}</span>
+                <span>
+                  <span className="block text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
+                    {phase === "pulling" ? "rolling" : `${Math.round(item.probability * 100)}%`}
+                  </span>
+                  <strong className="mt-2 block text-base">{phase === "pulling" ? "..." : item.name}</strong>
+                  <span className="mt-2 block text-xs text-[var(--accent-2)]">价值 {item.value}</span>
+                </span>
               </div>
             ))}
           </div>
+
+          {!results.length && (
+            <div className="grid gap-2 sm:grid-cols-3">
+              {pool.slice(0, 3).map((item) => (
+                <div key={`${item.name}-odds`} className="rounded-[8px] border border-[var(--line)] bg-[#0c1915] p-3 text-xs">
+                  <div className="flex justify-between gap-3">
+                    <span className="text-[var(--muted)]">{item.name}</span>
+                    <strong>{Math.round(item.probability * 100)}%</strong>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
