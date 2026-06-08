@@ -5,7 +5,7 @@ import {
   detectFollowupIntent,
   inferTopic,
 } from "@/lib/harness/conversation-router";
-import { buildSystemPrompt } from "@/lib/harness/prompt-composer";
+import { buildJsonSystemPrompt, buildToolSystemPrompt } from "@/lib/harness/prompt-composer";
 import { reflectTurn } from "@/lib/harness/state-reflection";
 import { initUserState } from "@/lib/harness/state-machine";
 import { stateStore } from "@/lib/harness/state-store";
@@ -195,10 +195,7 @@ async function generateSchemaWithTools({
   try {
     const result = await generateText({
       model,
-      system: [
-        system,
-        "必须调用一个 generate_* 工具来生成互动组件。不要直接输出 JSON 文本。",
-      ].join("\n\n"),
+      system,
       messages: [{ role: "user", content: [input, buildIntentDirective(intent)].filter(Boolean).join("\n\n") }],
       tools: buildGenerativeAiTools(),
       toolChoice: "required",
@@ -338,8 +335,15 @@ async function processChatRequest({
       : classifiedRoute;
   const routeContext = `<route_context route="${routeInfo.route}" confidence="${routeInfo.confidence}" source="${routeInfo.source}" />`;
   await emit?.({ type: "stage", stage: "prompt", label: "整理隐喻和组件约束" });
-  const systemPrompt = [
-    buildSystemPrompt(state, depth, { recentMessages, followup: followupInfo, schemaIntent }),
+  const promptContext = { recentMessages, followup: followupInfo, schemaIntent };
+  const toolSystemPrompt = [
+    buildToolSystemPrompt(state, depth, promptContext),
+    routeContext,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+  const jsonSystemPrompt = [
+    buildJsonSystemPrompt(state, depth, promptContext),
     routeContext,
   ]
     .filter(Boolean)
@@ -352,12 +356,12 @@ async function processChatRequest({
   await emit?.({ type: "stage", stage: "generating", label: model ? "生成互动组件结构" : "准备本地稳定组件" });
   if (model) {
     try {
-      const toolGenerated = await generateSchemaWithTools({ model, system: systemPrompt, input, intent: schemaIntent });
+      const toolGenerated = await generateSchemaWithTools({ model, system: toolSystemPrompt, input, intent: schemaIntent });
       if (toolGenerated.schema) {
         schema = attachDepth(toolGenerated.schema, depth);
         source = "llm";
       } else {
-        const jsonGenerated = await generateSchemaWithLLM({ model, system: systemPrompt, input, intent: schemaIntent });
+        const jsonGenerated = await generateSchemaWithLLM({ model, system: jsonSystemPrompt, input, intent: schemaIntent });
         if (jsonGenerated.schema) {
           schema = attachDepth(jsonGenerated.schema, depth);
           source = "llm";

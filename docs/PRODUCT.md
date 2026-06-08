@@ -340,7 +340,7 @@ Round 3 当前任务：
 |---|---|---|
 | T30 | 定义 10 个 Pattern Tool，inputSchema 与现有 Zod 校验逻辑一致 | 完成 |
 | T31 | 路由改为 Tool 选择，选 Tool 即选 Pattern | 完成 |
-| T32 | 简化 System Prompt，只保留角色、用户状态、隐喻规则和 Tool 使用提示 | 待做 |
+| T32 | 简化 System Prompt，只保留角色、用户状态、隐喻规则和 Tool 使用提示 | 完成 |
 | T33 | 简化校验层，Tool calling 输出作为结构化数据后只做二次确认 | 待做 |
 | T34 | 三重兜底：Tool calling、JSON fallback、mock schema | 待做 |
 | T35a | 顶栏、组件区、输入栏视觉语言收束 | 待做 |

@@ -13,6 +13,7 @@
 - 将 Pattern Tool Calling、三重兜底、Prompt 简化、成本优化和安全部署目标同步进 `TECHNICAL.md`。
 - T30 已完成：新增 `src/lib/tools/generative-tools.ts`，定义 10 个 Pattern Tool、默认 Template 映射和 Tool 调用结果转 V2 Schema helper。
 - T31 已完成：`/api/chat` 优先使用 AI SDK Tool Calling 选择 `generate_*` Pattern Tool；Tool 失败时保留现有 JSON fallback，最终仍可 mock fallback。
+- T32 已完成：拆分 Tool 主链路 Prompt 与 JSON fallback Prompt；Tool 主链路不再注入自然语言 `SCHEMA_REFERENCE` 和输出格式长规则。
 
 ## 2026-06-07
 

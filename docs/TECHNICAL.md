@@ -410,7 +410,7 @@ AHA_FLASH_STATE_DIR=
 |---|---|---|
 | T30 | 新建 `GENERATIVE_TOOLS`，10 个 Pattern Tool 的 inputSchema 与 Zod 协议对齐 | 完成 |
 | T31 | `/api/chat` 使用 Tool Calling 选择 Pattern | 完成 |
-| T32 | System Prompt 主链路降到 1000 tokens 内 | 待做 |
+| T32 | System Prompt 主链路降到 1000 tokens 内 | 完成 |
 | T33 | Tool calling 后校验层只做轻量二次确认 | 待做 |
 | T34 | 保留 Tool -> JSON fallback -> mock 三重兜底 | 待做 |
 | T36 | 合并 followup、route、schema 相关 LLM 调用，单次请求 LLM 调用不超过 3 次 | 待做 |

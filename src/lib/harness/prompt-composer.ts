@@ -7,6 +7,7 @@ import {
   METAPHOR_GUIDELINES,
   OUTPUT_FORMAT_RULES,
   SYSTEM_ROLE_PROMPT,
+  TOOL_USE_HINT,
   getSchemaReferenceForPattern,
 } from "@/lib/llm/prompt-templates";
 
@@ -53,7 +54,7 @@ function buildThreadContext(state: UserState, followup?: FollowupDetection) {
 `.trim();
 }
 
-export function buildSystemPrompt(
+function buildPromptBase(
   state: UserState,
   targetDepth: LearningDepth = "rapid",
   context: PromptContext = {},
@@ -79,13 +80,56 @@ export function buildSystemPrompt(
 </user_state>
 `.trim();
   const depthContext = `<target_depth>${targetDepth}</target_depth>`;
+
+  return {
+    metaphor,
+    stateContext,
+    recentMessagesContext: buildRecentMessagesContext(context.recentMessages),
+    threadContext: buildThreadContext(state, context.followup),
+    depthContext,
+  };
+}
+
+export function buildToolSystemPrompt(
+  state: UserState,
+  targetDepth: LearningDepth = "rapid",
+  context: PromptContext = {},
+) {
+  const { metaphor, stateContext, recentMessagesContext, threadContext, depthContext } = buildPromptBase(
+    state,
+    targetDepth,
+    context,
+  );
+
+  return [
+    SYSTEM_ROLE_PROMPT,
+    stateContext,
+    recentMessagesContext,
+    threadContext,
+    depthContext,
+    metaphor.promptHint,
+    METAPHOR_GUIDELINES,
+    TOOL_USE_HINT,
+  ].join("\n\n");
+}
+
+export function buildJsonSystemPrompt(
+  state: UserState,
+  targetDepth: LearningDepth = "rapid",
+  context: PromptContext = {},
+) {
+  const { metaphor, stateContext, recentMessagesContext, threadContext, depthContext } = buildPromptBase(
+    state,
+    targetDepth,
+    context,
+  );
   const schemaReference = getSchemaReferenceForPattern(context.schemaIntent?.pattern);
 
   return [
     SYSTEM_ROLE_PROMPT,
     stateContext,
-    buildRecentMessagesContext(context.recentMessages),
-    buildThreadContext(state, context.followup),
+    recentMessagesContext,
+    threadContext,
     depthContext,
     metaphor.promptHint,
     METAPHOR_GUIDELINES,
@@ -93,3 +137,5 @@ export function buildSystemPrompt(
     schemaReference,
   ].join("\n\n");
 }
+
+export const buildSystemPrompt = buildJsonSystemPrompt;

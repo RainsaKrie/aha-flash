@@ -15,6 +15,10 @@ export const METAPHOR_GUIDELINES = `
 6. 控制文本密度，解释必须短、准、能驱动交互。
 `.trim();
 
+export const TOOL_USE_HINT = `
+必须选择并调用一个最匹配的 generate_* 工具；工具参数就是组件内容，不要直接输出 JSON 文本。
+`.trim();
+
 export const OUTPUT_FORMAT_RULES = `
 输出规范:
 1. 必须输出合法 JSON，不要包裹 Markdown 代码块。
