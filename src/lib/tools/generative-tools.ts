@@ -1,5 +1,5 @@
 import { jsonSchema, tool, type ToolSet } from "ai";
-import type { LearningDepth, PatternType, TemplateId } from "../../types/schema.ts";
+import { isLearningDepth, type LearningDepth, type NextConcept, type PatternType, type TemplateId } from "../../types/schema.ts";
 
 type JsonSchema = Record<string, unknown>;
 
@@ -446,6 +446,21 @@ export function isGenerativeToolName(name: string): name is GenerativeToolName {
   return Object.hasOwn(GENERATIVE_TOOLS, name);
 }
 
+function normalizeNextConcepts(value: unknown): NextConcept[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const concepts = value
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const record = item as Record<string, unknown>;
+      return typeof record.label === "string" && typeof record.relation === "string"
+        ? { label: record.label, relation: record.relation }
+        : null;
+    })
+    .filter((item): item is NextConcept => Boolean(item));
+
+  return concepts.length ? concepts : undefined;
+}
+
 export function buildSchemaFromGenerativeToolCall(name: GenerativeToolName, args: Record<string, unknown>) {
   const tool = GENERATIVE_TOOLS[name];
   const { depth, next_concepts, ...payload } = args;
@@ -453,8 +468,8 @@ export function buildSchemaFromGenerativeToolCall(name: GenerativeToolName, args
     pattern: tool.pattern,
     template: tool.template,
     version: "2.0",
-    depth: depth as LearningDepth | undefined,
-    next_concepts,
+    depth: isLearningDepth(depth) ? depth : undefined,
+    next_concepts: normalizeNextConcepts(next_concepts),
     payload,
   };
 }

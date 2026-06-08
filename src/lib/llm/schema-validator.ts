@@ -1,5 +1,13 @@
 import { z } from "zod";
-import { SCHEMA_CATALOG, V1_TO_V2_SCHEMA_MAP, type UISchema } from "../../types/schema.ts";
+import {
+  SCHEMA_CATALOG,
+  V1_TO_V2_SCHEMA_MAP,
+  type LearningDepth,
+  type NextConcept,
+  type PatternType,
+  type TemplateId,
+  type UISchema,
+} from "../../types/schema.ts";
 
 export type MetaphorTraceValidationMode = "off" | "warn" | "reject";
 
@@ -391,6 +399,15 @@ const V2PayloadSchemas: Record<string, Record<string, z.ZodType>> = {
   },
 };
 
+interface KnownV2SchemaInput {
+  pattern: PatternType;
+  template: TemplateId;
+  version?: string;
+  depth?: LearningDepth;
+  next_concepts?: NextConcept[];
+  payload: unknown;
+}
+
 function getRecord(raw: unknown) {
   return raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : null;
 }
@@ -401,6 +418,16 @@ function summarizeZodIssues(error: z.ZodError, prefix = "") {
     message: issue.message,
     code: issue.code,
   }));
+}
+
+function sanitizeAdvisoryPayloadFields(payload: unknown) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return payload;
+  const record = payload as Record<string, unknown>;
+  if (!Object.hasOwn(record, "metaphor_trace")) return payload;
+  if (record.metaphor_trace && typeof record.metaphor_trace === "object" && !Array.isArray(record.metaphor_trace)) return payload;
+
+  const { metaphor_trace: _metaphorTrace, ...rest } = record;
+  return rest;
 }
 
 function diagnoseSchemaMismatch(raw: unknown, error: z.ZodError) {
@@ -539,6 +566,75 @@ export function getSchemaWarnings(raw: unknown, options: SchemaValidationOptions
   const result = UISchemaZod.safeParse(raw);
   if (!result.success) return [];
   return getAdvisorySchemaIssues(result.data as UISchema);
+}
+
+export function getKnownV2SchemaError(input: KnownV2SchemaInput) {
+  const payloadSchema = V2PayloadSchemas[input.pattern]?.[input.template];
+  if (!payloadSchema) {
+    return JSON.stringify(
+      {
+        reason: "unknown pattern/template pair",
+        actual_pattern: input.pattern,
+        actual_template: input.template,
+      },
+      null,
+      2,
+    );
+  }
+
+  const payloadResult = payloadSchema.safeParse(sanitizeAdvisoryPayloadFields(input.payload));
+  if (!payloadResult.success) {
+    return JSON.stringify(
+      {
+        reason: "payload does not satisfy selected tool schema",
+        actual_pattern: input.pattern,
+        actual_template: input.template,
+        zod_issues: summarizeZodIssues(payloadResult.error, "payload"),
+      },
+      null,
+      2,
+    );
+  }
+
+  const advisoryIssues = getAdvisorySchemaIssues({
+    pattern: input.pattern,
+    template: input.template,
+    version: input.version || "2.0",
+    depth: input.depth,
+    next_concepts: input.next_concepts,
+    payload: payloadResult.data as Record<string, unknown>,
+  });
+
+  if (advisoryIssues.length) {
+    return JSON.stringify({ warnings: advisoryIssues }, null, 2);
+  }
+
+  return "";
+}
+
+export function validateKnownV2Schema(input: KnownV2SchemaInput, options: SchemaValidationOptions = {}): UISchema | null {
+  const payloadSchema = V2PayloadSchemas[input.pattern]?.[input.template];
+  if (!payloadSchema) return null;
+
+  const payloadResult = payloadSchema.safeParse(sanitizeAdvisoryPayloadFields(input.payload));
+  if (!payloadResult.success) return null;
+
+  const schema = {
+    pattern: input.pattern,
+    template: input.template,
+    version: input.version || "2.0",
+    depth: input.depth,
+    next_concepts: input.next_concepts,
+    payload: payloadResult.data as Record<string, unknown>,
+  } satisfies UISchema;
+
+  const advisoryIssues = getAdvisorySchemaIssues(schema);
+  if ((options.metaphorTraceMode ?? "warn") === "reject" && advisoryIssues.length > 0) {
+    return null;
+  }
+
+  emitSchemaWarnings(advisoryIssues, options);
+  return schema;
 }
 
 export function validateSchema(raw: unknown, options: SchemaValidationOptions = {}): UISchema | null {

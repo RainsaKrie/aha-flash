@@ -14,6 +14,7 @@
 - T30 已完成：新增 `src/lib/tools/generative-tools.ts`，定义 10 个 Pattern Tool、默认 Template 映射和 Tool 调用结果转 V2 Schema helper。
 - T31 已完成：`/api/chat` 优先使用 AI SDK Tool Calling 选择 `generate_*` Pattern Tool；Tool 失败时保留现有 JSON fallback，最终仍可 mock fallback。
 - T32 已完成：拆分 Tool 主链路 Prompt 与 JSON fallback Prompt；Tool 主链路不再注入自然语言 `SCHEMA_REFERENCE` 和输出格式长规则。
+- T33 已完成：Tool Calling 路径改为已知 Pattern/Template 的直达 payload 校验；`metaphor_trace` 等调试字段无效时不再导致主组件整体 fallback。
 
 ## 2026-06-07
 

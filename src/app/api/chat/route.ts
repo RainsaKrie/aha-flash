@@ -11,7 +11,7 @@ import { initUserState } from "@/lib/harness/state-machine";
 import { stateStore } from "@/lib/harness/state-store";
 import { createMockSchema } from "@/lib/llm/mock-schema";
 import { getLLMProvider } from "@/lib/llm/provider";
-import { extractSchemaFromText, getSchemaFailureReason, validateSchema } from "@/lib/llm/schema-validator";
+import { extractSchemaFromText, getKnownV2SchemaError, getSchemaFailureReason, validateKnownV2Schema } from "@/lib/llm/schema-validator";
 import {
   buildGenerativeAiTools,
   buildSchemaFromGenerativeToolCall,
@@ -211,11 +211,11 @@ async function generateSchemaWithTools({
     }
 
     const candidate = buildSchemaFromGenerativeToolCall(toolCall.toolName, toolCall.input as Record<string, unknown>);
-    const schema = validateSchema(candidate);
+    const schema = validateKnownV2Schema(candidate);
     if (!schema) {
       return {
         schema: null,
-        validationError: `Tool calling 返回的 ${toolCall.toolName} 参数无法通过 Schema 校验: ${getSchemaFailureReason(JSON.stringify(candidate))}`,
+        validationError: `Tool calling 返回的 ${toolCall.toolName} 参数无法通过 Schema 校验: ${getKnownV2SchemaError(candidate)}`,
       };
     }
 
