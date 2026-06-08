@@ -72,7 +72,7 @@ export function DualSliderExplorer({
               max={config.max}
               value={item.value}
               onChange={(event) => update(item.side, Number(event.target.value))}
-              className="w-full accent-[var(--accent)]"
+              className="ui-range"
             />
             <div className="ui-result rounded-xl border border-[var(--line)] bg-[var(--pattern-raised)] p-4">
               <div className="flex items-center justify-between gap-4">

@@ -4,7 +4,7 @@
   color-scheme: dark;
   --background: #07120f;
   --surface: #0a1a14;
-  --panel: #07120f;
+  --panel: #10251d;
   --panel-strong: #0f2a22;
   --text: #ecfff7;
   --muted: #8fb4a7;
@@ -266,9 +266,9 @@ button:disabled {
 
 .generative-component-shell {
   --pattern-accent: var(--accent);
-  --pattern-surface: #0a1a14;
-  --pattern-panel: #07120f;
-  --pattern-raised: #0f2a22;
+  --pattern-surface: #08130f;
+  --pattern-panel: #10251d;
+  --pattern-raised: #173a2e;
 }
 
 .generative-component-theme {
@@ -481,6 +481,23 @@ button:disabled {
 
 .animate-error-shake {
   animation: error-shake 300ms ease-out both;
+}
+
+.ui-range {
+  width: 100%;
+  min-height: 44px;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+.ui-range:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.ui-range:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
 }
 
 @keyframes ui-enter {

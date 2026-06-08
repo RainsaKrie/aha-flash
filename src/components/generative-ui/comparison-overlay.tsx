@@ -72,7 +72,7 @@ export function ComparisonOverlay({
             max={100}
             value={ratio}
             onChange={(event) => update(Number(event.target.value))}
-            className="w-full accent-[var(--accent)]"
+            className="ui-range"
           />
         </Panel>
 

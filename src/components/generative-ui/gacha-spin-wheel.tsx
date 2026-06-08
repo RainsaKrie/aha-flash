@@ -118,6 +118,7 @@ export function GachaSpinWheel({
           </Button>
           <Button onClick={() => setResult(null)} className="bg-transparent" title="重置">
             <RotateCcw size={16} />
+            重置
           </Button>
         </Panel>
         {pool.length === 0 && <EmptyState detail="模型没有给出概率奖池，重新生成后应至少包含 3 个结果。" />}

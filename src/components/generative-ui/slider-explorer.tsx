@@ -80,7 +80,7 @@ export function SliderExplorer({
                 payload: { value: nextValue, label: config.variable_label },
               });
             }}
-            className="w-full accent-[var(--accent)]"
+            className="ui-range"
           />
         </label>
         <div className="grid gap-4 sm:grid-cols-3">

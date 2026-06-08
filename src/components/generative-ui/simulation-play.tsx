@@ -112,7 +112,7 @@ export function SimulationPlay({
                     max={param.max}
                     value={values[param.label]}
                     onChange={(event) => updateParam(param.label, Number(event.target.value))}
-                    className="w-full accent-[var(--accent)]"
+                    className="ui-range"
                   />
                 </label>
               </Panel>
@@ -148,12 +148,21 @@ export function SimulationPlay({
         <div className="flex gap-2">
           <Button type="button" onClick={reset} title="重置">
             <RotateCcw size={16} />
+            重置
           </Button>
           <Button type="button" onClick={() => setStep((value) => Math.min(maxSteps, value + 1))} title="下一步">
             <StepForward size={16} />
+            下一步
           </Button>
           <Button type="button" onClick={() => setPlaying((value) => !value)} title={playing ? "暂停" : "播放"}>
-            {playing ? <InlineSpinner label="播放中" /> : <Play size={16} />}
+            {playing ? (
+              <InlineSpinner label="播放中" />
+            ) : (
+              <>
+                <Play size={16} />
+                播放
+              </>
+            )}
           </Button>
         </div>
       </Panel>

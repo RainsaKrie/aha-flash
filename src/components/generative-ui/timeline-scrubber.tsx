@@ -60,7 +60,7 @@ export function TimelineScrubber({
               max={Math.max(events.length - 1, 0)}
               value={index}
               onChange={(event) => selectIndex(Number(event.target.value))}
-              className="w-full accent-[var(--accent)]"
+              className="ui-range"
             />
             <Panel className="p-6">
               <div className="text-sm text-[var(--muted)]">节点 {index + 1}</div>

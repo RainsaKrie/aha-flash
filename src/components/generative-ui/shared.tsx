@@ -25,9 +25,9 @@ export function patternStyle(pattern: PatternType): CSSProperties {
   return {
     "--accent": accent,
     "--pattern-accent": accent,
-    "--pattern-surface": "#0a1a14",
-    "--pattern-panel": "#07120f",
-    "--pattern-raised": "#0f2a22",
+    "--pattern-surface": "#08130f",
+    "--pattern-panel": "#10251d",
+    "--pattern-raised": "#173a2e",
     "--line": `${accent}38`,
   } as CSSProperties;
 }
@@ -172,14 +172,14 @@ export function ChoiceButton({
       ? "border-[var(--accent)] bg-[rgba(53,230,155,0.12)] text-[var(--text)]"
       : correct === false
         ? "border-[var(--danger)] bg-[rgba(255,107,107,0.08)] text-[var(--text)]"
-        : active
+      : active
           ? "scale-[1.02] border-[var(--accent)] bg-[var(--pattern-raised)] text-[var(--text)]"
           : "border-[var(--line)] bg-[var(--pattern-panel)] text-[var(--text)]";
 
   return (
     <button
       type="button"
-      className={`min-h-11 cursor-pointer rounded-lg border p-4 text-left text-sm leading-6 transition hover:border-[var(--accent)] active:scale-[0.96] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] ${stateClass} ${className}`}
+      className={`min-h-11 cursor-pointer rounded-lg border p-4 text-left text-sm leading-6 transition disabled:cursor-not-allowed disabled:opacity-55 hover:border-[var(--accent)] active:scale-[0.96] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)] ${stateClass} ${className}`}
       {...props}
     >
       {children}

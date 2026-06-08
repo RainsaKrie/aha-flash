@@ -18,6 +18,7 @@ export function QuizComboChain({
   const options = config.options || [];
 
   function answer(index: number, correct: boolean, explanation: string) {
+    if (answered[index] !== undefined) return;
     const nextCombo = correct ? combo + 1 : 0;
     setCombo(nextCombo);
     setFeedback(explanation);
@@ -44,6 +45,7 @@ export function QuizComboChain({
             options.map((option, index) => (
             <ChoiceButton
               key={option.label}
+              disabled={answered[index] !== undefined}
               onClick={() => answer(index, option.correct, option.explanation)}
               correct={answered[index]}
             >

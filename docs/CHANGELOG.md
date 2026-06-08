@@ -17,6 +17,7 @@
 - T33 已完成：Tool Calling 路径改为已知 Pattern/Template 的直达 payload 校验；`metaphor_trace` 等调试字段无效时不再导致主组件整体 fallback。
 - T34 已完成：显式返回 `generation_mode=tool|json_fallback|mock`；支持服务端开关或开发请求体跳过 Tool Calling 以验收 JSON fallback。
 - T35a 已完成：顶栏、空态舞台和底部输入栏完成视觉收束；输入框改为受控输入，空态关键词可直接填入输入栏，生产模式下验证提交体能正确携带当前输入。
+- T35b 已完成：逐组件走查互动模板视觉细节，统一生成组件色阶层次；滑块控件补齐 44px 触控面和 focus 状态；补充图标按钮可见文案；修复 combo quiz 重复点击刷分问题。
 
 ## 2026-06-07
 
