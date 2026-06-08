@@ -248,15 +248,33 @@ button:disabled {
 
 .stage-loading {
   position: absolute;
-  right: 16px;
-  bottom: 16px;
+  inset: 16px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(166, 255, 214, 0.16);
+  border-radius: 12px;
+  background: rgba(7, 18, 15, 0.58);
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+  animation: ui-result 240ms ease-out both;
+}
+
+.stage-loading__card {
+  display: inline-flex;
+  min-height: 56px;
+  align-items: center;
+  gap: 10px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 999px;
   background: var(--panel-strong);
-  padding: 10px 12px;
+  padding: 0 18px;
   color: var(--accent);
   font-size: 12px;
   animation: ui-breathe 2s ease-in-out infinite;
+}
+
+.stage-loading__card svg {
+  animation: value-pop 900ms ease-in-out infinite;
 }
 
 .widget-surface {

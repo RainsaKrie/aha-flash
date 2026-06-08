@@ -320,7 +320,10 @@ export default function HomePage() {
           )}
           {isLoading && (
             <div className="stage-loading" role="status">
-              {loadingStage}
+              <div className="stage-loading__card">
+                <BrainCircuit size={22} />
+                <span>{loadingStage}</span>
+              </div>
             </div>
           )}
         </div>
@@ -376,7 +379,11 @@ export default function HomePage() {
             </button>
           </div>
         )}
-        {errorMessage && <div className="input-error">{errorMessage}</div>}
+        {errorMessage && (
+          <div className="input-error" role="alert">
+            {errorMessage}
+          </div>
+        )}
         {process.env.NODE_ENV !== "production" && validationError && (
           <div className="dev-validation-error">
             <strong>Schema fallback</strong>

@@ -1,6 +1,6 @@
 "use client";
 
-import { SendHorizontal } from "lucide-react";
+import { Loader2, SendHorizontal } from "lucide-react";
 import { FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +18,7 @@ export function ChatInput({
 }) {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (disabled) return;
     const trimmed = value.trim();
     if (!trimmed) return;
     onValueChange("");
@@ -34,8 +35,17 @@ export function ChatInput({
         className="min-h-16 resize-none"
       />
       <Button type="submit" disabled={disabled} title="发送" className="min-h-16 px-5">
-        <SendHorizontal size={16} />
-        生成
+        {disabled ? (
+          <>
+            <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+            生成中
+          </>
+        ) : (
+          <>
+            <SendHorizontal size={16} />
+            生成
+          </>
+        )}
       </Button>
     </form>
   );
