@@ -118,9 +118,9 @@ POST /api/chat
   |
   +-- initUserState(userId)
   +-- attach recent_messages
-  +-- detectFollowupIntent(input, current_thread)
-  +-- classifyConversationIntent(input)
-  +-- buildSystemPrompt(state + recent_messages + thread + route + target_depth)
+  +-- detectFollowupByRules(input, current_thread)
+  +-- classifyConversationByRules(input)
+  +-- buildToolSystemPrompt(state + recent_messages + thread + route + target_depth)
   +-- stream stage events when requested
   +-- generateSchemaWithLLM()
       |
@@ -129,7 +129,7 @@ POST /api/chat
       +-- L3: if model unavailable or invalid output: createMockSchema()
   +-- normalizeUISchema(schema)
   +-- if route is knowledge: stateStore.updateCurrentThread()
-  +-- reflectTurn(input, route, schemaType, state)
+  +-- reflectTurnByRules(input, route, schemaType)
   +-- stateStore.applyTurnReflection()
   +-- if route is knowledge: stateStore.addKnowledgeAsset()
   +-- return schema + depth + next concepts + route + userState
@@ -404,7 +404,7 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 | LLM fallback | 无 key 时使用 mock schema | 保证 demo 和开发链路可运行 |
 | 状态存储 | 本地文件 / Vercel `/tmp` | 当前阶段轻量；生产需迁移 |
 | UI 组件 | 自建 React 组件 | 控制交互体验和协议映射 |
-| 路由分类 | LLM 优先，规则 fallback | 有 key 时更准，无 key 时稳定可演示 |
+| 路由分类 | 规则默认，LLM 预算集中给 Schema 生成 | 降低成本和延迟，避免前置分类消耗模型调用 |
 
 ## 19. Round 3 MVP 1.0 收束任务
 
@@ -418,7 +418,7 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 | T35a | 首页顶栏、空态舞台、底部输入栏视觉与输入联动收束 | 完成 |
 | T35b | 组件视觉细节走查：色阶、滑块触控、按钮文案和重复作答状态收口 | 完成 |
 | T35c | 加载、生成、渲染、错误状态的动效衔接 | 完成 |
-| T36 | 合并 followup、route、schema 相关 LLM 调用，单次请求 LLM 调用不超过 3 次 | 待做 |
+| T36 | 合并 followup、route、schema 相关 LLM 调用，单次请求 LLM 调用不超过 3 次 | 完成 |
 | T37 | 生产安全：API Key 不下发、限流、输入清洗、错误响应脱敏 | 待做 |
 | T38 | 默认体验额度与自定义 API Key 请求方案 | 待做 |
 | T39 | Eval 用例扩展到 30+，score 不低于 0.9 | 待做 |
@@ -427,5 +427,5 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 
 - Vercel `/tmp` 状态不持久，不能作为生产记忆。
 - 当前 mock schema 仍承担较多验收输入路由。
-- 追问检测仍是规则 + 轻量 LLM 判别，后续需要真实对话样本回归。
+- 追问检测和路由分类已默认改为规则判别，后续需要真实对话样本回归。
 - 当前流式生成是 `/api/chat` 的 NDJSON 阶段事件流，最后仍以完整 Schema 渲染；后续如需边生成边预览，需要重新设计增量 Schema 协议。

@@ -126,8 +126,18 @@ function isPureNounPhrase(input: string) {
 
 export function classifyConversationByRules(input: string): RouteClassification {
   const normalizedInput = input.trim();
+  const hasKnowledgeSignal = knowledgeWords.some((word) => normalizedInput.includes(word));
+  const hasExplicitKnowledgeQuestion = /(是什么|如何|为什么|怎么|解释|理解|原理|区别|对比|测验|测试|题目|时间线|分类|模拟|推演|架构|滑块)/.test(
+    normalizedInput,
+  );
+  const hasPreferenceSignal =
+    /(我喜欢|我习惯|我是|用.{1,12}讲)/.test(normalizedInput) || preferenceWords.some((word) => input.includes(word));
 
-  if (/(我喜欢|我习惯|我是|用.{1,12}讲)/.test(normalizedInput) || preferenceWords.some((word) => input.includes(word))) {
+  if (hasExplicitKnowledgeQuestion) {
+    return { route: "knowledge", confidence: 0.92, source: "rules", reason: "命中知识探索关键词" };
+  }
+
+  if (hasPreferenceSignal) {
     return { route: "preference", confidence: 0.92, source: "rules", reason: "命中偏好表达关键词" };
   }
 
@@ -139,7 +149,7 @@ export function classifyConversationByRules(input: string): RouteClassification 
     return { route: "knowledge", confidence: 0.92, source: "rules", reason: "纯名词短语默认按知识概念处理" };
   }
 
-  if (knowledgeWords.some((word) => input.includes(word))) {
+  if (hasKnowledgeSignal) {
     return { route: "knowledge", confidence: 0.92, source: "rules", reason: "命中知识探索关键词" };
   }
 

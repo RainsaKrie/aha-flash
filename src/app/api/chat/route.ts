@@ -1,12 +1,12 @@
 import { generateText } from "ai";
 import { NextResponse } from "next/server";
 import {
-  classifyConversationIntent,
-  detectFollowupIntent,
+  classifyConversationByRules,
+  detectFollowupByRules,
   inferTopic,
 } from "@/lib/harness/conversation-router";
 import { buildJsonSystemPrompt, buildToolSystemPrompt } from "@/lib/harness/prompt-composer";
-import { reflectTurn } from "@/lib/harness/state-reflection";
+import { reflectTurnByRules } from "@/lib/harness/state-reflection";
 import { initUserState } from "@/lib/harness/state-machine";
 import { stateStore } from "@/lib/harness/state-store";
 import { createMockSchema } from "@/lib/llm/mock-schema";
@@ -322,12 +322,11 @@ async function processChatRequest({
   const model = getLLMProvider();
   const schemaIntent = inferSchemaIntent(input);
   await emit?.({ type: "stage", stage: "routing", label: "判断这是不是接着刚才问" });
-  const followupInfo = await detectFollowupIntent(
+  const followupInfo = detectFollowupByRules(
     input,
     state.conversation_compressed.current_thread,
-    model,
   );
-  const classifiedRoute = await classifyConversationIntent(input, model);
+  const classifiedRoute = classifyConversationByRules(input);
   const routeInfo =
     followupInfo.is_followup && classifiedRoute.route === "casual"
       ? {
@@ -341,12 +340,6 @@ async function processChatRequest({
   const promptContext = { recentMessages, followup: followupInfo, schemaIntent };
   const toolSystemPrompt = [
     buildToolSystemPrompt(state, depth, promptContext),
-    routeContext,
-  ]
-    .filter(Boolean)
-    .join("\n\n");
-  const jsonSystemPrompt = [
-    buildJsonSystemPrompt(state, depth, promptContext),
     routeContext,
   ]
     .filter(Boolean)
@@ -368,6 +361,12 @@ async function processChatRequest({
         source = "llm";
         generationMode = "tool";
       } else {
+        const jsonSystemPrompt = [
+          buildJsonSystemPrompt(state, depth, promptContext),
+          routeContext,
+        ]
+          .filter(Boolean)
+          .join("\n\n");
         const jsonGenerated = await generateSchemaWithLLM({ model, system: jsonSystemPrompt, input, intent: schemaIntent });
         if (jsonGenerated.schema) {
           schema = attachDepth(jsonGenerated.schema, depth);
@@ -395,12 +394,10 @@ async function processChatRequest({
       : routeInfo.route === "casual"
         ? "闲聊"
         : concept || inferTopic(input);
-  const rawReflection = await reflectTurn({
+  const rawReflection = reflectTurnByRules({
     input,
     route: routeInfo.route,
     schemaType: normalizedSchema.type,
-    state,
-    model,
   });
   const reflection = {
     ...rawReflection,
