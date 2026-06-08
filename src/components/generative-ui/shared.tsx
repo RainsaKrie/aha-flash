@@ -25,10 +25,10 @@ export function patternStyle(pattern: PatternType): CSSProperties {
   return {
     "--accent": accent,
     "--pattern-accent": accent,
-    "--pattern-surface": "#08130f",
-    "--pattern-panel": "#10251d",
-    "--pattern-raised": "#173a2e",
-    "--line": `${accent}38`,
+    "--pattern-surface": "#0f1614",
+    "--pattern-panel": "#151e1b",
+    "--pattern-raised": "#1d2a25",
+    "--border-subtle": `${accent}38`,
   } as CSSProperties;
 }
 
@@ -87,7 +87,7 @@ export function ComponentFrame({
 
   return (
     <section className={`grid h-full ${minHeight} grid-rows-[auto_1fr_auto] gap-6 p-5`}>
-      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--line)] pb-4">
+      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border-subtle)] pb-4">
         <div className="min-w-0">
           <p className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-[var(--accent)]">
             <Icon size={15} />
@@ -97,7 +97,7 @@ export function ComponentFrame({
             <h2 className="text-balance text-2xl font-semibold leading-tight">{title}</h2>
             <DepthBadge depth={activeDepth} />
           </div>
-          {description && <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted)]">{description}</p>}
+          {description && <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">{description}</p>}
         </div>
         {aside}
       </header>
@@ -116,7 +116,7 @@ export function DepthBadge({ depth }: { depth: LearningDepth }) {
 }
 
 export function Panel({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] ${className}`}>{children}</div>;
+  return <div className={`rounded-xl border border-[var(--border-subtle)] bg-[var(--pattern-panel)] ${className}`}>{children}</div>;
 }
 
 export function FeedbackPanel({
@@ -130,10 +130,10 @@ export function FeedbackPanel({
     tone === "success"
       ? "border-[rgba(53,230,155,0.42)] bg-[rgba(53,230,155,0.1)] text-[var(--accent)] animate-success-flash"
       : tone === "danger"
-        ? "border-[rgba(255,107,107,0.42)] bg-[rgba(255,107,107,0.08)] text-[var(--danger)] animate-error-shake"
+        ? "border-[rgba(255,107,107,0.42)] bg-[rgba(255,107,107,0.08)] text-[var(--red)] animate-error-shake"
         : tone === "warning"
-          ? "border-[rgba(247,201,72,0.36)] bg-[rgba(247,201,72,0.08)] text-[var(--accent-2)]"
-          : "border-[var(--line)] bg-[var(--pattern-panel)] text-[var(--muted)]";
+          ? "border-[rgba(247,201,72,0.36)] bg-[rgba(247,201,72,0.08)] text-[var(--amber)]"
+          : "border-[var(--border-subtle)] bg-[var(--pattern-panel)] text-[var(--text-secondary)]";
 
   return <div className={`ui-result rounded-xl border p-4 text-sm leading-6 ${toneClass}`}>{children}</div>;
 }
@@ -144,7 +144,7 @@ export function ProgressMeter({ value, total }: { value: number; total: number }
 
   return (
     <div className="grid gap-2">
-      <div className="flex items-center justify-between gap-2 text-xs text-[var(--muted)]">
+      <div className="flex items-center justify-between gap-2 text-xs text-[var(--text-secondary)]">
         <span>进度</span>
         <strong className="text-[var(--accent)]">
           {value} / {safeTotal}
@@ -169,12 +169,12 @@ export function ChoiceButton({
 }) {
   const stateClass =
     correct === true
-      ? "border-[var(--accent)] bg-[rgba(53,230,155,0.12)] text-[var(--text)]"
+      ? "border-[var(--accent)] bg-[rgba(53,230,155,0.12)] text-[var(--text-primary)]"
       : correct === false
-        ? "border-[var(--danger)] bg-[rgba(255,107,107,0.08)] text-[var(--text)]"
+        ? "border-[var(--red)] bg-[rgba(255,107,107,0.08)] text-[var(--text-primary)]"
       : active
-          ? "scale-[1.02] border-[var(--accent)] bg-[var(--pattern-raised)] text-[var(--text)]"
-          : "border-[var(--line)] bg-[var(--pattern-panel)] text-[var(--text)]";
+          ? "scale-[1.02] border-[var(--accent)] bg-[var(--pattern-raised)] text-[var(--text-primary)]"
+          : "border-[var(--border-subtle)] bg-[var(--pattern-panel)] text-[var(--text-primary)]";
 
   return (
     <button
@@ -191,9 +191,9 @@ export function EmptyState({ title = "还没有可渲染内容", detail }: { tit
   return (
     <Panel className="ui-enter grid min-h-64 place-items-center p-6 text-center">
       <div>
-        <AlertTriangle className="mx-auto text-[var(--accent-2)]" size={22} />
+        <AlertTriangle className="mx-auto text-[var(--amber)]" size={22} />
         <h3 className="mt-3 text-base font-semibold">{title}</h3>
-        {detail && <p className="mt-2 max-w-md text-sm leading-6 text-[var(--muted)]">{detail}</p>}
+        {detail && <p className="mt-2 max-w-md text-sm leading-6 text-[var(--text-secondary)]">{detail}</p>}
       </div>
     </Panel>
   );

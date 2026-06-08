@@ -110,21 +110,21 @@ export default function SandboxPage() {
 
         <section className="grid gap-3 sm:grid-cols-3">
           <Card className="grid gap-2 p-4">
-            <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
+            <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
               <BrainCircuit size={16} />
               已学概念
             </div>
             <div className="text-3xl font-semibold">{assets.length}</div>
           </Card>
           <Card className="grid gap-2 p-4">
-            <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
+            <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
               <Layers3 size={16} />
               交互模式
             </div>
             <div className="text-3xl font-semibold">{patterns.size}</div>
           </Card>
           <Card className="grid gap-2 p-4">
-            <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
+            <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
               <Sparkles size={16} />
               深入理解
             </div>
@@ -133,7 +133,7 @@ export default function SandboxPage() {
         </section>
 
         {error && (
-          <Card className="border-[rgba(255,107,107,0.45)] bg-[rgba(255,107,107,0.08)] p-4 text-sm text-[var(--danger)]">
+          <Card className="border-[rgba(255,107,107,0.45)] bg-[rgba(255,107,107,0.08)] p-4 text-sm text-[var(--red)]">
             {error}
           </Card>
         )}
@@ -141,7 +141,7 @@ export default function SandboxPage() {
         {!error && !state && (
           <Card className="grid min-h-[360px] place-items-center p-6 text-center">
             <div className="grid gap-2">
-              <div className="mx-auto grid h-12 w-12 place-items-center rounded-[8px] border border-[var(--line)] bg-[#07120f]">
+              <div className="mx-auto grid h-12 w-12 place-items-center rounded-[8px] border border-[var(--border-subtle)] bg-[#07120f]">
                 <Map size={24} />
               </div>
               <div className="text-lg font-semibold">正在整理知识地图</div>
@@ -152,11 +152,11 @@ export default function SandboxPage() {
         {state && assets.length === 0 && (
           <Card className="grid min-h-[360px] place-items-center p-6 text-center">
             <div className="max-w-md">
-              <div className="mx-auto grid h-12 w-12 place-items-center rounded-[8px] border border-[var(--line)] bg-[#07120f]">
+              <div className="mx-auto grid h-12 w-12 place-items-center rounded-[8px] border border-[var(--border-subtle)] bg-[#07120f]">
                 <Boxes size={24} />
               </div>
               <h2 className="mt-4 text-xl font-semibold">还没有已学概念</h2>
-              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+              <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
                 回到首页生成几个互动组件后，这里会自动形成概念卡片。
               </p>
             </div>
@@ -167,12 +167,12 @@ export default function SandboxPage() {
           <section className="grid gap-5">
             {groupEntries.map(([topic, topicAssets]) => (
               <div key={topic} className="grid gap-3">
-                <div className="flex items-center justify-between gap-3 border-b border-[var(--line)] pb-2">
+                <div className="flex items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-2">
                   <div className="flex items-center gap-2">
                     <Map size={17} className="text-[var(--accent)]" />
                     <h2 className="text-lg font-semibold">{topic}</h2>
                   </div>
-                  <span className="text-sm text-[var(--muted)]">{topicAssets.length} 个概念</span>
+                  <span className="text-sm text-[var(--text-secondary)]">{topicAssets.length} 个概念</span>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {topicAssets.map((asset) => (
@@ -180,29 +180,29 @@ export default function SandboxPage() {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <h3 className="text-xl font-semibold">{asset.concept}</h3>
-                          <p className="mt-1 text-xs text-[var(--muted)]">{asset.pattern}</p>
+                          <p className="mt-1 text-xs text-[var(--text-secondary)]">{asset.pattern}</p>
                         </div>
-                        <span className="rounded-[8px] border border-[rgba(247,201,72,0.4)] bg-[rgba(247,201,72,0.1)] px-2 py-1 text-xs text-[var(--accent-2)]">
+                        <span className="rounded-[8px] border border-[rgba(247,201,72,0.4)] bg-[rgba(247,201,72,0.1)] px-2 py-1 text-xs text-[var(--amber)]">
                           {understandingLabel[asset.understanding]}
                         </span>
                       </div>
 
                       <dl className="grid gap-2 text-sm">
                         <div className="flex justify-between gap-3">
-                          <dt className="text-[var(--muted)]">Pattern</dt>
+                          <dt className="text-[var(--text-secondary)]">Pattern</dt>
                           <dd className="truncate">{asset.pattern}</dd>
                         </div>
                         <div className="flex justify-between gap-3">
-                          <dt className="text-[var(--muted)]">Template</dt>
+                          <dt className="text-[var(--text-secondary)]">Template</dt>
                           <dd className="truncate">{asset.template}</dd>
                         </div>
                         <div className="flex justify-between gap-3">
-                          <dt className="text-[var(--muted)]">理解深度</dt>
+                          <dt className="text-[var(--text-secondary)]">理解深度</dt>
                           <dd>{understandingLabel[asset.understanding]}</dd>
                         </div>
                       </dl>
 
-                      <div className="flex items-center gap-2 border-t border-[var(--line)] pt-3 text-xs text-[var(--muted)]">
+                      <div className="flex items-center gap-2 border-t border-[var(--border-subtle)] pt-3 text-xs text-[var(--text-secondary)]">
                         <div className="flex min-w-0 flex-1 items-center gap-2">
                           <Clock3 size={14} />
                           {formatDate(asset.learned_at)}

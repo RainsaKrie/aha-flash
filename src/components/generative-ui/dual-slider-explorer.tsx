@@ -42,7 +42,7 @@ export function DualSliderExplorer({
 
   return (
     <section className="grid h-full min-h-[520px] grid-rows-[auto_1fr_auto] gap-6 p-5">
-      <header className="border-b border-[var(--line)] pb-4">
+      <header className="border-b border-[var(--border-subtle)] pb-4">
         <p className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--accent)]">
           <SlidersHorizontal size={15} /> dual slider
         </p>
@@ -57,9 +57,9 @@ export function DualSliderExplorer({
           { label: "方案 A", value: left, side: "left" as const },
           { label: "方案 B", value: right, side: "right" as const },
         ].map((item) => (
-          <label key={item.side} className="grid gap-4 rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-5">
+          <label key={item.side} className="grid gap-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--pattern-panel)] p-5">
             <div className="flex items-end justify-between gap-4">
-              <span className="text-sm text-[var(--muted)]">{item.label}</span>
+              <span className="text-sm text-[var(--text-secondary)]">{item.label}</span>
               <strong className="animate-value-pop text-3xl font-bold text-[var(--accent)]">
                 {item.value}
                 {config.unit}
@@ -74,9 +74,9 @@ export function DualSliderExplorer({
               onChange={(event) => update(item.side, Number(event.target.value))}
               className="ui-range"
             />
-            <div className="ui-result rounded-xl border border-[var(--line)] bg-[var(--pattern-raised)] p-4">
+            <div className="ui-result rounded-xl border border-[var(--border-subtle)] bg-[var(--pattern-raised)] p-4">
               <div className="flex items-center justify-between gap-4">
-                <div className="text-xs text-[var(--muted)]">{primaryOutput.label}</div>
+                <div className="text-xs text-[var(--text-secondary)]">{primaryOutput.label}</div>
                 {primaryOutput.expression_label && <div className="text-xs text-[var(--accent)]">{primaryOutput.expression_label}</div>}
               </div>
               <div className="animate-value-pop mt-1 text-3xl font-bold">
@@ -87,7 +87,7 @@ export function DualSliderExplorer({
           </label>
           ))}
       </div>
-      <p className="ui-result rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-4 text-sm leading-6 text-[var(--muted)]">
+      <p className="ui-result rounded-xl border border-[var(--border-subtle)] bg-[var(--pattern-panel)] p-4 text-sm leading-6 text-[var(--text-secondary)]">
         {config.explanation_template.replace("{{value}}", `${left} vs ${right}`)}
       </p>
         </>

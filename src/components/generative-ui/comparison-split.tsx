@@ -91,20 +91,20 @@ export function ComparisonSplit({
       {activeDimension ? (
         <Panel className="mt-4 grid min-h-80 gap-4 p-5">
           <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-stretch">
-            <article className="rounded-xl border border-[var(--line)] bg-[var(--pattern-raised)] p-4">
-              <div className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">{subjectA}</div>
-              <h3 className="mt-2 text-base font-medium text-[var(--accent-2)]">{activeDimension.a}</h3>
+            <article className="rounded-xl border border-[var(--border-subtle)] bg-[var(--pattern-raised)] p-4">
+              <div className="text-xs uppercase tracking-[0.16em] text-[var(--text-secondary)]">{subjectA}</div>
+              <h3 className="mt-2 text-base font-medium text-[var(--amber)]">{activeDimension.a}</h3>
             </article>
-            <div className="grid place-items-center px-2 text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
+            <div className="grid place-items-center px-2 text-xs uppercase tracking-[0.18em] text-[var(--text-secondary)]">
               {activeDimension.label}
             </div>
-            <article className="rounded-xl border border-[var(--line)] bg-[var(--pattern-raised)] p-4">
-              <div className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">{subjectB}</div>
+            <article className="rounded-xl border border-[var(--border-subtle)] bg-[var(--pattern-raised)] p-4">
+              <div className="text-xs uppercase tracking-[0.16em] text-[var(--text-secondary)]">{subjectB}</div>
               <h3 className="mt-2 text-base font-medium text-[var(--accent)]">{activeDimension.b}</h3>
             </article>
           </div>
 
-          <div className="ui-result flex items-start gap-4 rounded-xl border border-[rgba(247,201,72,0.32)] bg-[rgba(247,201,72,0.08)] p-4 text-sm leading-6 text-[var(--accent-2)]">
+          <div className="ui-result flex items-start gap-4 rounded-xl border border-[rgba(247,201,72,0.32)] bg-[rgba(247,201,72,0.08)] p-4 text-sm leading-6 text-[var(--amber)]">
             <Lightbulb size={18} className="mt-0.5 shrink-0" />
             <strong>{activeDimension.insight}</strong>
           </div>
@@ -113,14 +113,14 @@ export function ComparisonSplit({
         <Panel className="mt-4 grid min-h-80 overflow-hidden md:grid-cols-2">
           <article
             className={[
-              "border-b border-[var(--line)] bg-[var(--pattern-panel)] p-5 transition md:border-b-0 md:border-r",
+              "border-b border-[var(--border-subtle)] bg-[var(--pattern-panel)] p-5 transition md:border-b-0 md:border-r",
               focus === "right" ? "opacity-35" : "opacity-100",
             ].join(" ")}
           >
-            <h3 className="text-base font-medium text-[var(--accent-2)]">{config.left.label}</h3>
-            <ul className="mt-4 grid gap-4 text-sm leading-6 text-[var(--muted)]">
+            <h3 className="text-base font-medium text-[var(--amber)]">{config.left.label}</h3>
+            <ul className="mt-4 grid gap-4 text-sm leading-6 text-[var(--text-secondary)]">
               {(leftPoints.length ? leftPoints : [config.left.content]).map((point, index) => (
-                <li key={`${point}-${index}`} className="rounded-xl border border-[var(--line)] bg-[var(--pattern-raised)] p-3">
+                <li key={`${point}-${index}`} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--pattern-raised)] p-3">
                   {point}
                 </li>
               ))}
@@ -128,9 +128,9 @@ export function ComparisonSplit({
           </article>
           <article className={["bg-[var(--pattern-raised)] p-5 transition", focus === "left" ? "opacity-35" : "opacity-100"].join(" ")}>
             <h3 className="text-base font-medium text-[var(--accent)]">{config.right.label}</h3>
-            <ul className="mt-4 grid gap-4 text-sm leading-6 text-[var(--muted)]">
+            <ul className="mt-4 grid gap-4 text-sm leading-6 text-[var(--text-secondary)]">
               {(rightPoints.length ? rightPoints : [config.right.content]).map((point, index) => (
-                <li key={`${point}-${index}`} className="rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-3">
+                <li key={`${point}-${index}`} className="rounded-xl border border-[var(--border-subtle)] bg-[var(--pattern-panel)] p-3">
                   {point}
                 </li>
               ))}

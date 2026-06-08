@@ -13,7 +13,7 @@ export function StyleQuiz({
 
   return (
     <div className="grid gap-3">
-      <div className="text-sm text-[var(--muted)]">隐喻风格</div>
+      <div className="text-sm text-[var(--text-secondary)]">隐喻风格</div>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         {options.map((option) => {
           const active = values.includes(option);
@@ -25,7 +25,7 @@ export function StyleQuiz({
                 "min-h-10 rounded-[8px] border px-3 py-2 text-sm transition",
                 active
                   ? "border-[var(--accent)] bg-[rgba(53,230,155,0.14)]"
-                  : "border-[var(--line)] bg-[#07120f] hover:border-[var(--accent)]",
+                  : "border-[var(--border-subtle)] bg-[#07120f] hover:border-[var(--accent)]",
               ].join(" ")}
               type="button"
             >
