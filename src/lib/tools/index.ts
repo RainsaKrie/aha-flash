@@ -1,6 +1,13 @@
 import type { ToolDefinition } from "@/types/tool";
 import { updateUserState } from "./update-user-state";
 
+export {
+  GENERATIVE_TOOLS,
+  buildSchemaFromGenerativeToolCall,
+  getGenerativeToolNames,
+  type GenerativeToolName,
+} from "./generative-tools";
+
 export const V1_TOOLS: Record<string, ToolDefinition> = {
   update_user_state: {
     description: "当用户在对话中表达背景、爱好、知识盲区或隐喻偏好时，增量更新 User_State。",

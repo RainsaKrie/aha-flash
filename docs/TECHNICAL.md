@@ -29,6 +29,7 @@ Harness Layer
 LLM Layer
   |
   +-- DeepSeek via Vercel AI SDK
+  +-- Round 3 target: Pattern Tool Calling
   +-- mock fallback when API key is absent
 
 Generative UI Layer
@@ -221,6 +222,23 @@ POST /api/chat
 |---|---|
 | `update_user_state` | 保留，用于服务端注入 `user_id` 后增量更新用户画像 |
 
+Round 3 目标工具：
+
+| Tool | Pattern |
+|---|---|
+| `generate_probability` | `probability` |
+| `generate_parameter_explore` | `parameter_explore` |
+| `generate_concept_memory` | `concept_memory` |
+| `generate_process_timeline` | `process_timeline` |
+| `generate_comparison` | `comparison` |
+| `generate_knowledge_check` | `knowledge_check` |
+| `generate_system_builder` | `system_builder` |
+| `generate_narrative_branch` | `narrative_branch` |
+| `generate_classification_sort` | `classification_sort` |
+| `generate_simulation_play` | `simulation_play` |
+
+T30 已在 `src/lib/tools/generative-tools.ts` 定义 10 个 Pattern Tool，每个 Tool 的 `inputSchema` 只包含该 Pattern 的 payload 字段、`depth` 和 `next_concepts`。T31 起 `/api/chat` 通过 Tool Calling 选择 Pattern，选 Tool 即选 Pattern。若 DeepSeek Tool Calling 不稳定，T34 保留现有 JSON Schema 生成链路作为 L2 fallback，最终仍可回退 mock schema。
+
 来源输入技术原则：
 
 - 文字输入是当前主路径。
@@ -341,7 +359,7 @@ rg -n "旧入口文档|待处理输入|archive" docs/README.md docs/PRODUCT.md d
 
 ## 15. Prompt 与隐喻推理
 
-`src/lib/llm/prompt-templates.ts` 必须包含：
+当前 JSON fallback 的 `src/lib/llm/prompt-templates.ts` 必须包含：
 
 - 输出合法 JSON，不包 Markdown。
 - 优先输出 V2 `pattern/template/payload/depth/next_concepts`。
@@ -350,6 +368,13 @@ rg -n "旧入口文档|待处理输入|archive" docs/README.md docs/PRODUCT.md d
 - 每个 Pattern 至少 2 条反例：结构反例和内容反例。
 - 隐喻推理流程：拆动作、找机制、验映射、统一术语、给具体对应物。
 - payload 中输出 `metaphor_trace`，前端不渲染。
+
+Round 3 Tool Calling 目标：
+
+- 主链路 Prompt 不再描述全部 Schema 结构。
+- System Prompt 只保留角色设定、用户状态、隐喻规则和 1 句 Tool 使用提示。
+- Pattern 结构约束转移到 `GENERATIVE_TOOLS` 的 `inputSchema`。
+- 现有自然语言 `SCHEMA_REFERENCE` 保留为 JSON fallback，待 T34 完成后再判断是否继续保留。
 
 ## 16. 环境变量
 
@@ -376,6 +401,20 @@ AHA_FLASH_STATE_DIR=
 | 状态存储 | 本地文件 / Vercel `/tmp` | 当前阶段轻量；生产需迁移 |
 | UI 组件 | 自建 React 组件 | 控制交互体验和协议映射 |
 | 路由分类 | LLM 优先，规则 fallback | 有 key 时更准，无 key 时稳定可演示 |
+
+## 19. Round 3 MVP 1.0 收束任务
+
+| 任务 | 技术目标 | 状态 |
+|---|---|---|
+| T30 | 新建 `GENERATIVE_TOOLS`，10 个 Pattern Tool 的 inputSchema 与 Zod 协议对齐 | 完成 |
+| T31 | `/api/chat` 使用 Tool Calling 选择 Pattern | 待做 |
+| T32 | System Prompt 主链路降到 1000 tokens 内 | 待做 |
+| T33 | Tool calling 后校验层只做轻量二次确认 | 待做 |
+| T34 | 保留 Tool -> JSON fallback -> mock 三重兜底 | 待做 |
+| T36 | 合并 followup、route、schema 相关 LLM 调用，单次请求 LLM 调用不超过 3 次 | 待做 |
+| T37 | 生产安全：API Key 不下发、限流、输入清洗、错误响应脱敏 | 待做 |
+| T38 | 默认体验额度与自定义 API Key 请求方案 | 待做 |
+| T39 | Eval 用例扩展到 30+，score 不低于 0.9 | 待做 |
 
 ## 18. 已知技术债
 

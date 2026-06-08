@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { SCHEMA_CATALOG, V1_TO_V2_SCHEMA_MAP, type UISchema } from "@/types/schema";
+import { SCHEMA_CATALOG, V1_TO_V2_SCHEMA_MAP, type UISchema } from "../../types/schema.ts";
 
 export type MetaphorTraceValidationMode = "off" | "warn" | "reject";
 
