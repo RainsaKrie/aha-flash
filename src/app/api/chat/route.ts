@@ -129,11 +129,27 @@ function attachDepth(schema: UISchema, depth: LearningDepth): UISchema {
 }
 
 function inferSchemaIntent(input: string): SchemaIntent | null {
+  if (/(期权|保险|抽卡)/.test(input) && !/(区别|对比|比较|测验|测试|连答|combo)/i.test(input)) {
+    return {
+      pattern: "probability",
+      template: /(转盘|spin)/i.test(input) ? "spin_wheel" : "card_flip_reveal",
+      reason: "用户输入的是概率、期权、保险或抽卡相关概念",
+    };
+  }
+
   if (/(贝叶斯|先验|后验|条件概率|似然|bayes)/i.test(input)) {
     return {
       pattern: "concept_memory",
       template: "term_cards",
       reason: "用户输入的是抽象定理或概率术语，优先用术语卡解释核心构件",
+    };
+  }
+
+  if (/(配对|匹配|记忆卡|术语)/.test(input)) {
+    return {
+      pattern: "concept_memory",
+      template: /(配对|匹配|grid)/i.test(input) ? "grid_match" : "term_cards",
+      reason: "用户明确要求术语记忆或配对记忆卡",
     };
   }
 
@@ -169,6 +185,14 @@ function inferSchemaIntent(input: string): SchemaIntent | null {
     return { pattern: "parameter_explore", reason: "用户明确要求参数探索" };
   }
 
+  if (/^[\p{Script=Han}A-Za-z0-9\s·（）()\-]{1,14}$/u.test(input.trim())) {
+    return {
+      pattern: "concept_memory",
+      template: "term_cards",
+      reason: "用户输入的是短概念名，优先用术语卡解释核心构件",
+    };
+  }
+
   return null;
 }
 
@@ -182,6 +206,7 @@ function buildIntentDirective(intent: SchemaIntent | null) {
     intent.template ? `required_template: ${intent.template}` : "",
     "如果用户要求与 required_pattern 冲突，以 required_pattern 为准。",
     "输出必须满足 required_pattern / required_template；不要改用记忆卡、泛化解释或其他 pattern。",
+    intent.template ? "如果调用 generate_* 工具，工具参数里的 template 字段必须等于 required_template。" : "",
     "</schema_intent_guard>",
   ]
     .filter(Boolean)

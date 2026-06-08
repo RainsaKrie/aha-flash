@@ -239,7 +239,7 @@ Round 3 目标工具：
 | `generate_classification_sort` | `classification_sort` |
 | `generate_simulation_play` | `simulation_play` |
 
-T30 已在 `src/lib/tools/generative-tools.ts` 定义 10 个 Pattern Tool，每个 Tool 的 `inputSchema` 只包含该 Pattern 的 payload 字段、`depth` 和 `next_concepts`。T31 已让 `/api/chat` 优先通过 Tool Calling 选择 Pattern，选 Tool 即选 Pattern。若 DeepSeek Tool Calling 不稳定，现有 JSON Schema 生成链路作为 L2 fallback，最终仍可回退 mock schema。
+T30 已在 `src/lib/tools/generative-tools.ts` 定义 10 个 Pattern Tool，每个 Tool 的 `inputSchema` 包含该 Pattern 的 payload 字段、可选 `template`、`depth` 和 `next_concepts`。T31 已让 `/api/chat` 优先通过 Tool Calling 选择 Pattern，Tool 参数可携带模板 ID 以覆盖默认模板。若 DeepSeek Tool Calling 不稳定，现有 JSON Schema 生成链路作为 L2 fallback，最终仍可回退 mock schema。
 
 来源输入技术原则：
 

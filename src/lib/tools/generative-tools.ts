@@ -1,5 +1,12 @@
 import { jsonSchema, tool, type ToolSet } from "ai";
-import { isLearningDepth, type LearningDepth, type NextConcept, type PatternType, type TemplateId } from "../../types/schema.ts";
+import {
+  SCHEMA_CATALOG,
+  isLearningDepth,
+  type LearningDepth,
+  type NextConcept,
+  type PatternType,
+  type TemplateId,
+} from "../../types/schema.ts";
 
 type JsonSchema = Record<string, unknown>;
 
@@ -47,6 +54,7 @@ function schema(properties: Record<string, unknown>, required: string[]) {
     type: "object",
     properties: {
       ...properties,
+      template: { type: "string", description: "可选模板 ID，必须属于当前 Pattern 的模板列表。" },
       depth: depthProperty,
       next_concepts: nextConceptsProperty,
       metaphor_trace: metaphorTraceProperty,
@@ -463,10 +471,15 @@ function normalizeNextConcepts(value: unknown): NextConcept[] | undefined {
 
 export function buildSchemaFromGenerativeToolCall(name: GenerativeToolName, args: Record<string, unknown>) {
   const tool = GENERATIVE_TOOLS[name];
-  const { depth, next_concepts, ...payload } = args;
+  const { depth, next_concepts, template, ...payload } = args;
+  const templateId =
+    typeof template === "string" && SCHEMA_CATALOG[tool.pattern].templates.includes(template as TemplateId)
+      ? (template as TemplateId)
+      : tool.template;
+
   return {
     pattern: tool.pattern,
-    template: tool.template,
+    template: templateId,
     version: "2.0",
     depth: isLearningDepth(depth) ? depth : undefined,
     next_concepts: normalizeNextConcepts(next_concepts),
