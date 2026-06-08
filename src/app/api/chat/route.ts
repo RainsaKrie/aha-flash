@@ -234,6 +234,23 @@ function logSchemaParseFailure(label: string, text: string, reason: string) {
   });
 }
 
+async function retryGenerateText(
+  options: Parameters<typeof generateText>[0],
+  maxRetries = 1,
+): Promise<Awaited<ReturnType<typeof generateText>>> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await generateText(options);
+    } catch (error) {
+      if (attempt === maxRetries) throw error;
+      const msg = error instanceof Error ? error.message : String(error);
+      if (!/(500|502|503|timeout|ECONNRESET|ETIMEDOUT|fetch failed)/i.test(msg)) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
+    }
+  }
+  throw new Error("unreachable");
+}
+
 async function generateSchemaWithTools({
   model,
   system,
@@ -246,7 +263,7 @@ async function generateSchemaWithTools({
   intent: SchemaIntent | null;
 }): Promise<SchemaGenerationResult> {
   try {
-    const result = await generateText({
+    const result = await retryGenerateText({
       model,
       system,
       messages: [{ role: "user", content: [input, buildIntentDirective(intent)].filter(Boolean).join("\n\n") }],
@@ -299,59 +316,66 @@ async function generateSchemaWithLLM({
   input: string;
   intent: SchemaIntent | null;
 }): Promise<SchemaGenerationResult> {
-  const userContent = [input, buildIntentDirective(intent)].filter(Boolean).join("\n\n");
-  const first = await generateText({
-    model,
-    system,
-    messages: [{ role: "user", content: userContent }],
-  });
+  try {
+    const userContent = [input, buildIntentDirective(intent)].filter(Boolean).join("\n\n");
+    const first = await retryGenerateText({
+      model,
+      system,
+      messages: [{ role: "user", content: userContent }],
+    });
 
-  const firstSchema = extractSchemaFromText(first.text);
-  if (schemaMatchesIntent(firstSchema, intent)) return { schema: firstSchema };
+    const firstSchema = extractSchemaFromText(first.text);
+    if (schemaMatchesIntent(firstSchema, intent)) return { schema: firstSchema };
 
-  const failureReason = firstSchema
-    ? `Schema pattern/template 与用户意图不匹配，必须满足 ${intent?.pattern}${intent?.template ? `/${intent.template}` : ""}。`
-    : getSchemaFailureReason(first.text);
-  if (!firstSchema) logSchemaParseFailure("initial", first.text, failureReason);
-  const repair = await generateText({
-    model,
-    system,
-    messages: [
-      { role: "user", content: userContent },
-      {
-        role: "assistant",
-        content: first.text,
-      },
-      {
-        role: "user",
-        content: [
-          "上一次输出无法被前端解析。",
-          "请只输出一个合法 JSON 对象，不要输出 Markdown，不要解释。",
-          `校验错误: ${failureReason}`,
-        ].join("\n"),
-      },
-    ],
-  });
+    const failureReason = firstSchema
+      ? `Schema pattern/template 与用户意图不匹配，必须满足 ${intent?.pattern}${intent?.template ? `/${intent.template}` : ""}。`
+      : getSchemaFailureReason(first.text);
+    if (!firstSchema) logSchemaParseFailure("initial", first.text, failureReason);
+    const repair = await retryGenerateText({
+      model,
+      system,
+      messages: [
+        { role: "user", content: userContent },
+        {
+          role: "assistant",
+          content: first.text,
+        },
+        {
+          role: "user",
+          content: [
+            "上一次输出无法被前端解析。",
+            "请只输出一个合法 JSON 对象，不要输出 Markdown，不要解释。",
+            `校验错误: ${failureReason}`,
+          ].join("\n"),
+        },
+      ],
+    });
 
-  const repairedSchema = extractSchemaFromText(repair.text);
-  if (schemaMatchesIntent(repairedSchema, intent)) return { schema: repairedSchema };
+    const repairedSchema = extractSchemaFromText(repair.text);
+    if (schemaMatchesIntent(repairedSchema, intent)) return { schema: repairedSchema };
 
-  const repairFailureReason = repairedSchema
-    ? `修复后 Schema pattern/template 仍不匹配，必须满足 ${intent?.pattern}${intent?.template ? `/${intent.template}` : ""}。`
-    : getSchemaFailureReason(repair.text);
-  if (!repairedSchema) logSchemaParseFailure("repair", repair.text, repairFailureReason);
+    const repairFailureReason = repairedSchema
+      ? `修复后 Schema pattern/template 仍不匹配，必须满足 ${intent?.pattern}${intent?.template ? `/${intent.template}` : ""}。`
+      : getSchemaFailureReason(repair.text);
+    if (!repairedSchema) logSchemaParseFailure("repair", repair.text, repairFailureReason);
 
-  return {
-    schema: null,
-    validationError: [
-      `初次失败: ${failureReason}`,
-      !firstSchema ? getRawModelOutputDebug("初次", first.text) : "",
-      `修复失败: ${repairFailureReason}`,
-      !repairedSchema ? getRawModelOutputDebug("修复", repair.text) : "",
-    ]
-      .filter(Boolean)
-      .join("\n"),
-  };
+    return {
+      schema: null,
+      validationError: [
+        `初次失败: ${failureReason}`,
+        !firstSchema ? getRawModelOutputDebug("初次", first.text) : "",
+        `修复失败: ${repairFailureReason}`,
+        !repairedSchema ? getRawModelOutputDebug("修复", repair.text) : "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    };
+  } catch (error) {
+    return {
+      schema: null,
+      validationError: `JSON fallback 异常: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
 }
 
 async function processChatRequest({
@@ -429,8 +453,8 @@ async function processChatRequest({
         }
       }
     } catch (error) {
-      validationError = error instanceof Error ? error.message : String(error);
-      source = "mock";
+      const newErr = error instanceof Error ? error.message : String(error);
+      validationError = [validationError, `外层异常: ${newErr}`].filter(Boolean).join(" | ");
     }
   }
 
