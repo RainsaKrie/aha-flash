@@ -343,7 +343,7 @@ Round 3 当前任务：
 | T32 | 简化 System Prompt，只保留角色、用户状态、隐喻规则和 Tool 使用提示 | 完成 |
 | T33 | 简化校验层，Tool calling 输出作为结构化数据后只做二次确认 | 完成 |
 | T34 | 三重兜底：Tool calling、JSON fallback、mock schema | 完成 |
-| T35a | 顶栏、组件区、输入栏视觉语言收束 | 待做 |
+| T35a | 顶栏、组件区、输入栏视觉语言收束 | 完成 |
 | T35b | 逐一走查 11 个 Pattern/模板组合的视觉细节 | 待做 |
 | T35c | 加载、生成、渲染、错误状态的动效衔接 | 待做 |
 | T36 | 合并 LLM 调用并降低 prompt/token 成本 | 待做 |

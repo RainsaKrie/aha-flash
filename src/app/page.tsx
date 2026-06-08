@@ -87,6 +87,7 @@ export default function HomePage() {
   const [loadingStage, setLoadingStage] = useState("正在生成互动组件...");
   const [lastSubmitted, setLastSubmitted] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [inputDraft, setInputDraft] = useState("期权是什么？用我能听懂的方式讲。");
 
   useEffect(() => {
     async function boot() {
@@ -257,6 +258,7 @@ export default function HomePage() {
   const activeDepth = currentRenderableSchema?.depth || learningDepth;
   const nextLearningDepth = componentCompleted ? nextDepth(activeDepth) : null;
   const nextConcepts = currentRenderableSchema?.next_concepts.slice(0, 2) || [];
+  const starterPrompts = ["贝叶斯定理", "股票和期权区别", "复利为什么厉害"];
 
   return (
     <main className="app-shell">
@@ -294,9 +296,26 @@ export default function HomePage() {
             })
           ) : (
             <div className="empty-stage">
-              <BrainCircuit size={34} />
+              <span className="empty-stage__icon">
+                <BrainCircuit size={34} />
+              </span>
               <h1>输入一个概念开始探索</h1>
               <p>趣灵会把它变成一个能操作、能反馈的小组件。</p>
+              <div className="empty-stage__prompts" aria-label="可填入的引导关键词">
+                {starterPrompts.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onPointerDown={(event) => {
+                      event.preventDefault();
+                      setInputDraft(prompt);
+                    }}
+                    onClick={() => setInputDraft(prompt)}
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
           {isLoading && (
@@ -364,7 +383,12 @@ export default function HomePage() {
             <span>{validationError}</span>
           </div>
         )}
-        <ChatInput onSubmit={(value) => submit(value, learningDepth)} disabled={isLoading} />
+        <ChatInput
+          value={inputDraft}
+          onValueChange={setInputDraft}
+          onSubmit={(value) => submit(value, learningDepth)}
+          disabled={isLoading}
+        />
       </footer>
     </main>
   );

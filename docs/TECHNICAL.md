@@ -415,6 +415,7 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 | T32 | System Prompt 主链路降到 1000 tokens 内 | 完成 |
 | T33 | Tool calling 后校验层只做轻量二次确认 | 完成 |
 | T34 | 保留 Tool -> JSON fallback -> mock 三重兜底 | 完成 |
+| T35a | 首页顶栏、空态舞台、底部输入栏视觉与输入联动收束 | 完成 |
 | T36 | 合并 followup、route、schema 相关 LLM 调用，单次请求 LLM 调用不超过 3 次 | 待做 |
 | T37 | 生产安全：API Key 不下发、限流、输入清洗、错误响应脱敏 | 待做 |
 | T38 | 默认体验额度与自定义 API Key 请求方案 | 待做 |

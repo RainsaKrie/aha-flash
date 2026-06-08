@@ -1,24 +1,26 @@
 "use client";
 
 import { SendHorizontal } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
 export function ChatInput({
   onSubmit,
   disabled,
+  value,
+  onValueChange,
 }: {
   onSubmit: (value: string) => Promise<void>;
   disabled?: boolean;
+  value: string;
+  onValueChange: (value: string) => void;
 }) {
-  const [value, setValue] = useState("期权是什么？用我能听懂的方式讲。");
-
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = value.trim();
     if (!trimmed) return;
-    setValue("");
+    onValueChange("");
     await onSubmit(trimmed);
   }
 
@@ -26,7 +28,7 @@ export function ChatInput({
     <form onSubmit={submit} className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
       <Textarea
         value={value}
-        onChange={(event) => setValue(event.target.value)}
+        onChange={(event) => onValueChange(event.target.value)}
         placeholder="输入你想理解的概念，用你的方式讲给你听"
         disabled={disabled}
         className="min-h-16 resize-none"
