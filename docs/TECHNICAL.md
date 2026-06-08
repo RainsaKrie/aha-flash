@@ -392,7 +392,10 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 说明：
 
 - 没有 `DEEPSEEK_API_KEY` 时使用 mock schema fallback。
+- `DEEPSEEK_API_KEY` 仅在服务端 provider 中读取，不使用 `NEXT_PUBLIC_` 前缀，也不进入 API 响应。
 - `AHA_FLASH_DISABLE_TOOL_CALLING=1` 时跳过 Tool Calling，直接验证 JSON fallback；开发环境也可在 `/api/chat` 请求体传 `disable_tools: true`。
+- `/api/chat` 默认限制单条输入 2000 字，清理控制字符，并按 userId/IP 做 10 分钟 30 次的内存级基础限流。
+- 生产环境不返回 Schema validation debug 细节；开发环境保留 `validation_error` 便于排查。
 - Vercel demo 默认写 `/tmp/aha-flash/states`，不保证长期持久。
 - 搜索和 URL 抓取相关环境变量已不再使用。
 
@@ -419,7 +422,7 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 | T35b | 组件视觉细节走查：色阶、滑块触控、按钮文案和重复作答状态收口 | 完成 |
 | T35c | 加载、生成、渲染、错误状态的动效衔接 | 完成 |
 | T36 | 合并 followup、route、schema 相关 LLM 调用，单次请求 LLM 调用不超过 3 次 | 完成 |
-| T37 | 生产安全：API Key 不下发、限流、输入清洗、错误响应脱敏 | 待做 |
+| T37 | 生产安全：API Key 不下发、限流、输入清洗、错误响应脱敏 | 完成 |
 | T38 | 默认体验额度与自定义 API Key 请求方案 | 待做 |
 | T39 | Eval 用例扩展到 30+，score 不低于 0.9 | 待做 |
 

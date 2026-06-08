@@ -6,6 +6,7 @@ import {
   inferTopic,
 } from "@/lib/harness/conversation-router";
 import { buildJsonSystemPrompt, buildToolSystemPrompt } from "@/lib/harness/prompt-composer";
+import { checkRateLimit } from "@/lib/harness/rate-limit";
 import { reflectTurnByRules } from "@/lib/harness/state-reflection";
 import { initUserState } from "@/lib/harness/state-machine";
 import { stateStore } from "@/lib/harness/state-store";
@@ -43,10 +44,28 @@ interface ChatStageEvent {
 
 type EmitChatEvent = (event: ChatStageEvent) => Promise<void> | void;
 type GenerationMode = "tool" | "json_fallback" | "mock";
+const MAX_MESSAGE_CHARS = 2000;
 
 interface SchemaGenerationResult {
   schema: UISchema | null;
   validationError?: string;
+}
+
+function sanitizeMessage(value: unknown) {
+  return String(value || "")
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+    .trim();
+}
+
+function sanitizeRateLimitKey(value: string) {
+  return value.replace(/[^a-zA-Z0-9:._-]/g, "").slice(0, 96);
+}
+
+function getChatRateLimitKey(req: Request, userId?: string | null) {
+  if (userId) return `user:${sanitizeRateLimitKey(userId)}`;
+  const forwardedFor = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const realIp = req.headers.get("x-real-ip")?.trim();
+  return `ip:${sanitizeRateLimitKey(forwardedFor || realIp || "local")}`;
 }
 
 function inferConcept(input: string) {
@@ -452,22 +471,48 @@ async function processChatRequest({
     userState: updatedState,
     source,
     generation_mode: generationMode,
-    validation_error: validationError,
+    validation_error: process.env.NODE_ENV !== "production" ? validationError : undefined,
     created_at: new Date().toISOString(),
   };
 }
 
 export async function POST(req: Request) {
-  const { message, userId, depth: rawDepth, recent_messages, stream, disable_tools } = await req.json();
-  const input = String(message || "").trim();
+  let body: Record<string, unknown>;
+  try {
+    body = (await req.json()) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: "invalid json body" }, { status: 400 });
+  }
+
+  const { message, userId, depth: rawDepth, recent_messages, stream, disable_tools } = body;
+  const input = sanitizeMessage(message);
   const depth = normalizeDepth(rawDepth);
   const recentMessages = normalizeRecentMessages(recent_messages);
+  const normalizedUserId = typeof userId === "string" ? userId : null;
   const disableToolCalling =
     process.env.AHA_FLASH_DISABLE_TOOL_CALLING === "1" ||
     (process.env.NODE_ENV !== "production" && disable_tools === true);
 
   if (!input) {
     return NextResponse.json({ error: "message is required" }, { status: 400 });
+  }
+
+  if (input.length > MAX_MESSAGE_CHARS) {
+    return NextResponse.json({ error: "message is too long" }, { status: 413 });
+  }
+
+  const rateLimit = checkRateLimit(getChatRateLimitKey(req, normalizedUserId));
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "too many requests, please retry later" },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rateLimit.retryAfterSeconds),
+          "X-RateLimit-Remaining": "0",
+        },
+      },
+    );
   }
 
   if (stream === true) {
@@ -481,7 +526,7 @@ export async function POST(req: Request) {
         try {
           const payload = await processChatRequest({
             input,
-            userId,
+            userId: normalizedUserId,
             depth,
             recentMessages,
             disableToolCalling,
@@ -504,6 +549,15 @@ export async function POST(req: Request) {
     });
   }
 
-  const payload = await processChatRequest({ input, userId, depth, recentMessages, disableToolCalling });
-  return NextResponse.json(payload);
+  try {
+    const payload = await processChatRequest({ input, userId: normalizedUserId, depth, recentMessages, disableToolCalling });
+    return NextResponse.json(payload, {
+      headers: {
+        "X-RateLimit-Remaining": String(rateLimit.remaining),
+      },
+    });
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") console.error("[aha-flash] chat request failed", error);
+    return NextResponse.json({ error: "生成失败，请稍后重试。" }, { status: 500 });
+  }
 }
