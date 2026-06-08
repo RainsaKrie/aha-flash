@@ -21,6 +21,8 @@
 - T35c 已完成：生成期间舞台显示居中 loading 状态层，底部提交按钮切换为“生成中”并禁用，输入框同步禁用；错误提示使用 `role=alert` 明确失败态。
 - T36 已完成：路由、追问和状态提炼默认改为确定性规则，LLM 调用预算集中给 Schema 生成；JSON fallback prompt 仅在 Tool Calling 失败后构造和发送，单次请求最坏为 Tool + JSON + Repair 三次模型调用。
 - T37 已完成：`/api/chat` 增加输入控制字符清理、2000 字长度限制和基础内存限流；生产响应不再返回 `validation_error` 调试细节；非流式异常统一返回脱敏错误。
+- T38 按当前优先级暂时搁置，先完成 T39。
+- T39 已完成：Eval 固定集从 14 条扩展到 32 条，覆盖 10 类 Pattern、17 个模板变体、3 档深度和 3 类意图；`eval:score` 固定集 overall 保持 1。补充贝叶斯纯名词 case，并将贝叶斯/先验/后验输入强制走 `concept_memory/term_cards`，真实 API 复测不再落 mock。
 
 ## 2026-06-07
 

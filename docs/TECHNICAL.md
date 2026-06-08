@@ -282,7 +282,7 @@ T30 已在 `src/lib/tools/generative-tools.ts` 定义 10 个 Pattern Tool，每�
 
 质量体系包含：
 
-- `tests/fixtures/test-cases.json`：固定输入集合，覆盖全部 Pattern、深度和意图。
+- `tests/fixtures/test-cases.json`：固定输入集合，当前 32 条，覆盖全部 Pattern、全部模板变体、深度和意图。
 - `tests/eval/score.ts`：评分单个预测文件；无预测文件时使用 mock schema 作为基线。
 - `tests/eval/compare.ts`：对比两个预测文件，输出总分和逐 case 分数差异。
 
@@ -423,8 +423,8 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 | T35c | 加载、生成、渲染、错误状态的动效衔接 | 完成 |
 | T36 | 合并 followup、route、schema 相关 LLM 调用，单次请求 LLM 调用不超过 3 次 | 完成 |
 | T37 | 生产安全：API Key 不下发、限流、输入清洗、错误响应脱敏 | 完成 |
-| T38 | 默认体验额度与自定义 API Key 请求方案 | 待做 |
-| T39 | Eval 用例扩展到 30+，score 不低于 0.9 | 待做 |
+| T38 | 默认体验额度与自定义 API Key 请求方案 | 搁置 |
+| T39 | Eval 用例扩展到 30+，score 不低于 0.9 | 完成 |
 
 ## 18. 已知技术债
 

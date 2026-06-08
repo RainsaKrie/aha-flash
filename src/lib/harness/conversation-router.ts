@@ -30,6 +30,12 @@ const knowledgeWords = [
   "区别",
   "对比",
   "测验",
+  "测试",
+  "术语",
+  "记忆",
+  "机器学习",
+  "系统",
+  "模块",
   "期权",
   "算法",
   "架构",
@@ -127,7 +133,7 @@ function isPureNounPhrase(input: string) {
 export function classifyConversationByRules(input: string): RouteClassification {
   const normalizedInput = input.trim();
   const hasKnowledgeSignal = knowledgeWords.some((word) => normalizedInput.includes(word));
-  const hasExplicitKnowledgeQuestion = /(是什么|如何|为什么|怎么|解释|理解|原理|区别|对比|测验|测试|题目|时间线|分类|模拟|推演|架构|滑块)/.test(
+  const hasExplicitKnowledgeQuestion = /(是什么|如何|为什么|怎么|解释|理解|原理|区别|对比|测验|测试|题目|术语|记忆卡|时间线|分类|模拟|推演|架构|系统|模块|滑块)/.test(
     normalizedInput,
   );
   const hasPreferenceSignal =

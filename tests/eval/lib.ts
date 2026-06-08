@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { createMockSchema } from "../../src/lib/llm/mock-schema.ts";
 import { extractSchemaFromText, validateSchema } from "../../src/lib/llm/schema-validator.ts";
 import { normalizeUISchema, type LearningDepth, type UISchema } from "../../src/types/schema.ts";
+import { classifyConversationByRules } from "../../src/lib/harness/conversation-router.ts";
 
 export interface EvalCase {
   id: string;
@@ -76,9 +77,7 @@ export function readEvalCases(filePath = defaultCasesPath) {
 }
 
 function inferRouteByRules(input: string): EvalCase["expected_route"] {
-  if (/(我是|喜欢|爱好|之后用|以后用|偏好|背景)/.test(input)) return "preference";
-  if (/(不学习|随便聊|闲聊|你好)/.test(input)) return "casual";
-  return "knowledge";
+  return classifyConversationByRules(input).route;
 }
 
 function schemaFromPrediction(testCase: EvalCase, prediction?: Prediction) {

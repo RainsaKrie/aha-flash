@@ -27,6 +27,15 @@
     "required_keywords": ["期权费", "行权价", "标的价格"]
   },
   {
+    "id": "probability-option-spin",
+    "input": "期权是什么？用转盘模拟一次。",
+    "depth": "rapid",
+    "expected_route": "knowledge",
+    "expected_pattern": "probability",
+    "expected_template": "spin_wheel",
+    "required_keywords": ["期权", "选择权", "损失"]
+  },
+  {
     "id": "parameter-complexity",
     "input": "算法复杂度是什么？用滑块让我感受一下。",
     "depth": "rapid",
@@ -34,6 +43,24 @@
     "expected_pattern": "parameter_explore",
     "expected_template": "single_slider",
     "required_keywords": ["输入数量", "变量"]
+  },
+  {
+    "id": "parameter-complexity-dual",
+    "input": "算法复杂度是什么？用双滑块对照。",
+    "depth": "mapping",
+    "expected_route": "knowledge",
+    "expected_pattern": "parameter_explore",
+    "expected_template": "dual_slider",
+    "required_keywords": ["输入数量", "平方成本"]
+  },
+  {
+    "id": "parameter-interest-rate",
+    "input": "利率变化怎么影响结果？用参数滑块讲。",
+    "depth": "scenario",
+    "expected_route": "knowledge",
+    "expected_pattern": "parameter_explore",
+    "expected_template": "single_slider",
+    "required_keywords": ["关键变量", "放大影响"]
   },
   {
     "id": "concept-memory-grid",
@@ -45,12 +72,48 @@
     "required_keywords": ["概念", "记忆"]
   },
   {
+    "id": "concept-memory-bayes-rapid",
+    "input": "贝叶斯定理",
+    "depth": "rapid",
+    "expected_route": "knowledge",
+    "expected_pattern": "concept_memory",
+    "expected_template": "term_cards",
+    "required_keywords": ["先验", "证据", "后验"]
+  },
+  {
+    "id": "concept-memory-bayes-scenario",
+    "input": "贝叶斯定理",
+    "depth": "scenario",
+    "expected_route": "knowledge",
+    "expected_pattern": "concept_memory",
+    "expected_template": "term_cards",
+    "required_keywords": ["先验", "证据", "后验"]
+  },
+  {
+    "id": "concept-memory-bayes-mapping",
+    "input": "贝叶斯定理",
+    "depth": "mapping",
+    "expected_route": "knowledge",
+    "expected_pattern": "concept_memory",
+    "expected_template": "term_cards",
+    "required_keywords": ["先验", "似然", "后验"]
+  },
+  {
     "id": "process-timeline",
     "input": "人工智能的发展历史，用时间线讲。",
     "depth": "scenario",
     "expected_route": "knowledge",
     "expected_pattern": "process_timeline",
     "expected_template": "horizontal_timeline",
+    "required_keywords": ["起点", "演化"]
+  },
+  {
+    "id": "process-timeline-vertical",
+    "input": "人工智能的发展历史，用纵向滚动时间线讲。",
+    "depth": "rapid",
+    "expected_route": "knowledge",
+    "expected_pattern": "process_timeline",
+    "expected_template": "vertical_scroll",
     "required_keywords": ["起点", "演化"]
   },
   {
@@ -63,12 +126,39 @@
     "required_keywords": ["差异", "风险"]
   },
   {
+    "id": "comparison-split-stock-option",
+    "input": "股票和期权有什么区别？",
+    "depth": "rapid",
+    "expected_route": "knowledge",
+    "expected_pattern": "comparison",
+    "expected_template": "split_panel",
+    "required_keywords": ["股票", "期权", "选择权"]
+  },
+  {
+    "id": "comparison-split-fund-index",
+    "input": "主动基金和指数基金有什么区别？",
+    "depth": "mapping",
+    "expected_route": "knowledge",
+    "expected_pattern": "comparison",
+    "expected_template": "split_panel",
+    "required_keywords": ["权利", "成本", "风险"]
+  },
+  {
     "id": "knowledge-check-combo",
     "input": "给我一个期权理解连答 combo。",
     "depth": "scenario",
     "expected_route": "knowledge",
     "expected_pattern": "knowledge_check",
     "expected_template": "combo_chain",
+    "required_keywords": ["理解", "预测"]
+  },
+  {
+    "id": "knowledge-check-single",
+    "input": "给我一个期权理解测试。",
+    "depth": "rapid",
+    "expected_route": "knowledge",
+    "expected_pattern": "knowledge_check",
+    "expected_template": "single_question",
     "required_keywords": ["理解", "预测"]
   },
   {
@@ -81,6 +171,15 @@
     "required_keywords": ["输入", "规则", "反馈"]
   },
   {
+    "id": "system-builder-module",
+    "input": "把趣灵的系统模块做成沙盒。",
+    "depth": "rapid",
+    "expected_route": "knowledge",
+    "expected_pattern": "system_builder",
+    "expected_template": "module_sandbox",
+    "required_keywords": ["输入", "规则", "反馈"]
+  },
+  {
     "id": "narrative-branch-sunk-cost",
     "input": "沉没成本是什么意思？用一个分支故事讲。",
     "depth": "scenario",
@@ -88,6 +187,24 @@
     "expected_pattern": "narrative_branch",
     "expected_template": "branch_story",
     "required_keywords": ["未来", "成本"]
+  },
+  {
+    "id": "narrative-branch-sunk-cost-rapid",
+    "input": "沉没成本是什么意思？",
+    "depth": "rapid",
+    "expected_route": "knowledge",
+    "expected_pattern": "narrative_branch",
+    "expected_template": "branch_story",
+    "required_keywords": ["过去", "未来"]
+  },
+  {
+    "id": "narrative-branch-sunk-cost-mapping",
+    "input": "沉没成本是什么意思？用映射拆开讲。",
+    "depth": "mapping",
+    "expected_route": "knowledge",
+    "expected_pattern": "narrative_branch",
+    "expected_template": "branch_story",
+    "required_keywords": ["机会成本", "边际收益"]
   },
   {
     "id": "classification-sort-investing",
@@ -99,9 +216,36 @@
     "required_keywords": ["价值投资", "成长投资"]
   },
   {
+    "id": "classification-sort-investing-mapping",
+    "input": "价值投资、成长投资和指数投资怎么分类？",
+    "depth": "mapping",
+    "expected_route": "knowledge",
+    "expected_pattern": "classification_sort",
+    "expected_template": "category_buckets",
+    "required_keywords": ["价值投资", "成长投资", "指数投资"]
+  },
+  {
     "id": "simulation-compound",
     "input": "复利怎么滚起来的？做一个模拟推演。",
     "depth": "scenario",
+    "expected_route": "knowledge",
+    "expected_pattern": "simulation_play",
+    "expected_template": "parameter_simulation",
+    "required_keywords": ["复利", "增长"]
+  },
+  {
+    "id": "simulation-network-effect",
+    "input": "网络效应怎么滚起来的？做一个模拟推演。",
+    "depth": "mapping",
+    "expected_route": "knowledge",
+    "expected_pattern": "simulation_play",
+    "expected_template": "parameter_simulation",
+    "required_keywords": ["复利", "增长"]
+  },
+  {
+    "id": "simulation-compound-rapid",
+    "input": "复利是什么？用模拟让我看见增长。",
+    "depth": "rapid",
     "expected_route": "knowledge",
     "expected_pattern": "simulation_play",
     "expected_template": "parameter_simulation",
@@ -117,8 +261,26 @@
     "required_keywords": ["概念"]
   },
   {
+    "id": "preference-racing",
+    "input": "我喜欢赛车，以后用进站策略讲金融概念。",
+    "depth": "rapid",
+    "expected_route": "preference",
+    "expected_pattern": "concept_memory",
+    "expected_template": "term_cards",
+    "required_keywords": ["概念"]
+  },
+  {
     "id": "casual-route",
     "input": "今天先不学习，随便聊两句。",
+    "depth": "rapid",
+    "expected_route": "casual",
+    "expected_pattern": "concept_memory",
+    "expected_template": "term_cards",
+    "required_keywords": ["概念"]
+  },
+  {
+    "id": "casual-hello",
+    "input": "你好，今天先不学。",
     "depth": "rapid",
     "expected_route": "casual",
     "expected_pattern": "concept_memory",

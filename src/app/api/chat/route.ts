@@ -129,6 +129,14 @@ function attachDepth(schema: UISchema, depth: LearningDepth): UISchema {
 }
 
 function inferSchemaIntent(input: string): SchemaIntent | null {
+  if (/(贝叶斯|先验|后验|条件概率|似然|bayes)/i.test(input)) {
+    return {
+      pattern: "concept_memory",
+      template: "term_cards",
+      reason: "用户输入的是抽象定理或概率术语，优先用术语卡解释核心构件",
+    };
+  }
+
   if (/(区别|对比|比较|VS|vs| versus )/.test(input)) {
     return {
       pattern: "comparison",
