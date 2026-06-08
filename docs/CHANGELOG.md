@@ -15,6 +15,7 @@
 - T31 已完成：`/api/chat` 优先使用 AI SDK Tool Calling 选择 `generate_*` Pattern Tool；Tool 失败时保留现有 JSON fallback，最终仍可 mock fallback。
 - T32 已完成：拆分 Tool 主链路 Prompt 与 JSON fallback Prompt；Tool 主链路不再注入自然语言 `SCHEMA_REFERENCE` 和输出格式长规则。
 - T33 已完成：Tool Calling 路径改为已知 Pattern/Template 的直达 payload 校验；`metaphor_trace` 等调试字段无效时不再导致主组件整体 fallback。
+- T34 已完成：显式返回 `generation_mode=tool|json_fallback|mock`；支持服务端开关或开发请求体跳过 Tool Calling 以验收 JSON fallback。
 
 ## 2026-06-07
 

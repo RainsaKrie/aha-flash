@@ -42,6 +42,7 @@ interface ChatStageEvent {
 }
 
 type EmitChatEvent = (event: ChatStageEvent) => Promise<void> | void;
+type GenerationMode = "tool" | "json_fallback" | "mock";
 
 interface SchemaGenerationResult {
   schema: UISchema | null;
@@ -306,12 +307,14 @@ async function processChatRequest({
   userId,
   depth,
   recentMessages,
+  disableToolCalling = false,
   emit,
 }: {
   input: string;
   userId?: string | null;
   depth: LearningDepth;
   recentMessages: RecentMessage[];
+  disableToolCalling?: boolean;
   emit?: EmitChatEvent;
 }) {
   await emit?.({ type: "stage", stage: "state", label: "读取你的学习状态" });
@@ -351,20 +354,25 @@ async function processChatRequest({
 
   let schema = attachDepth(createMockSchema(input, depth), depth);
   let source: "mock" | "llm" = "mock";
+  let generationMode: GenerationMode = "mock";
   let validationError: string | undefined;
 
   await emit?.({ type: "stage", stage: "generating", label: model ? "生成互动组件结构" : "准备本地稳定组件" });
   if (model) {
     try {
-      const toolGenerated = await generateSchemaWithTools({ model, system: toolSystemPrompt, input, intent: schemaIntent });
+      const toolGenerated = disableToolCalling
+        ? { schema: null, validationError: "Tool calling 已被开发调试开关禁用，进入 JSON fallback。" }
+        : await generateSchemaWithTools({ model, system: toolSystemPrompt, input, intent: schemaIntent });
       if (toolGenerated.schema) {
         schema = attachDepth(toolGenerated.schema, depth);
         source = "llm";
+        generationMode = "tool";
       } else {
         const jsonGenerated = await generateSchemaWithLLM({ model, system: jsonSystemPrompt, input, intent: schemaIntent });
         if (jsonGenerated.schema) {
           schema = attachDepth(jsonGenerated.schema, depth);
           source = "llm";
+          generationMode = "json_fallback";
         } else {
           validationError = [toolGenerated.validationError, jsonGenerated.validationError].filter(Boolean).join("\n");
         }
@@ -446,16 +454,20 @@ async function processChatRequest({
     userId: state.user_id,
     userState: updatedState,
     source,
+    generation_mode: generationMode,
     validation_error: validationError,
     created_at: new Date().toISOString(),
   };
 }
 
 export async function POST(req: Request) {
-  const { message, userId, depth: rawDepth, recent_messages, stream } = await req.json();
+  const { message, userId, depth: rawDepth, recent_messages, stream, disable_tools } = await req.json();
   const input = String(message || "").trim();
   const depth = normalizeDepth(rawDepth);
   const recentMessages = normalizeRecentMessages(recent_messages);
+  const disableToolCalling =
+    process.env.AHA_FLASH_DISABLE_TOOL_CALLING === "1" ||
+    (process.env.NODE_ENV !== "production" && disable_tools === true);
 
   if (!input) {
     return NextResponse.json({ error: "message is required" }, { status: 400 });
@@ -475,6 +487,7 @@ export async function POST(req: Request) {
             userId,
             depth,
             recentMessages,
+            disableToolCalling,
             emit: send,
           });
           send({ type: "final", payload });
@@ -494,6 +507,6 @@ export async function POST(req: Request) {
     });
   }
 
-  const payload = await processChatRequest({ input, userId, depth, recentMessages });
+  const payload = await processChatRequest({ input, userId, depth, recentMessages, disableToolCalling });
   return NextResponse.json(payload);
 }

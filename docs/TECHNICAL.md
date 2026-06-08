@@ -126,7 +126,7 @@ POST /api/chat
       |
       +-- L1: Tool Calling selects one generate_* Pattern Tool
       +-- L2: JSON Schema fallback with repair prompt
-      +-- if model unavailable or invalid output: createMockSchema()
+      +-- L3: if model unavailable or invalid output: createMockSchema()
   +-- normalizeUISchema(schema)
   +-- if route is knowledge: stateStore.updateCurrentThread()
   +-- reflectTurn(input, route, schemaType, state)
@@ -386,11 +386,13 @@ DEEPSEEK_BASE_URL=https://api.deepseek.com
 NEXT_PUBLIC_APP_NAME=趣灵
 NEXT_PUBLIC_MAX_STEPS=5
 AHA_FLASH_STATE_DIR=
+AHA_FLASH_DISABLE_TOOL_CALLING=
 ```
 
 说明：
 
 - 没有 `DEEPSEEK_API_KEY` 时使用 mock schema fallback。
+- `AHA_FLASH_DISABLE_TOOL_CALLING=1` 时跳过 Tool Calling，直接验证 JSON fallback；开发环境也可在 `/api/chat` 请求体传 `disable_tools: true`。
 - Vercel demo 默认写 `/tmp/aha-flash/states`，不保证长期持久。
 - 搜索和 URL 抓取相关环境变量已不再使用。
 
@@ -412,7 +414,7 @@ AHA_FLASH_STATE_DIR=
 | T31 | `/api/chat` 使用 Tool Calling 选择 Pattern | 完成 |
 | T32 | System Prompt 主链路降到 1000 tokens 内 | 完成 |
 | T33 | Tool calling 后校验层只做轻量二次确认 | 完成 |
-| T34 | 保留 Tool -> JSON fallback -> mock 三重兜底 | 待做 |
+| T34 | 保留 Tool -> JSON fallback -> mock 三重兜底 | 完成 |
 | T36 | 合并 followup、route、schema 相关 LLM 调用，单次请求 LLM 调用不超过 3 次 | 待做 |
 | T37 | 生产安全：API Key 不下发、限流、输入清洗、错误响应脱敏 | 待做 |
 | T38 | 默认体验额度与自定义 API Key 请求方案 | 待做 |

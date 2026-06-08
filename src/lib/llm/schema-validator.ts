@@ -430,6 +430,21 @@ function sanitizeAdvisoryPayloadFields(payload: unknown) {
   return rest;
 }
 
+function sanitizeSchemaAdvisoryFields(raw: unknown) {
+  const record = getRecord(raw);
+  if (!record) return raw;
+
+  if (record.payload && typeof record.payload === "object" && !Array.isArray(record.payload)) {
+    return { ...record, payload: sanitizeAdvisoryPayloadFields(record.payload) };
+  }
+
+  if (record.config && typeof record.config === "object" && !Array.isArray(record.config)) {
+    return { ...record, config: sanitizeAdvisoryPayloadFields(record.config) };
+  }
+
+  return raw;
+}
+
 function diagnoseSchemaMismatch(raw: unknown, error: z.ZodError) {
   const record = getRecord(raw);
   if (!record) {
@@ -563,7 +578,7 @@ export function getSchemaWarnings(raw: unknown, options: SchemaValidationOptions
   const mode = options.metaphorTraceMode ?? "warn";
   if (mode === "off") return [];
 
-  const result = UISchemaZod.safeParse(raw);
+  const result = UISchemaZod.safeParse(sanitizeSchemaAdvisoryFields(raw));
   if (!result.success) return [];
   return getAdvisorySchemaIssues(result.data as UISchema);
 }
@@ -638,10 +653,11 @@ export function validateKnownV2Schema(input: KnownV2SchemaInput, options: Schema
 }
 
 export function validateSchema(raw: unknown, options: SchemaValidationOptions = {}): UISchema | null {
-  const result = UISchemaZod.safeParse(raw);
+  const sanitizedRaw = sanitizeSchemaAdvisoryFields(raw);
+  const result = UISchemaZod.safeParse(sanitizedRaw);
   if (!result.success) {
     if (process.env.NODE_ENV !== "production") {
-      console.error("[aha-flash] schema validation failed", diagnoseSchemaMismatch(raw, result.error));
+      console.error("[aha-flash] schema validation failed", diagnoseSchemaMismatch(sanitizedRaw, result.error));
     }
     return null;
   }
@@ -656,8 +672,9 @@ export function validateSchema(raw: unknown, options: SchemaValidationOptions = 
 }
 
 export function getSchemaErrors(raw: unknown, options: SchemaValidationOptions = {}) {
-  const result = UISchemaZod.safeParse(raw);
-  if (!result.success) return stringifySchemaDiagnostics(raw, result.error);
+  const sanitizedRaw = sanitizeSchemaAdvisoryFields(raw);
+  const result = UISchemaZod.safeParse(sanitizedRaw);
+  if (!result.success) return stringifySchemaDiagnostics(sanitizedRaw, result.error);
 
   if ((options.metaphorTraceMode ?? "warn") === "reject") {
     const issues = getAdvisorySchemaIssues(result.data as UISchema);

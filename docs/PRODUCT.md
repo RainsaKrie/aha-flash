@@ -342,7 +342,7 @@ Round 3 当前任务：
 | T31 | 路由改为 Tool 选择，选 Tool 即选 Pattern | 完成 |
 | T32 | 简化 System Prompt，只保留角色、用户状态、隐喻规则和 Tool 使用提示 | 完成 |
 | T33 | 简化校验层，Tool calling 输出作为结构化数据后只做二次确认 | 完成 |
-| T34 | 三重兜底：Tool calling、JSON fallback、mock schema | 待做 |
+| T34 | 三重兜底：Tool calling、JSON fallback、mock schema | 完成 |
 | T35a | 顶栏、组件区、输入栏视觉语言收束 | 待做 |
 | T35b | 逐一走查 11 个 Pattern/模板组合的视觉细节 | 待做 |
 | T35c | 加载、生成、渲染、错误状态的动效衔接 | 待做 |
