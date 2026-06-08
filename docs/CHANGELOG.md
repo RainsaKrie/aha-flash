@@ -12,6 +12,7 @@
 - 将 MVP 1.0 交付标准、T30-T39 任务清单和执行顺序整合进 `PRODUCT.md`。
 - 将 Pattern Tool Calling、三重兜底、Prompt 简化、成本优化和安全部署目标同步进 `TECHNICAL.md`。
 - T30 已完成：新增 `src/lib/tools/generative-tools.ts`，定义 10 个 Pattern Tool、默认 Template 映射和 Tool 调用结果转 V2 Schema helper。
+- T31 已完成：`/api/chat` 优先使用 AI SDK Tool Calling 选择 `generate_*` Pattern Tool；Tool 失败时保留现有 JSON fallback，最终仍可 mock fallback。
 
 ## 2026-06-07
 

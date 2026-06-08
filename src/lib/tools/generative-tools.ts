@@ -1,4 +1,5 @@
-import type { LearningDepth, PatternType, TemplateId } from "@/types/schema";
+import { jsonSchema, tool, type ToolSet } from "ai";
+import type { LearningDepth, PatternType, TemplateId } from "../../types/schema.ts";
 
 type JsonSchema = Record<string, unknown>;
 
@@ -441,6 +442,10 @@ export function getGenerativeToolNames() {
   return Object.keys(GENERATIVE_TOOLS) as GenerativeToolName[];
 }
 
+export function isGenerativeToolName(name: string): name is GenerativeToolName {
+  return Object.hasOwn(GENERATIVE_TOOLS, name);
+}
+
 export function buildSchemaFromGenerativeToolCall(name: GenerativeToolName, args: Record<string, unknown>) {
   const tool = GENERATIVE_TOOLS[name];
   const { depth, next_concepts, ...payload } = args;
@@ -452,4 +457,16 @@ export function buildSchemaFromGenerativeToolCall(name: GenerativeToolName, args
     next_concepts,
     payload,
   };
+}
+
+export function buildGenerativeAiTools() {
+  return Object.fromEntries(
+    Object.entries(GENERATIVE_TOOLS).map(([name, definition]) => [
+      name,
+      tool({
+        description: definition.description,
+        inputSchema: jsonSchema(definition.inputSchema as never),
+      }),
+    ]),
+  ) as ToolSet;
 }

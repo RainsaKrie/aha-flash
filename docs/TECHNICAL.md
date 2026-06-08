@@ -124,6 +124,8 @@ POST /api/chat
   +-- stream stage events when requested
   +-- generateSchemaWithLLM()
       |
+      +-- L1: Tool Calling selects one generate_* Pattern Tool
+      +-- L2: JSON Schema fallback with repair prompt
       +-- if model unavailable or invalid output: createMockSchema()
   +-- normalizeUISchema(schema)
   +-- if route is knowledge: stateStore.updateCurrentThread()
@@ -237,7 +239,7 @@ Round 3 目标工具：
 | `generate_classification_sort` | `classification_sort` |
 | `generate_simulation_play` | `simulation_play` |
 
-T30 已在 `src/lib/tools/generative-tools.ts` 定义 10 个 Pattern Tool，每个 Tool 的 `inputSchema` 只包含该 Pattern 的 payload 字段、`depth` 和 `next_concepts`。T31 起 `/api/chat` 通过 Tool Calling 选择 Pattern，选 Tool 即选 Pattern。若 DeepSeek Tool Calling 不稳定，T34 保留现有 JSON Schema 生成链路作为 L2 fallback，最终仍可回退 mock schema。
+T30 已在 `src/lib/tools/generative-tools.ts` 定义 10 个 Pattern Tool，每个 Tool 的 `inputSchema` 只包含该 Pattern 的 payload 字段、`depth` 和 `next_concepts`。T31 已让 `/api/chat` 优先通过 Tool Calling 选择 Pattern，选 Tool 即选 Pattern。若 DeepSeek Tool Calling 不稳定，现有 JSON Schema 生成链路作为 L2 fallback，最终仍可回退 mock schema。
 
 来源输入技术原则：
 
@@ -407,7 +409,7 @@ AHA_FLASH_STATE_DIR=
 | 任务 | 技术目标 | 状态 |
 |---|---|---|
 | T30 | 新建 `GENERATIVE_TOOLS`，10 个 Pattern Tool 的 inputSchema 与 Zod 协议对齐 | 完成 |
-| T31 | `/api/chat` 使用 Tool Calling 选择 Pattern | 待做 |
+| T31 | `/api/chat` 使用 Tool Calling 选择 Pattern | 完成 |
 | T32 | System Prompt 主链路降到 1000 tokens 内 | 待做 |
 | T33 | Tool calling 后校验层只做轻量二次确认 | 待做 |
 | T34 | 保留 Tool -> JSON fallback -> mock 三重兜底 | 待做 |

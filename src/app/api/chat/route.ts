@@ -11,7 +11,12 @@ import { initUserState } from "@/lib/harness/state-machine";
 import { stateStore } from "@/lib/harness/state-store";
 import { createMockSchema } from "@/lib/llm/mock-schema";
 import { getLLMProvider } from "@/lib/llm/provider";
-import { extractSchemaFromText, getSchemaFailureReason } from "@/lib/llm/schema-validator";
+import { extractSchemaFromText, getSchemaFailureReason, validateSchema } from "@/lib/llm/schema-validator";
+import {
+  buildGenerativeAiTools,
+  buildSchemaFromGenerativeToolCall,
+  isGenerativeToolName,
+} from "@/lib/tools/generative-tools";
 import {
   DEFAULT_LEARNING_DEPTH,
   isLearningDepth,
@@ -176,6 +181,63 @@ function logSchemaParseFailure(label: string, text: string, reason: string) {
   });
 }
 
+async function generateSchemaWithTools({
+  model,
+  system,
+  input,
+  intent,
+}: {
+  model: NonNullable<ReturnType<typeof getLLMProvider>>;
+  system: string;
+  input: string;
+  intent: SchemaIntent | null;
+}): Promise<SchemaGenerationResult> {
+  try {
+    const result = await generateText({
+      model,
+      system: [
+        system,
+        "必须调用一个 generate_* 工具来生成互动组件。不要直接输出 JSON 文本。",
+      ].join("\n\n"),
+      messages: [{ role: "user", content: [input, buildIntentDirective(intent)].filter(Boolean).join("\n\n") }],
+      tools: buildGenerativeAiTools(),
+      toolChoice: "required",
+    });
+
+    const toolCall = result.toolCalls[0];
+    if (!toolCall) {
+      return { schema: null, validationError: "Tool calling 未返回 toolCalls。" };
+    }
+
+    if (!isGenerativeToolName(toolCall.toolName)) {
+      return { schema: null, validationError: `Tool calling 返回未知工具: ${toolCall.toolName}` };
+    }
+
+    const candidate = buildSchemaFromGenerativeToolCall(toolCall.toolName, toolCall.input as Record<string, unknown>);
+    const schema = validateSchema(candidate);
+    if (!schema) {
+      return {
+        schema: null,
+        validationError: `Tool calling 返回的 ${toolCall.toolName} 参数无法通过 Schema 校验: ${getSchemaFailureReason(JSON.stringify(candidate))}`,
+      };
+    }
+
+    if (!schemaMatchesIntent(schema, intent)) {
+      return {
+        schema: null,
+        validationError: `Tool calling 选择的 Pattern 与用户意图不匹配: ${toolCall.toolName}`,
+      };
+    }
+
+    return { schema };
+  } catch (error) {
+    return {
+      schema: null,
+      validationError: `Tool calling 失败: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+}
+
 async function generateSchemaWithLLM({
   model,
   system,
@@ -290,11 +352,18 @@ async function processChatRequest({
   await emit?.({ type: "stage", stage: "generating", label: model ? "生成互动组件结构" : "准备本地稳定组件" });
   if (model) {
     try {
-      const generated = await generateSchemaWithLLM({ model, system: systemPrompt, input, intent: schemaIntent });
-      validationError = generated.validationError;
-      if (generated.schema) {
-        schema = attachDepth(generated.schema, depth);
+      const toolGenerated = await generateSchemaWithTools({ model, system: systemPrompt, input, intent: schemaIntent });
+      if (toolGenerated.schema) {
+        schema = attachDepth(toolGenerated.schema, depth);
         source = "llm";
+      } else {
+        const jsonGenerated = await generateSchemaWithLLM({ model, system: systemPrompt, input, intent: schemaIntent });
+        if (jsonGenerated.schema) {
+          schema = attachDepth(jsonGenerated.schema, depth);
+          source = "llm";
+        } else {
+          validationError = [toolGenerated.validationError, jsonGenerated.validationError].filter(Boolean).join("\n");
+        }
       }
     } catch (error) {
       validationError = error instanceof Error ? error.message : String(error);

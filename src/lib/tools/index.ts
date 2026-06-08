@@ -3,10 +3,11 @@ import { updateUserState } from "./update-user-state";
 
 export {
   GENERATIVE_TOOLS,
+  buildGenerativeAiTools,
   buildSchemaFromGenerativeToolCall,
   getGenerativeToolNames,
   type GenerativeToolName,
-} from "./generative-tools";
+} from "./generative-tools.ts";
 
 export const V1_TOOLS: Record<string, ToolDefinition> = {
   update_user_state: {
