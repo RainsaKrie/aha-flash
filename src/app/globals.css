@@ -1,17 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: dark;
-  --background: #07120f;
-  --surface: #0a1a14;
-  --panel: #10251d;
-  --panel-strong: #0f2a22;
-  --text: #ecfff7;
-  --muted: #8fb4a7;
-  --line: rgba(166, 255, 214, 0.18);
-  --accent: #35e69b;
-  --accent-2: #f7c948;
-  --danger: #ff6b6b;
+  color-scheme: light;
+  --background: #ffffff;
+  --surface: #f8fafc;
+  --panel: #ffffff;
+  --panel-strong: #f1f5f9;
+  --text: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --accent: #059669;
+  --accent-2: #d97706;
+  --danger: #ef4444;
+  --pattern-probability: #F7C948;
+  --pattern-parameter: #36D399;
+  --pattern-memory: #78A6FF;
+  --pattern-timeline: #B392F0;
+  --pattern-comparison: #F4A261;
+  --pattern-check: #FF6B6B;
+  --pattern-system: #35E69B;
+  --pattern-branch: #E879BA;
+  --pattern-classification: #4DD9C1;
+  --pattern-simulation: #FACC15;
 }
 
 * {
@@ -69,7 +79,7 @@ button:disabled {
   justify-content: space-between;
   gap: 16px;
   border-bottom: 1px solid var(--line);
-  background: rgba(7, 18, 15, 0.96);
+  background: rgba(255, 255, 255, 0.96);
   padding: 0 20px;
   backdrop-filter: blur(14px);
 }
@@ -89,7 +99,7 @@ button:disabled {
   place-items: center;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(53, 230, 155, 0.12);
+  background: rgba(5, 150, 105, 0.08);
   color: var(--accent);
 }
 
@@ -116,9 +126,9 @@ button:disabled {
   justify-content: center;
   gap: 8px;
   min-height: 44px;
-  border: 1px solid rgba(53, 230, 155, 0.3);
+  border: 1px solid rgba(5, 150, 105, 0.2);
   border-radius: 999px;
-  background: rgba(53, 230, 155, 0.12);
+  background: rgba(5, 150, 105, 0.08);
   padding: 0 14px;
   color: var(--text);
   transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
@@ -197,7 +207,7 @@ button:disabled {
   place-items: center;
   border: 1px solid rgba(53, 230, 155, 0.32);
   border-radius: 20px;
-  background: rgba(53, 230, 155, 0.12);
+  background: rgba(5, 150, 105, 0.08);
   color: var(--accent);
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.26);
 }
@@ -226,9 +236,9 @@ button:disabled {
 
 .empty-stage__prompts button {
   min-height: 44px;
-  border: 1px solid rgba(53, 230, 155, 0.24);
+  border: 1px solid rgba(5, 150, 105, 0.2);
   border-radius: 999px;
-  background: rgba(15, 42, 34, 0.72);
+  background: var(--panel-strong);
   padding: 0 14px;
   color: var(--text);
   font-size: 13px;
@@ -251,7 +261,7 @@ button:disabled {
   place-items: center;
   border: 1px solid rgba(166, 255, 214, 0.16);
   border-radius: 12px;
-  background: rgba(7, 18, 15, 0.58);
+  background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(6px);
   pointer-events: none;
   animation: ui-result 240ms ease-out both;
@@ -282,9 +292,9 @@ button:disabled {
 
 .generative-component-shell {
   --pattern-accent: var(--accent);
-  --pattern-surface: #08130f;
-  --pattern-panel: #10251d;
-  --pattern-raised: #173a2e;
+  --pattern-surface: var(--surface);
+  --pattern-panel: var(--panel);
+  --pattern-raised: var(--panel-strong);
 }
 
 .generative-component-theme {
@@ -342,7 +352,7 @@ button:disabled {
   z-index: 20;
   flex: 0 0 auto;
   border-top: 1px solid var(--line);
-  background: rgba(7, 18, 15, 0.96);
+  background: rgba(255, 255, 255, 0.96);
   padding: 14px 20px 20px;
   box-shadow: 0 -18px 48px rgba(0, 0, 0, 0.22);
   backdrop-filter: blur(14px);
@@ -445,9 +455,9 @@ button:disabled {
 .input-bar form {
   margin: 0 auto;
   max-width: 1120px;
-  border: 1px solid rgba(166, 255, 214, 0.2);
+  border: 1px solid var(--line);
   border-radius: 18px;
-  background: rgba(10, 26, 20, 0.92);
+  background: var(--panel);
   padding: 10px;
   box-shadow: 0 16px 44px rgba(0, 0, 0, 0.22);
 }
@@ -456,13 +466,13 @@ button:disabled {
   min-height: 72px;
   border: 0;
   border-radius: 14px;
-  background: rgba(7, 18, 15, 0.72);
+  background: var(--surface);
   padding: 14px 16px;
   font-size: 16px;
 }
 
 .input-bar textarea::placeholder {
-  color: rgba(143, 180, 167, 0.86);
+  color: var(--muted);
   font-size: 16px;
 }
 

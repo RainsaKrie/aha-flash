@@ -141,7 +141,7 @@ export default function SandboxPage() {
         {!error && !state && (
           <Card className="grid min-h-[360px] place-items-center p-6 text-center">
             <div className="grid gap-2">
-              <div className="mx-auto grid h-12 w-12 place-items-center rounded-[8px] border border-[var(--line)] bg-[#07120f]">
+              <div className="mx-auto grid h-12 w-12 place-items-center rounded-[8px] border border-[var(--line)] bg-[var(--surface)]">
                 <Map size={24} />
               </div>
               <div className="text-lg font-semibold">正在整理知识地图</div>
@@ -152,7 +152,7 @@ export default function SandboxPage() {
         {state && assets.length === 0 && (
           <Card className="grid min-h-[360px] place-items-center p-6 text-center">
             <div className="max-w-md">
-              <div className="mx-auto grid h-12 w-12 place-items-center rounded-[8px] border border-[var(--line)] bg-[#07120f]">
+              <div className="mx-auto grid h-12 w-12 place-items-center rounded-[8px] border border-[var(--line)] bg-[var(--surface)]">
                 <Boxes size={24} />
               </div>
               <h2 className="mt-4 text-xl font-semibold">还没有已学概念</h2>
