@@ -53,9 +53,9 @@ export function VerticalTimeline({
               active={active}
               className="grid gap-2 border-l-2"
             >
-              <span className="text-xs uppercase tracking-[0.16em] text-[var(--text-secondary)]">step {index + 1}</span>
-              <strong className={active ? "text-[var(--amber)]" : ""}>{event.label}</strong>
-              {active && <span className="text-sm leading-6 text-[var(--text-secondary)]">{event.description}</span>}
+              <span className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">step {index + 1}</span>
+              <strong className={active ? "text-[var(--accent-2)]" : ""}>{event.label}</strong>
+              {active && <span className="text-sm leading-6 text-[var(--muted)]">{event.description}</span>}
             </ChoiceButton>
           );
           })

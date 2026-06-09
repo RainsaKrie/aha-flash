@@ -51,23 +51,23 @@ export function PreferenceForm({
       }}
     >
       <label className="grid gap-2 text-sm">
-        <span className="text-[var(--text-secondary)]">背景</span>
+        <span className="text-[var(--muted)]">背景</span>
         <Input value={background} onChange={(event) => setBackground(event.target.value)} />
       </label>
       <label className="grid gap-2 text-sm">
-        <span className="text-[var(--text-secondary)]">爱好</span>
+        <span className="text-[var(--muted)]">爱好</span>
         <Input value={hobbies} onChange={(event) => setHobbies(event.target.value)} />
       </label>
       <label className="grid gap-2 text-sm">
-        <span className="text-[var(--text-secondary)]">知识盲区</span>
+        <span className="text-[var(--muted)]">知识盲区</span>
         <Input value={blindspots} onChange={(event) => setBlindspots(event.target.value)} />
       </label>
       <label className="grid gap-2 text-sm">
-        <span className="text-[var(--text-secondary)]">隐喻偏好</span>
+        <span className="text-[var(--muted)]">隐喻偏好</span>
         <Input value={metaphors} onChange={(event) => setMetaphors(event.target.value)} />
       </label>
       <label className="grid gap-2 text-sm">
-        <span className="text-[var(--text-secondary)]">复杂度容忍度</span>
+        <span className="text-[var(--muted)]">复杂度容忍度</span>
         <input
           aria-label="复杂度容忍度"
           type="range"
@@ -77,7 +77,7 @@ export function PreferenceForm({
           onChange={(event) => setComplexity(Number(event.target.value) as 1 | 2 | 3 | 4 | 5)}
           className="w-full accent-[var(--accent)]"
         />
-        <strong className="text-[var(--amber)]">{complexity}</strong>
+        <strong className="text-[var(--accent-2)]">{complexity}</strong>
       </label>
       <Button type="submit" disabled={saving}>
         {saving ? "保存中" : "保存偏好"}

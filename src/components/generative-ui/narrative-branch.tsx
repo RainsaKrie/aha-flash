@@ -35,7 +35,7 @@ export function NarrativeBranch({
         <FeedbackPanel tone={branch ? "success" : "neutral"}>
           {branch ? (
             <>
-              <p className="text-[var(--text-secondary)]">{branch.outcome_description}</p>
+              <p className="text-[var(--muted)]">{branch.outcome_description}</p>
               <strong className="mt-2 block text-[var(--accent)]">{branch.insight}</strong>
             </>
           ) : (
@@ -45,7 +45,7 @@ export function NarrativeBranch({
       }
     >
       <div className="grid content-center gap-6">
-        <Panel className="p-4 text-sm leading-6 text-[var(--text-secondary)]">
+        <Panel className="p-4 text-sm leading-6 text-[var(--muted)]">
           {config.opening}
         </Panel>
         <div className="grid gap-4 sm:grid-cols-3">

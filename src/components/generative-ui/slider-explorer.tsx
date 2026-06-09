@@ -47,7 +47,7 @@ export function SliderExplorer({
 
   return (
     <section className="grid h-full min-h-[520px] grid-rows-[auto_1fr] gap-6 p-5">
-      <header className="border-b border-[var(--border-subtle)] pb-4">
+      <header className="border-b border-[var(--line)] pb-4">
         <p className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--accent)]">
           <Gauge size={15} /> slider explorer
         </p>
@@ -58,9 +58,9 @@ export function SliderExplorer({
           <EmptyState detail="模型给出的滑块范围无效，重新生成后最大值必须大于最小值。" />
         ) : (
           <>
-        <label className="grid gap-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--pattern-panel)] p-5">
+        <label className="grid gap-4 rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-5">
           <div className="flex items-end justify-between gap-4">
-            <span className="text-sm text-[var(--text-secondary)]">{config.variable_label}</span>
+            <span className="text-sm text-[var(--muted)]">{config.variable_label}</span>
             <strong className="animate-value-pop text-3xl font-bold text-[var(--accent)]">
               {value}
               {config.unit}
@@ -101,20 +101,20 @@ export function SliderExplorer({
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           {outputs.slice(0, 4).map((output) => (
-            <div key={output.label} className="ui-result rounded-xl border border-[var(--border-subtle)] bg-[var(--pattern-panel)] p-4">
+            <div key={output.label} className="ui-result rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-4">
               <div className="flex items-center justify-between gap-4">
-                <div className="text-sm text-[var(--text-secondary)]">{output.label}</div>
+                <div className="text-sm text-[var(--muted)]">{output.label}</div>
                 {output.expression_label && <div className="text-xs text-[var(--accent)]">{output.expression_label}</div>}
               </div>
-              <div className="animate-value-pop mt-2 text-3xl font-bold text-[var(--text-primary)]">
+              <div className="animate-value-pop mt-2 text-3xl font-bold text-[var(--text)]">
                 {computeOutput(output, value)}
                 {output.unit}
               </div>
-              {output.description && <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">{output.description}</p>}
+              {output.description && <p className="mt-2 text-xs leading-5 text-[var(--muted)]">{output.description}</p>}
             </div>
           ))}
         </div>
-        <p className="ui-result rounded-xl border border-[var(--border-subtle)] bg-[var(--pattern-panel)] p-4 text-sm leading-6 text-[var(--text-secondary)]">
+        <p className="ui-result rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-4 text-sm leading-6 text-[var(--muted)]">
           {insight || config.explanation_template.replace("{{value}}", String(value))}
         </p>
           </>

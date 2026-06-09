@@ -65,7 +65,7 @@ export function SandboxFlowConnect({
                 const flowModule = config.modules.find((item) => item.id === id);
                 return (
                   <span key={id} className="flex items-center gap-2">
-                    <strong className="rounded-md border border-[var(--border-subtle)] bg-[var(--pattern-raised)] px-3 py-2 text-sm">
+                    <strong className="rounded-md border border-[var(--line)] bg-[var(--pattern-raised)] px-3 py-2 text-sm">
                       {flowModule?.label || id}
                     </strong>
                     {index < sequence.length - 1 && <span className="text-[var(--accent)]">→</span>}
@@ -73,7 +73,7 @@ export function SandboxFlowConnect({
                 );
               })
             ) : (
-              <span className="text-sm text-[var(--text-secondary)]">还没有连接模块。</span>
+              <span className="text-sm text-[var(--muted)]">还没有连接模块。</span>
             )}
           </div>
         </Panel>
@@ -85,7 +85,7 @@ export function SandboxFlowConnect({
               return (
                 <ChoiceButton key={flowModule.id} active={active} onClick={() => add(flowModule.id)} className="min-h-32">
                   <strong className="text-base font-medium">{flowModule.label}</strong>
-                  <span className="mt-3 block text-sm leading-6 text-[var(--text-secondary)]">{flowModule.description}</span>
+                  <span className="mt-3 block text-sm leading-6 text-[var(--muted)]">{flowModule.description}</span>
                 </ChoiceButton>
               );
             })}

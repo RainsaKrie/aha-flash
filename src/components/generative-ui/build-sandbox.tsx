@@ -65,7 +65,7 @@ export function BuildSandbox({
                   {active && <Check size={18} className="text-[var(--accent)]" />}
                 </span>
                 {module.role && <span className="mt-2 block text-xs uppercase tracking-[0.16em] text-[var(--accent)]">{module.role}</span>}
-                <span className="mt-3 block text-sm leading-6 text-[var(--text-secondary)]">{module.description}</span>
+                <span className="mt-3 block text-sm leading-6 text-[var(--muted)]">{module.description}</span>
               </ChoiceButton>
             );
           })}
@@ -76,10 +76,10 @@ export function BuildSandbox({
 
       {config.connections && config.connections.length > 0 && (
         <Panel className="mt-4 p-4">
-          <div className="text-xs uppercase tracking-[0.16em] text-[var(--text-secondary)]">连接提示</div>
+          <div className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">连接提示</div>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
             {config.connections.map((connection) => (
-              <span key={`${connection.from}-${connection.to}`} className="rounded-md border border-[var(--border-subtle)] bg-[var(--pattern-raised)] px-3 py-2">
+              <span key={`${connection.from}-${connection.to}`} className="rounded-md border border-[var(--line)] bg-[var(--pattern-raised)] px-3 py-2">
                 {connection.from} → {connection.to}
                 {connection.label ? ` · ${connection.label}` : ""}
               </span>

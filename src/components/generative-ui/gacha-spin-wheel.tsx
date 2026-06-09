@@ -87,16 +87,16 @@ export function GachaSpinWheel({
     >
       <div className="grid content-center gap-6 lg:grid-cols-[1fr_280px] lg:items-center">
         <div className="grid place-items-center">
-          <div className="relative grid aspect-square w-full max-w-sm place-items-center rounded-full border border-[var(--border-subtle)] bg-[var(--pattern-panel)]">
+          <div className="relative grid aspect-square w-full max-w-sm place-items-center rounded-full border border-[var(--line)] bg-[var(--pattern-panel)]">
             <div
-              className="absolute inset-8 rounded-full border border-[var(--accent)] bg-[conic-gradient(from_0deg,var(--accent),var(--amber),var(--pattern-raised),var(--accent))] opacity-80 transition-transform duration-700"
+              className="absolute inset-8 rounded-full border border-[var(--accent)] bg-[conic-gradient(from_0deg,var(--accent),var(--accent-2),var(--pattern-raised),var(--accent))] opacity-80 transition-transform duration-700"
               style={{ transform: `rotate(${rotation}deg)` }}
             />
-            <div className="relative grid h-32 w-32 place-items-center rounded-full border border-[var(--border-subtle)] bg-[var(--pattern-surface)] p-4 text-center">
+            <div className="relative grid h-32 w-32 place-items-center rounded-full border border-[var(--line)] bg-[var(--pattern-surface)] p-4 text-center">
               <span>
                 <strong className="block text-sm leading-5">{spinning ? "转动中" : result ? tierLabel(result) : topPrize ? tierLabel(topPrize) : "暂无奖池"}</strong>
                 {!spinning && result && flavorLabel(result) && (
-                  <span className="mt-1 block text-xs text-[var(--text-secondary)]">{flavorLabel(result)}</span>
+                  <span className="mt-1 block text-xs text-[var(--muted)]">{flavorLabel(result)}</span>
                 )}
               </span>
             </div>
@@ -104,11 +104,11 @@ export function GachaSpinWheel({
         </div>
 
         <Panel className="grid gap-4 p-4">
-          <div className="flex justify-between gap-4 text-sm text-[var(--text-secondary)]">
+          <div className="flex justify-between gap-4 text-sm text-[var(--muted)]">
             <span>期权费</span>
             <strong className="text-[var(--accent)]">{config.option_cost}</strong>
           </div>
-          <div className="flex justify-between gap-4 text-sm text-[var(--text-secondary)]">
+          <div className="flex justify-between gap-4 text-sm text-[var(--muted)]">
             <span>锁定价</span>
             <strong className="text-[var(--accent)]">{config.strike_price}</strong>
           </div>

@@ -99,7 +99,7 @@ export function SimulationPlay({
               <Panel key={param.label} className="grid gap-4 p-4">
                 <label className="grid gap-4">
                   <div className="flex items-end justify-between gap-4">
-                    <span className="text-sm text-[var(--text-secondary)]">{param.label}</span>
+                    <span className="text-sm text-[var(--muted)]">{param.label}</span>
                     <strong className="animate-value-pop text-3xl font-bold text-[var(--accent)]">
                       {values[param.label]}
                       {param.unit}
@@ -125,10 +125,10 @@ export function SimulationPlay({
         <Panel className="grid content-center gap-4 p-5">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <div className="text-xs uppercase tracking-[0.18em] text-[var(--text-secondary)]">step {step}</div>
+              <div className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">step {step}</div>
               <div className="mt-2 animate-value-pop text-3xl font-bold text-[var(--accent)]">{currentValue}</div>
             </div>
-            <div className="text-right text-sm text-[var(--text-secondary)]">基准 100</div>
+            <div className="text-right text-sm text-[var(--muted)]">基准 100</div>
           </div>
           <div className="flex h-40 items-end gap-2">
             {series.map((value, index) => (
@@ -144,7 +144,7 @@ export function SimulationPlay({
       </div>
 
       <Panel className="flex flex-wrap items-center justify-between gap-4 p-4">
-        <div className="text-sm text-[var(--text-secondary)]">{playing ? "自动播放中" : "手动推进或自动播放模拟。"}</div>
+        <div className="text-sm text-[var(--muted)]">{playing ? "自动播放中" : "手动推进或自动播放模拟。"}</div>
         <div className="flex gap-2">
           <Button type="button" onClick={reset} title="重置">
             <RotateCcw size={16} />

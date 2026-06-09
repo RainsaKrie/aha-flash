@@ -63,9 +63,9 @@ export function TimelineScrubber({
               className="ui-range"
             />
             <Panel className="p-6">
-              <div className="text-sm text-[var(--text-secondary)]">节点 {index + 1}</div>
-              <h3 className="mt-2 text-2xl font-semibold text-[var(--amber)]">{active?.label}</h3>
-              <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">{active?.description}</p>
+              <div className="text-sm text-[var(--muted)]">节点 {index + 1}</div>
+              <h3 className="mt-2 text-2xl font-semibold text-[var(--accent-2)]">{active?.label}</h3>
+              <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{active?.description}</p>
             </Panel>
           </>
         ) : (

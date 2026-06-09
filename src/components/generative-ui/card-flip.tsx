@@ -35,7 +35,7 @@ export function CardFlip({
             className="min-h-44"
             title="翻转"
           >
-            <span className="text-xs uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+            <span className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
               {flipped[index] ? "meaning" : "term"}
             </span>
             <span className="ui-result mt-4 block text-base font-medium leading-7">

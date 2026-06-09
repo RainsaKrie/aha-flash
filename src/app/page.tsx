@@ -23,13 +23,6 @@ function depthGuideCopy(depth: LearningDepth) {
   return "想不想拆开看看原理？";
 }
 
-function promptIcon(prompt: string) {
-  if (prompt.includes("贝叶斯")) return "🎲";
-  if (prompt.includes("股票") || prompt.includes("期权")) return "📊";
-  if (prompt.includes("复利")) return "📈";
-  return "✦";
-}
-
 type ChatStreamEvent =
   | { type: "stage"; label: string }
   | { type: "final"; payload: Record<string, unknown> }
@@ -303,25 +296,22 @@ export default function HomePage() {
             })
           ) : (
             <div className="empty-stage">
-              <div className="empty-stage__brand">
-                <BrainCircuit size={48} className="empty-stage__icon" />
-                <h1 className="empty-stage__title">趣灵</h1>
-                <p className="empty-stage__tagline">AI 原生互动知识引擎</p>
-              </div>
-              <p className="empty-stage__hint">输入一个概念，它会变成一个能操作、能反馈的互动组件</p>
+              <span className="empty-stage__icon">
+                <BrainCircuit size={34} />
+              </span>
+              <h1>输入一个概念开始探索</h1>
+              <p>趣灵会把它变成一个能操作、能反馈的小组件。</p>
               <div className="empty-stage__prompts" aria-label="可填入的引导关键词">
                 {starterPrompts.map((prompt) => (
                   <button
                     key={prompt}
                     type="button"
-                    className="starter-prompt"
                     onPointerDown={(event) => {
                       event.preventDefault();
                       setInputDraft(prompt);
                     }}
                     onClick={() => setInputDraft(prompt)}
                   >
-                    <span className="starter-prompt__icon">{promptIcon(prompt)}</span>
                     {prompt}
                   </button>
                 ))}

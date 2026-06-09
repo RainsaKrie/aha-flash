@@ -60,7 +60,7 @@ export function ComparisonOverlay({
         )}
 
         <Panel className="grid gap-4 p-4">
-          <div className="flex items-center justify-between gap-4 text-xs text-[var(--text-secondary)]">
+          <div className="flex items-center justify-between gap-4 text-xs text-[var(--muted)]">
             <span>{leftLabel}</span>
             <strong className="animate-value-pop text-[var(--accent)]">{ratio}%</strong>
             <span>{rightLabel}</span>
@@ -78,15 +78,15 @@ export function ComparisonOverlay({
 
         <Panel className="relative min-h-80 overflow-hidden">
           <article className="absolute inset-0 grid content-center gap-4 p-6" style={{ opacity: (100 - ratio) / 100 }}>
-            <h3 className="text-2xl font-semibold text-[var(--amber)]">{leftLabel}</h3>
-            <p className="text-sm leading-6 text-[var(--text-secondary)]">{leftContent}</p>
+            <h3 className="text-2xl font-semibold text-[var(--accent-2)]">{leftLabel}</h3>
+            <p className="text-sm leading-6 text-[var(--muted)]">{leftContent}</p>
           </article>
           <article
             className="absolute inset-0 grid content-center gap-4 bg-[var(--pattern-raised)] p-6"
             style={{ opacity: ratio / 100 }}
           >
             <h3 className="text-2xl font-semibold text-[var(--accent)]">{rightLabel}</h3>
-            <p className="text-sm leading-6 text-[var(--text-secondary)]">{rightContent}</p>
+            <p className="text-sm leading-6 text-[var(--muted)]">{rightContent}</p>
           </article>
         </Panel>
 

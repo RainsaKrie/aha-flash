@@ -90,7 +90,7 @@ export function GachaSimulator({
 
   return (
     <section className="grid min-h-[520px] gap-6 p-5">
-      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border-subtle)] pb-4">
+      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--line)] pb-4">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--accent)]">gacha simulator</p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -99,32 +99,32 @@ export function GachaSimulator({
               {LEARNING_DEPTH_LABELS[depth]}
             </span>
           </div>
-          {config.quote && <p className="mt-2 max-w-2xl text-sm text-[var(--text-secondary)]">{config.quote}</p>}
+          {config.quote && <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">{config.quote}</p>}
           <p className="mt-2 text-xs text-[var(--accent)]">{depthGoals[depth]}</p>
         </div>
-        <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--pattern-panel)] px-4 py-3 text-right">
-          <div className="text-xs text-[var(--text-secondary)]">余额</div>
+        <div className="rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] px-4 py-3 text-right">
+          <div className="text-xs text-[var(--muted)]">余额</div>
           <div className="animate-value-pop text-3xl font-bold text-[var(--accent)]">{balance}</div>
         </div>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-        <aside className={["rounded-xl border bg-[var(--pattern-panel)] p-4 transition", phase === "pulling" ? "border-[var(--accent)]" : "border-[var(--border-subtle)]"].join(" ")}>
+        <aside className={["rounded-xl border bg-[var(--pattern-panel)] p-4 transition", phase === "pulling" ? "border-[var(--accent)]" : "border-[var(--line)]"].join(" ")}>
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
             <Ticket size={16} />
             看涨期权券
           </div>
           <dl className="grid gap-4 text-sm">
             <div className="flex justify-between gap-4">
-              <dt className="text-[var(--text-secondary)]">期权费</dt>
+              <dt className="text-[var(--muted)]">期权费</dt>
               <dd>{config.option_cost}</dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt className="text-[var(--text-secondary)]">锁定价</dt>
+              <dt className="text-[var(--muted)]">锁定价</dt>
               <dd>{config.strike_price}</dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt className="text-[var(--text-secondary)]">次数</dt>
+              <dt className="text-[var(--muted)]">次数</dt>
               <dd>{config.pulls_per_try}</dd>
             </div>
           </dl>
@@ -140,17 +140,17 @@ export function GachaSimulator({
           </div>
         </aside>
 
-        <div className="grid gap-4 rounded-xl border border-[var(--border-subtle)] bg-[var(--pattern-surface)] p-4">
+        <div className="grid gap-4 rounded-xl border border-[var(--line)] bg-[var(--pattern-surface)] p-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <div className="text-xs uppercase tracking-[0.16em] text-[var(--text-secondary)]">
+              <div className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
                 {results.length ? "抽取结果" : "奖池预览"}
               </div>
-              <div className="mt-1 text-sm text-[var(--text-secondary)]">
+              <div className="mt-1 text-sm text-[var(--muted)]">
                 {results.length ? "结果揭晓后，再判断这张券是否值得执行。" : "先看可能结果，再决定是否付出期权费。"}
               </div>
             </div>
-            <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--pattern-raised)] px-3 py-2 text-xs text-[var(--text-secondary)]">
+            <div className="rounded-lg border border-[var(--line)] bg-[var(--pattern-raised)] px-3 py-2 text-xs text-[var(--muted)]">
               最高价值 {pool.length ? Math.max(...pool.map((item) => item.value)) : "-"}
             </div>
           </div>
@@ -163,22 +163,22 @@ export function GachaSimulator({
                 className={[
                   "grid aspect-[4/5] place-items-center rounded-xl border p-4 text-center text-sm shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition",
                   item.rarity === "5"
-                    ? "border-[var(--amber)] bg-[rgba(247,201,72,0.14)]"
+                    ? "border-[var(--accent-2)] bg-[rgba(247,201,72,0.14)]"
                     : item.rarity === "4"
                       ? "border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent),transparent_88%)]"
-                      : "border-[var(--border-subtle)] bg-[var(--pattern-raised)]",
+                      : "border-[var(--line)] bg-[var(--pattern-raised)]",
                   phase === "pulling" ? "ui-breathe border-[var(--accent)]" : "",
                 ].join(" ")}
               >
                 <span>
-                  <span className="block text-xs uppercase tracking-[0.14em] text-[var(--text-secondary)]">
+                  <span className="block text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
                     {phase === "pulling" ? "rolling" : `${Math.round(item.probability * 100)}%`}
                   </span>
                   <strong className="mt-2 block text-base">{phase === "pulling" ? "..." : tierLabel(item)}</strong>
                   {phase !== "pulling" && flavorLabel(item) && (
-                    <span className="mt-1 block text-xs text-[var(--text-secondary)]">{flavorLabel(item)}</span>
+                    <span className="mt-1 block text-xs text-[var(--muted)]">{flavorLabel(item)}</span>
                   )}
-                  <span className="mt-2 block text-xs text-[var(--amber)]">价值 {item.value}</span>
+                  <span className="mt-2 block text-xs text-[var(--accent-2)]">价值 {item.value}</span>
                 </span>
               </div>
               ))}
@@ -190,9 +190,9 @@ export function GachaSimulator({
           {!results.length && pool.length > 0 && (
             <div className="grid gap-2 sm:grid-cols-3">
               {pool.slice(0, 3).map((item) => (
-                <div key={`${item.name}-odds`} className="rounded-lg border border-[var(--border-subtle)] bg-[var(--pattern-raised)] p-3 text-xs">
+                <div key={`${item.name}-odds`} className="rounded-lg border border-[var(--line)] bg-[var(--pattern-raised)] p-3 text-xs">
                   <div className="flex justify-between gap-4">
-                    <span className="text-[var(--text-secondary)]">
+                    <span className="text-[var(--muted)]">
                       {tierLabel(item)}
                       {flavorLabel(item) ? ` · ${flavorLabel(item)}` : ""}
                     </span>
@@ -205,23 +205,23 @@ export function GachaSimulator({
         </div>
       </div>
 
-      <footer className="ui-result rounded-xl border border-[var(--border-subtle)] bg-[var(--pattern-panel)] p-4">
+      <footer className="ui-result rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-4">
         {phase === "result" && best ? (
           <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
-            <p className="text-sm text-[var(--text-secondary)]">
+            <p className="text-sm text-[var(--muted)]">
               {won
                 ? config.explanation_map.win
                     .replace("{{market_price}}", String(best.value))
                     .replace("{{strike_price}}", String(config.strike_price))
                 : config.explanation_map.lose.replace("{{option_cost}}", String(config.option_cost))}
             </p>
-            <strong className={won ? "text-[var(--accent)]" : "text-[var(--red)]"}>
+            <strong className={won ? "text-[var(--accent)]" : "text-[var(--danger)]"}>
               {profit >= 0 ? "+" : ""}
               {profit}
             </strong>
           </div>
         ) : (
-          <p className="text-sm text-[var(--text-secondary)]">{depthGoals[depth]}</p>
+          <p className="text-sm text-[var(--muted)]">{depthGoals[depth]}</p>
         )}
       </footer>
     </section>
