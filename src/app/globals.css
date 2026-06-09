@@ -222,10 +222,11 @@ button:disabled {
   max-width: 1120px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
 }
 
 .current-prompt {
+  align-self: center;
   display: flex;
   max-width: 100%;
   align-items: center;
@@ -250,7 +251,9 @@ button:disabled {
 }
 
 .empty-stage {
+  align-self: center;
   display: flex;
+  width: 100%;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -379,16 +382,20 @@ button:disabled {
   --pattern-accent: var(--accent);
   --pattern-surface: var(--bg-base);
   --pattern-panel: var(--bg-raised);
-  --pattern-raised: color-mix(in srgb, var(--bg-raised) 82%, var(--accent));
+  --pattern-raised: var(--bg-raised);
+  width: 100%;
 }
 
 .generative-component-theme {
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--accent), transparent 94%), transparent 42%),
-    var(--pattern-surface);
+  width: 100%;
+  background: var(--pattern-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   overflow: hidden;
+}
+
+.generative-component-theme > section {
+  width: 100%;
 }
 
 .depth-switcher {
