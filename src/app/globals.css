@@ -107,7 +107,7 @@ button:disabled {
 .panel {
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: rgba(14, 29, 25, 0.86);
+  background: var(--panel);
 }
 
 .tool-button {
@@ -165,7 +165,7 @@ button:disabled {
   gap: 10px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(15, 42, 34, 0.72);
+  background: var(--panel-strong);
   padding: 8px 12px;
   color: var(--muted);
   font-size: 12px;
@@ -197,9 +197,7 @@ button:disabled {
   place-items: center;
   border: 1px solid rgba(53, 230, 155, 0.32);
   border-radius: 20px;
-  background:
-    linear-gradient(135deg, rgba(53, 230, 155, 0.2), rgba(120, 166, 255, 0.1)),
-    var(--surface);
+  background: rgba(53, 230, 155, 0.12);
   color: var(--accent);
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.26);
 }
@@ -290,9 +288,7 @@ button:disabled {
 }
 
 .generative-component-theme {
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--accent), transparent 94%), transparent 42%),
-    var(--pattern-surface);
+  background: var(--pattern-surface);
   border: 1px solid var(--line);
   border-radius: 12px;
   overflow: hidden;
@@ -346,7 +342,7 @@ button:disabled {
   z-index: 20;
   flex: 0 0 auto;
   border-top: 1px solid var(--line);
-  background: linear-gradient(180deg, rgba(7, 18, 15, 0.88), rgba(7, 18, 15, 0.98));
+  background: rgba(7, 18, 15, 0.96);
   padding: 14px 20px 20px;
   box-shadow: 0 -18px 48px rgba(0, 0, 0, 0.22);
   backdrop-filter: blur(14px);

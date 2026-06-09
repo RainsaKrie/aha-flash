@@ -28,7 +28,6 @@ export function patternStyle(pattern: PatternType): CSSProperties {
     "--pattern-surface": "#08130f",
     "--pattern-panel": "#10251d",
     "--pattern-raised": "#173a2e",
-    "--line": `${accent}38`,
   } as CSSProperties;
 }
 
