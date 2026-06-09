@@ -25,8 +25,10 @@ export function patternStyle(pattern: PatternType): CSSProperties {
   return {
     "--accent": accent,
     "--pattern-accent": accent,
-    "--pattern-raised": `${accent}18`,
-    "--border-subtle": `${accent}30`,
+    "--pattern-surface": "#0f1614",
+    "--pattern-panel": "#151e1b",
+    "--pattern-raised": "#1d2a25",
+    "--border-subtle": `${accent}38`,
   } as CSSProperties;
 }
 
