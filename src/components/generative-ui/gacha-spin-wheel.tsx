@@ -92,7 +92,7 @@ export function GachaSpinWheel({
               className="absolute inset-8 rounded-full border border-[var(--accent)] bg-[conic-gradient(from_0deg,var(--accent),var(--accent-2),var(--pattern-raised),var(--accent))] opacity-80 transition-transform duration-700"
               style={{ transform: `rotate(${rotation}deg)` }}
             />
-            <div className="relative grid h-32 w-32 place-items-center rounded-full border border-[var(--line)] bg-[var(--pattern-surface)] p-4 text-center">
+            <div className="relative grid h-32 w-32 place-items-center rounded-full border border-[var(--line)] bg-[var(--pattern-surface)] p-5 text-center">
               <span>
                 <strong className="block text-sm leading-5">{spinning ? "转动中" : result ? tierLabel(result) : topPrize ? tierLabel(topPrize) : "暂无奖池"}</strong>
                 {!spinning && result && flavorLabel(result) && (
@@ -103,7 +103,7 @@ export function GachaSpinWheel({
           </div>
         </div>
 
-        <Panel className="grid gap-4 p-4">
+        <Panel className="grid gap-4 p-5">
           <div className="flex justify-between gap-4 text-sm text-[var(--muted)]">
             <span>期权费</span>
             <strong className="text-[var(--accent)]">{config.option_cost}</strong>
@@ -112,11 +112,11 @@ export function GachaSpinWheel({
             <span>锁定价</span>
             <strong className="text-[var(--accent)]">{config.strike_price}</strong>
           </div>
-          <Button onClick={spin} disabled={spinning || pool.length === 0} title="转动" className={!result && pool.length > 0 ? "ui-breathe" : ""}>
+          <Button onClick={spin} disabled={spinning || pool.length === 0} title="转动" className={`${!result && pool.length > 0 ? "ui-breathe " : ""}transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]`}>
             <Sparkles size={16} />
             {spinning ? <InlineSpinner label="结算中" /> : "转动一次"}
           </Button>
-          <Button onClick={() => setResult(null)} className="bg-transparent" title="重置">
+          <Button onClick={() => setResult(null)} className="bg-transparent transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]" title="重置">
             <RotateCcw size={16} />
             重置
           </Button>

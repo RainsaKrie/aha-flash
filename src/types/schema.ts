@@ -1,4 +1,4 @@
-export type UISchemaType =
+﻿export type UISchemaType =
   | "gacha_simulator"
   | "slider_explorer"
   | "card_flip"
@@ -67,12 +67,21 @@ export interface NextConcept {
   relation: string;
 }
 
+export type VisualAssetMood = "idle" | "loading" | "success" | "error" | "reward";
+
+export interface VisualAssetHint {
+  tag: string;
+  mood?: VisualAssetMood;
+  emoji?: string;
+}
+
 export interface V1UISchema<TConfig = Record<string, unknown>> {
   type: UISchemaType;
   version: string;
   config: TConfig;
   next_concepts?: NextConcept[];
   depth?: LearningDepth;
+  visual_asset?: VisualAssetHint;
   pattern?: never;
   template?: never;
   payload?: never;
@@ -85,6 +94,7 @@ export interface V2UISchema<TPayload = Record<string, unknown>> {
   payload: UIPayload<TPayload>;
   next_concepts?: NextConcept[];
   depth?: LearningDepth;
+  visual_asset?: VisualAssetHint;
   type?: UISchemaType;
   config?: never;
 }
@@ -99,6 +109,7 @@ export interface NormalizedUISchema<TConfig = Record<string, unknown>> {
   config: TConfig;
   next_concepts: NextConcept[];
   depth: LearningDepth;
+  visual_asset?: VisualAssetHint;
 }
 
 export const SCHEMA_CATALOG: Record<
@@ -146,6 +157,7 @@ export function normalizeUISchema(schema: UISchema): NormalizedUISchema {
       config: schema.payload,
       next_concepts: schema.next_concepts || [],
       depth: schema.depth || DEFAULT_LEARNING_DEPTH,
+      visual_asset: schema.visual_asset,
     };
   }
 
@@ -158,6 +170,7 @@ export function normalizeUISchema(schema: UISchema): NormalizedUISchema {
     config: schema.config,
     next_concepts: schema.next_concepts || [],
     depth: schema.depth || DEFAULT_LEARNING_DEPTH,
+    visual_asset: schema.visual_asset,
   };
 }
 
@@ -302,3 +315,6 @@ export interface SimulationPlayConfig extends ComponentDepthConfig {
   compute_formula_description: string;
   steps: number;
 }
+
+
+

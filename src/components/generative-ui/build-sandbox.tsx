@@ -45,7 +45,7 @@ export function BuildSandbox({
           <div className="grid gap-4">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <span>{complete ? config.success_summary || `已组装完成：${config.target}` : `先选出达成目标所必需的模块。`}</span>
-              <strong className="animate-value-pop text-[var(--accent)]">
+              <strong key={selectedRequiredCount} className="animate-value-pop text-3xl font-bold text-[var(--accent)]">
                 {selectedRequiredCount} / {requiredIds.length}
               </strong>
             </div>
@@ -65,7 +65,7 @@ export function BuildSandbox({
                   {active && <Check size={18} className="text-[var(--accent)]" />}
                 </span>
                 {module.role && <span className="mt-2 block text-xs uppercase tracking-[0.16em] text-[var(--accent)]">{module.role}</span>}
-                <span className="mt-3 block text-sm leading-6 text-[var(--muted)]">{module.description}</span>
+                <span className="mt-3 block text-sm leading-relaxed text-[var(--muted)]">{module.description}</span>
               </ChoiceButton>
             );
           })}
@@ -75,7 +75,7 @@ export function BuildSandbox({
       )}
 
       {config.connections && config.connections.length > 0 && (
-        <Panel className="mt-4 p-4">
+        <Panel className="mt-4 p-5">
           <div className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">连接提示</div>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
             {config.connections.map((connection) => (

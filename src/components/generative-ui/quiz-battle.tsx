@@ -24,12 +24,12 @@ export function QuizBattle({
       depth={config.depth}
       footer={
         <FeedbackPanel tone={current ? (current.correct ? "success" : "danger") : "neutral"}>
-          {current ? current.explanation : "选择一个答案，系统会即时反馈。"}
+          {current ? <div className="ui-result">{current.explanation}</div> : "选择一个答案，系统会即时反馈。"}
         </FeedbackPanel>
       }
     >
       <div className="grid content-center gap-6">
-        <h3 className="text-base font-medium leading-7">{config.question}</h3>
+        <h3 className="text-base font-medium leading-relaxed">{config.question}</h3>
         <div className="grid gap-4">
           {options.length ? (
             options.map((option, index) => (

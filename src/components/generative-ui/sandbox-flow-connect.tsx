@@ -48,7 +48,7 @@ export function SandboxFlowConnect({
                     ? "顺序还不对，试着按输入 → 处理 → 反馈的依赖关系连接。"
                     : "按流程顺序点击模块，连出系统路径。"}
               </span>
-              <strong className="animate-value-pop text-[var(--accent)]">
+              <strong key={sequence.length} className="animate-value-pop text-3xl font-bold text-[var(--accent)]">
                 {sequence.length} / {expectedSequence.length}
               </strong>
             </div>
@@ -58,7 +58,7 @@ export function SandboxFlowConnect({
       }
     >
       <div className="grid content-center gap-6">
-        <Panel className="min-h-24 p-4">
+        <Panel className="min-h-24 p-5">
           <div className="flex flex-wrap items-center gap-2">
             {sequence.length ? (
               sequence.map((id, index) => {
@@ -85,7 +85,7 @@ export function SandboxFlowConnect({
               return (
                 <ChoiceButton key={flowModule.id} active={active} onClick={() => add(flowModule.id)} className="min-h-32">
                   <strong className="text-base font-medium">{flowModule.label}</strong>
-                  <span className="mt-3 block text-sm leading-6 text-[var(--muted)]">{flowModule.description}</span>
+                  <span className="mt-3 block text-sm leading-relaxed text-[var(--muted)]">{flowModule.description}</span>
                 </ChoiceButton>
               );
             })}

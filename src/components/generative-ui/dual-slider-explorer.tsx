@@ -60,7 +60,7 @@ export function DualSliderExplorer({
           <label key={item.side} className="grid gap-4 rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-5">
             <div className="flex items-end justify-between gap-4">
               <span className="text-sm text-[var(--muted)]">{item.label}</span>
-              <strong className="animate-value-pop text-3xl font-bold text-[var(--accent)]">
+              <strong key={`${item.side}-${item.value}`} className="animate-value-pop text-3xl font-bold text-[var(--accent)]">
                 {item.value}
                 {config.unit}
               </strong>
@@ -74,12 +74,12 @@ export function DualSliderExplorer({
               onChange={(event) => update(item.side, Number(event.target.value))}
               className="ui-range"
             />
-            <div className="ui-result rounded-xl border border-[var(--line)] bg-[var(--pattern-raised)] p-4">
+            <div className="ui-result rounded-xl border border-[var(--line)] bg-[var(--pattern-raised)] p-5">
               <div className="flex items-center justify-between gap-4">
                 <div className="text-xs text-[var(--muted)]">{primaryOutput.label}</div>
                 {primaryOutput.expression_label && <div className="text-xs text-[var(--accent)]">{primaryOutput.expression_label}</div>}
               </div>
-              <div className="animate-value-pop mt-1 text-3xl font-bold">
+              <div key={`${item.side}-${computeOutput(primaryOutput, item.value)}`} className="animate-value-pop mt-1 text-3xl font-bold">
                 {computeOutput(primaryOutput, item.value)}
                 {primaryOutput.unit}
               </div>
@@ -87,7 +87,7 @@ export function DualSliderExplorer({
           </label>
           ))}
       </div>
-      <p className="ui-result rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-4 text-sm leading-6 text-[var(--muted)]">
+      <p className="ui-result rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-5 text-sm leading-relaxed text-[var(--muted)]">
         {config.explanation_template.replace("{{value}}", `${left} vs ${right}`)}
       </p>
         </>

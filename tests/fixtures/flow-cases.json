@@ -1,0 +1,106 @@
+[
+  {
+    "id": "probability-bayes-step-count",
+    "flow_id": "bayes-starter",
+    "knowledge_type": "probability",
+    "check": "step_count",
+    "expected_count": 3
+  },
+  {
+    "id": "probability-bayes-pattern-chain",
+    "flow_id": "bayes-starter",
+    "knowledge_type": "probability",
+    "check": "pattern_chain",
+    "expected_patterns": ["knowledge_check", "concept_memory", "parameter_explore"]
+  },
+  {
+    "id": "probability-bayes-slider-payload",
+    "flow_id": "bayes-starter",
+    "knowledge_type": "probability",
+    "check": "payload_quality",
+    "target_pattern": "parameter_explore"
+  },
+  {
+    "id": "probability-bayes-card-payload",
+    "flow_id": "bayes-starter",
+    "knowledge_type": "probability",
+    "check": "payload_quality",
+    "target_pattern": "concept_memory"
+  },
+  {
+    "id": "probability-bayes-concept-anchor",
+    "flow_id": "bayes-starter",
+    "knowledge_type": "probability",
+    "check": "concept_anchor",
+    "required_keywords": ["先验", "证据", "后验"]
+  },
+  {
+    "id": "timeline-industrial-step-count",
+    "flow_id": "industrial-revolution",
+    "knowledge_type": "timeline",
+    "check": "step_count",
+    "expected_count": 3
+  },
+  {
+    "id": "timeline-industrial-pattern-chain",
+    "flow_id": "industrial-revolution",
+    "knowledge_type": "timeline",
+    "check": "pattern_chain",
+    "expected_patterns": ["knowledge_check", "process_timeline", "concept_memory"]
+  },
+  {
+    "id": "timeline-industrial-events-payload",
+    "flow_id": "industrial-revolution",
+    "knowledge_type": "timeline",
+    "check": "payload_quality",
+    "target_pattern": "process_timeline"
+  },
+  {
+    "id": "timeline-industrial-causal-chain",
+    "flow_id": "industrial-revolution",
+    "knowledge_type": "timeline",
+    "check": "concept_anchor",
+    "required_keywords": ["能源", "机器", "工厂", "城市"]
+  },
+  {
+    "id": "timeline-industrial-copy-safety",
+    "flow_id": "industrial-revolution",
+    "knowledge_type": "timeline",
+    "check": "copy_safety"
+  },
+  {
+    "id": "comparison-inflation-step-count",
+    "flow_id": "inflation-deflation",
+    "knowledge_type": "comparison",
+    "check": "step_count",
+    "expected_count": 3
+  },
+  {
+    "id": "comparison-inflation-pattern-chain",
+    "flow_id": "inflation-deflation",
+    "knowledge_type": "comparison",
+    "check": "pattern_chain",
+    "expected_patterns": ["knowledge_check", "comparison"]
+  },
+  {
+    "id": "comparison-inflation-dimensions-payload",
+    "flow_id": "inflation-deflation",
+    "knowledge_type": "comparison",
+    "check": "payload_quality",
+    "target_pattern": "comparison"
+  },
+  {
+    "id": "comparison-inflation-quiz-payload",
+    "flow_id": "inflation-deflation",
+    "knowledge_type": "comparison",
+    "check": "payload_quality",
+    "target_pattern": "knowledge_check"
+  },
+  {
+    "id": "comparison-inflation-concept-anchor",
+    "flow_id": "inflation-deflation",
+    "knowledge_type": "comparison",
+    "check": "concept_anchor",
+    "required_keywords": ["通胀", "通缩", "购买力", "债务"]
+  }
+]

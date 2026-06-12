@@ -9,7 +9,9 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "eval:score": "node --no-warnings --experimental-strip-types tests/eval/score.ts",
-    "eval:compare": "node --no-warnings --experimental-strip-types tests/eval/compare.ts"
+    "eval:compare": "node --no-warnings --experimental-strip-types tests/eval/compare.ts",
+    "eval:flow-manual": "node --no-warnings --experimental-strip-types scripts/manual-flow-eval.ts",
+    "eval:flow": "node --no-warnings --experimental-strip-types tests/eval/flow-score.ts"
   },
   "dependencies": {
     "@ai-sdk/deepseek": "^2.0.35",
@@ -21,6 +23,7 @@
     "clsx": "^2.1.1",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.7",
+    "framer-motion": "^12.40.0",
     "lucide-react": "^1.17.0",
     "nanoid": "^5.1.11",
     "next": "^16.2.7",

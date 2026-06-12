@@ -62,10 +62,10 @@ export function TimelineScrubber({
               onChange={(event) => selectIndex(Number(event.target.value))}
               className="ui-range"
             />
-            <Panel className="p-6">
+            <Panel className="ui-result p-5">
               <div className="text-sm text-[var(--muted)]">节点 {index + 1}</div>
               <h3 className="mt-2 text-2xl font-semibold text-[var(--accent-2)]">{active?.label}</h3>
-              <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{active?.description}</p>
+              <p className="mt-3 text-sm leading-relaxed text-[var(--muted)]">{active?.description}</p>
             </Panel>
           </>
         ) : (

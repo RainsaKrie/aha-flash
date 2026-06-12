@@ -59,10 +59,10 @@ export function ComparisonOverlay({
           </div>
         )}
 
-        <Panel className="grid gap-4 p-4">
+        <Panel className="grid gap-4 p-5">
           <div className="flex items-center justify-between gap-4 text-xs text-[var(--muted)]">
             <span>{leftLabel}</span>
-            <strong className="animate-value-pop text-[var(--accent)]">{ratio}%</strong>
+            <strong key={ratio} className="animate-value-pop text-3xl font-bold text-[var(--accent)]">{ratio}%</strong>
             <span>{rightLabel}</span>
           </div>
           <input
@@ -77,16 +77,16 @@ export function ComparisonOverlay({
         </Panel>
 
         <Panel className="relative min-h-80 overflow-hidden">
-          <article className="absolute inset-0 grid content-center gap-4 p-6" style={{ opacity: (100 - ratio) / 100 }}>
+          <article className="absolute inset-0 grid content-center gap-4 p-5" style={{ opacity: (100 - ratio) / 100 }}>
             <h3 className="text-2xl font-semibold text-[var(--accent-2)]">{leftLabel}</h3>
-            <p className="text-sm leading-6 text-[var(--muted)]">{leftContent}</p>
+            <p className="text-sm leading-relaxed text-[var(--muted)]">{leftContent}</p>
           </article>
           <article
-            className="absolute inset-0 grid content-center gap-4 bg-[var(--pattern-raised)] p-6"
+            className="absolute inset-0 grid content-center gap-4 bg-[var(--pattern-raised)] p-5"
             style={{ opacity: ratio / 100 }}
           >
             <h3 className="text-2xl font-semibold text-[var(--accent)]">{rightLabel}</h3>
-            <p className="text-sm leading-6 text-[var(--muted)]">{rightContent}</p>
+            <p className="text-sm leading-relaxed text-[var(--muted)]">{rightContent}</p>
           </article>
         </Panel>
 

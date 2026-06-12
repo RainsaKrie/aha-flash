@@ -55,7 +55,7 @@ export function VerticalTimeline({
             >
               <span className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">step {index + 1}</span>
               <strong className={active ? "text-[var(--accent-2)]" : ""}>{event.label}</strong>
-              {active && <span className="text-sm leading-6 text-[var(--muted)]">{event.description}</span>}
+              {active && <span className="ui-result text-sm leading-relaxed text-[var(--muted)]">{event.description}</span>}
             </ChoiceButton>
           );
           })

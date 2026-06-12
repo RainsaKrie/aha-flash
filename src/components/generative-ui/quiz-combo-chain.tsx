@@ -32,14 +32,14 @@ export function QuizComboChain({
       label="combo chain"
       title={config.title}
       depth={config.depth}
-      footer={<FeedbackPanel tone={combo > 0 ? "success" : "neutral"}>{feedback}</FeedbackPanel>}
+      footer={<FeedbackPanel tone={combo > 0 ? "success" : "neutral"}>{combo > 0 ? <div className="ui-result">{feedback}</div> : feedback}</FeedbackPanel>}
     >
       <div className="grid content-center gap-6">
         <Panel className="p-5">
           <div className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">combo</div>
-          <div className="animate-value-pop mt-2 text-5xl font-bold text-[var(--accent)]">{combo}</div>
+          <div key={combo} className="animate-value-pop mt-2 text-3xl font-bold text-[var(--accent)]">{combo}</div>
         </Panel>
-        <h3 className="text-base font-medium leading-7">{config.question}</h3>
+        <h3 className="text-base font-medium leading-relaxed">{config.question}</h3>
         <div className="grid gap-4 sm:grid-cols-3">
           {options.length ? (
             options.map((option, index) => (

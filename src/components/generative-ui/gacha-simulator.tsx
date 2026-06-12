@@ -95,7 +95,7 @@ export function GachaSimulator({
           <p className="text-xs uppercase tracking-[0.18em] text-[var(--accent)]">gacha simulator</p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <h2 className="text-2xl font-semibold">{config.title}</h2>
-            <span className="rounded-md border border-[var(--accent)] bg-[var(--pattern-raised)] px-2 py-1 text-xs text-[var(--accent)]">
+            <span className="rounded-md border border-[var(--line)] bg-[var(--pattern-raised)] px-2 py-1 text-xs text-[var(--muted)]">
               {LEARNING_DEPTH_LABELS[depth]}
             </span>
           </div>
@@ -104,12 +104,12 @@ export function GachaSimulator({
         </div>
         <div className="rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] px-4 py-3 text-right">
           <div className="text-xs text-[var(--muted)]">余额</div>
-          <div className="animate-value-pop text-3xl font-bold text-[var(--accent)]">{balance}</div>
+          <div key={balance} className="animate-value-pop text-3xl font-bold text-[var(--accent)]">{balance}</div>
         </div>
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-        <aside className={["rounded-xl border bg-[var(--pattern-panel)] p-4 transition", phase === "pulling" ? "border-[var(--accent)]" : "border-[var(--line)]"].join(" ")}>
+        <aside className={["rounded-xl border bg-[var(--pattern-panel)] p-5 transition-all duration-200", phase === "pulling" ? "border-[var(--accent)]" : "border-[var(--line)]"].join(" ")}>
           <div className="mb-4 flex items-center gap-2 text-sm font-medium">
             <Ticket size={16} />
             看涨期权券
@@ -129,18 +129,18 @@ export function GachaSimulator({
             </div>
           </dl>
           <div className="mt-4 grid gap-2">
-            <Button onClick={pull} disabled={phase === "pulling" || pool.length === 0} title="抽取" className={phase === "idle" && pool.length > 0 ? "ui-breathe" : ""}>
+            <Button onClick={pull} disabled={phase === "pulling" || pool.length === 0} title="抽取" className={`${phase === "idle" && pool.length > 0 ? "ui-breathe " : ""}transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]`}>
               <Sparkles size={16} />
               {phase === "pulling" ? <InlineSpinner label="结算中" /> : "买入并抽取"}
             </Button>
-            <Button onClick={reset} className="bg-transparent" title="重置">
+            <Button onClick={reset} className="bg-transparent transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]" title="重置">
               <RotateCcw size={16} />
               重置
             </Button>
           </div>
         </aside>
 
-        <div className="grid gap-4 rounded-xl border border-[var(--line)] bg-[var(--pattern-surface)] p-4">
+        <div className="grid gap-4 rounded-xl border border-[var(--line)] bg-[var(--pattern-surface)] p-5">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
@@ -161,7 +161,7 @@ export function GachaSimulator({
               <div
                 key={`${item.name}-${index}`}
                 className={[
-                  "grid aspect-[4/5] place-items-center rounded-xl border p-4 text-center text-sm shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition",
+                  "grid aspect-[4/5] place-items-center rounded-xl border p-5 text-center text-sm shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]",
                   item.rarity === "5"
                     ? "border-[var(--accent-2)] bg-[rgba(247,201,72,0.14)]"
                     : item.rarity === "4"
@@ -190,13 +190,13 @@ export function GachaSimulator({
           {!results.length && pool.length > 0 && (
             <div className="grid gap-2 sm:grid-cols-3">
               {pool.slice(0, 3).map((item) => (
-                <div key={`${item.name}-odds`} className="rounded-lg border border-[var(--line)] bg-[var(--pattern-raised)] p-3 text-xs">
+                <div key={`${item.name}-odds`} className="rounded-xl border border-[var(--line)] bg-[var(--pattern-raised)] p-5 text-xs transition-all duration-200 hover:scale-[1.02] hover:border-[var(--pattern-accent)] active:scale-[0.96]">
                   <div className="flex justify-between gap-4">
                     <span className="text-[var(--muted)]">
                       {tierLabel(item)}
                       {flavorLabel(item) ? ` · ${flavorLabel(item)}` : ""}
                     </span>
-                    <strong>{Math.round(item.probability * 100)}%</strong>
+                    <strong key={item.probability} className="animate-value-pop text-3xl font-bold">{Math.round(item.probability * 100)}%</strong>
                   </div>
                 </div>
               ))}
@@ -205,7 +205,7 @@ export function GachaSimulator({
         </div>
       </div>
 
-      <footer className="ui-result rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-4">
+      <footer className="ui-result rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-5">
         {phase === "result" && best ? (
           <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
             <p className="text-sm text-[var(--muted)]">
@@ -215,7 +215,7 @@ export function GachaSimulator({
                     .replace("{{strike_price}}", String(config.strike_price))
                 : config.explanation_map.lose.replace("{{option_cost}}", String(config.option_cost))}
             </p>
-            <strong className={won ? "text-[var(--accent)]" : "text-[var(--danger)]"}>
+            <strong key={profit} className={`animate-value-pop text-3xl font-bold ${won ? "text-[var(--accent)]" : "text-[var(--danger)]"}`}>
               {profit >= 0 ? "+" : ""}
               {profit}
             </strong>

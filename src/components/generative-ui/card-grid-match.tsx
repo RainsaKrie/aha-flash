@@ -2,7 +2,7 @@
 
 import { Grid2X2Check } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { ComponentFrame, EmptyState, FeedbackPanel, Panel, ProgressMeter } from "./shared";
+import { ComponentFrame, EmptyState, FeedbackPanel, Panel, ProgressMeter, normalizeGeneratedText } from "./shared";
 import type { CardFlipConfig, InteractionEvent } from "@/types/schema";
 
 export function CardGridMatch({
@@ -15,8 +15,9 @@ export function CardGridMatch({
   const [selected, setSelected] = useState<Record<number, number>>({});
   const completedRef = useRef(false);
   const cards = config.cards || [];
-  const backs = cards.map((card) => card.back);
-  const matched = cards.filter((card, index) => backs[selected[index]] === card.back).length;
+  const fronts = cards.map((card) => normalizeGeneratedText(card.front));
+  const backs = cards.map((card) => normalizeGeneratedText(card.back));
+  const matched = cards.filter((card, index) => backs[selected[index]] === normalizeGeneratedText(card.back)).length;
 
   useEffect(() => {
     if (completedRef.current || matched < cards.length || cards.length === 0) return;
@@ -40,18 +41,18 @@ export function CardGridMatch({
         {cards.length ? (
           cards.map((card, index) => {
             const selectedBack = selected[index];
-            const correct = selectedBack !== undefined ? backs[selectedBack] === card.back : undefined;
+            const correct = selectedBack !== undefined ? backs[selectedBack] === normalizeGeneratedText(card.back) : undefined;
             return (
           <Panel
-            key={card.front}
-            className={`grid gap-4 p-4 ${correct === true ? "animate-success-flash border-[var(--accent)] bg-[rgba(53,230,155,0.1)]" : correct === false ? "animate-error-shake border-[var(--danger)] bg-[rgba(255,107,107,0.08)]" : ""}`}
+            key={fronts[index]}
+            className={`grid gap-4 p-5 transition-all duration-200 hover:scale-[1.02] hover:border-[var(--pattern-accent)] active:scale-[0.96] ${correct === true ? "animate-success-flash border-[var(--accent)] bg-[rgba(53,230,155,0.1)]" : correct === false ? "animate-error-shake border-[var(--danger)] bg-[rgba(255,107,107,0.08)]" : ""}`}
           >
-            <strong className="min-h-12 text-base leading-6">{card.front}</strong>
+            <strong className="min-h-12 text-base font-medium leading-relaxed">{fronts[index]}</strong>
             <select
-              aria-label={`匹配 ${card.front}`}
+              aria-label={`匹配 ${fronts[index]}`}
               value={selected[index] ?? ""}
               onChange={(event) => setSelected((value) => ({ ...value, [index]: Number(event.target.value) }))}
-              className="min-h-11 rounded-lg border border-[var(--line)] bg-[var(--pattern-raised)] p-3 text-sm outline-none focus:border-[var(--accent)]"
+              className="min-h-11 rounded-lg border border-[var(--line)] bg-[var(--pattern-raised)] p-3 text-sm outline-none transition-all duration-200 hover:scale-[1.02] hover:border-[var(--pattern-accent)] active:scale-[0.96] focus:border-[var(--accent)]"
             >
               <option value="">选择含义</option>
               {backs.map((back, backIndex) => (

@@ -1,4 +1,4 @@
-import type { PatternType } from "@/types/schema";
+﻿import type { PatternType } from "@/types/schema";
 
 export const SYSTEM_ROLE_PROMPT = `
 你是趣灵（aha-flash），一款 AI 原生交互式知识学习引擎。
@@ -26,7 +26,7 @@ export const OUTPUT_FORMAT_RULES = `
 3. payload 的核心数组字段至少 3 项；测验 options 至少 3 项且至少 1 个 correct=true；simulation_play.params 至少 2 项。
 4. insight / explanation / outcome_description 至少包含一个“因为...所以...”因果链。
 5. 标题必须是 2-8 字短标题；按钮、卡片正面、维度名尽量短。
-6. payload.metaphor_trace 可选，尽量输出；缺失不影响，但输出时必须真实反映隐喻推理。
+6. payload.metaphor_trace 和顶层 visual_asset 可选，尽量输出；缺失不影响。visual_asset 只包含 tag/mood/emoji，不要放长文。
 `.trim();
 
 export const SCHEMA_REFERENCE = `
@@ -146,6 +146,7 @@ Pattern 选择目录:
 - narrative_branch: 沉没成本、案例、逻辑谬误、历史选择；template: branch_story。
 - classification_sort: 分类归因、概念边界辨析；template: category_buckets。
 - simulation_play: 复利、供需变化、种群演化、网络效应；template: parameter_simulation。
+visual_asset: 顶层可选字段，格式 {"tag":"短标签","mood":"idle|loading|success|error|reward","emoji":"可选"}。缺失不影响渲染。
 默认: 用户只输入一个概念且没有明显互动意图时，优先使用 concept_memory/term_cards。
 `.trim();
 
@@ -156,3 +157,4 @@ export function getSchemaReferenceForPattern(pattern?: PatternType | null) {
   const match = SCHEMA_REFERENCE.match(new RegExp(`Pattern: ${escapedPattern}[\\s\\S]*?(?=\\n\\nPattern: |$)`));
   return match?.[0]?.trim() || COMPACT_PATTERN_CATALOG;
 }
+

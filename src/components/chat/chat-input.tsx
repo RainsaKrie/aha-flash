@@ -34,7 +34,7 @@ export function ChatInput({
         disabled={disabled}
         className="min-h-16 resize-none"
       />
-      <Button type="submit" disabled={disabled} title="发送" className="min-h-16 px-5">
+      <Button type="submit" disabled={disabled} title="生成互动组件" className="min-h-16 px-5">
         {disabled ? (
           <>
             <Loader2 size={16} className="animate-spin" aria-hidden="true" />
@@ -43,7 +43,7 @@ export function ChatInput({
         ) : (
           <>
             <SendHorizontal size={16} />
-            生成
+            变成组件
           </>
         )}
       </Button>

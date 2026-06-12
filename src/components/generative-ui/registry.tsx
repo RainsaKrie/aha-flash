@@ -1,5 +1,6 @@
-"use client";
+﻿"use client";
 
+import type { ComponentType, CSSProperties } from "react";
 import type {
   GenerativeUIComponentProps,
   NormalizedUISchema,
@@ -8,6 +9,7 @@ import type {
   UISchema,
 } from "@/types/schema";
 import { normalizeUISchema } from "@/types/schema";
+import { getVisualAsset } from "@/lib/content/visual-assets";
 import { BuildSandbox } from "./build-sandbox";
 import { CardFlip } from "./card-flip";
 import { CardGridMatch } from "./card-grid-match";
@@ -27,7 +29,7 @@ import { GenerativeUIErrorBoundary, StateTransition, patternStyle } from "./shar
 import { TimelineScrubber } from "./timeline-scrubber";
 import { VerticalTimeline } from "./vertical-timeline";
 
-type RegistryComponent = React.ComponentType<GenerativeUIComponentProps<never>>;
+type RegistryComponent = ComponentType<GenerativeUIComponentProps<never>>;
 type PatternRegistry = Partial<Record<TemplateId, RegistryComponent>> & {
   default: TemplateId;
 };
@@ -93,6 +95,7 @@ export function renderBySchema(
   const normalized = getRenderableSchema(schema);
   const pattern = patternRegistry[normalized.pattern];
   const Component = pattern[normalized.template] || pattern[pattern.default];
+  const visualAsset = getVisualAsset(normalized.pattern, normalized.visual_asset);
 
   if (!Component) return null;
   const config = {
@@ -100,15 +103,21 @@ export function renderBySchema(
     depth: normalized.depth,
   };
 
+  const themeStyle = {
+    ...patternStyle(normalized.pattern),
+    "--visual-accent": visualAsset.accentVar,
+  } as CSSProperties;
+
   return (
     <GenerativeUIErrorBoundary>
       <StateTransition
         className="generative-component-shell"
       >
-        <div className="generative-component-theme" data-pattern={normalized.pattern} style={patternStyle(normalized.pattern)}>
+        <div className="generative-component-theme" data-pattern={normalized.pattern} data-visual-tag={visualAsset.tag} style={themeStyle}>
           <Component config={config as never} {...handlers} />
         </div>
       </StateTransition>
     </GenerativeUIErrorBoundary>
   );
 }
+

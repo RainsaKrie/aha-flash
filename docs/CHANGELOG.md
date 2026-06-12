@@ -4,6 +4,166 @@
 
 ---
 
+## 2026-06-12
+
+### V5 作品集部署模式收口
+
+完成：
+- `/explore` 从完整产品首页收敛为求职作品入口：固定展示 3 个精选 topic，不再暴露分类筛选、搜索和完整话题列表。
+- 新增 `SHOWCASE_FLOW_IDS` / `getShowcaseFlows()`，当前展示 `bayes-starter`、`industrial-revolution`、`inflation-deflation` 三条验证过的垂直切片。
+- 首页文案改为“3 分钟作品演示”，强调三张 topic 卡、每个三关、完成后写入 Hub 的最小闭环。
+- 保留 Hub 入口和随机开始 CTA，确保一个公开链接打开就能玩，不需要注册、付费或多设备同步。
+
+验证：
+- `npm run typecheck`
+- `npm run build`
+- `npm run eval:score`：固定 32 用例 `overall: 1`。
+- `npm run eval:flow`：15 cases，3 flows，本地模式 `overall: 1`。
+- 本地 `/explore` HTTP 冒烟：状态 200，包含三张 topic，且不包含搜索入口。
+
+---
+### V5 Hub 轻量化收口
+
+完成：
+- `/flow/[flowId]` 在完成最后一关后写入本地完成记录，记录 flowId、标题、概念、分类、摘要、概念列表、完成关卡数和完成时间。
+- 重写 `/hub` 为 V5 轻量个人图鉴：顶部成就数字、最近点亮卡、概念卡片墙和 30 秒快速回顾弹窗。
+- Hub 同时读取本地 Flow 完成记录与 `/api/state` 已学资产；状态接口失败时仍展示本机通关记录，避免个人页空白。
+- 保持 Hub 轻消费定位：不做知识图谱、笔记、收藏、排行或重型数据看板。
+
+验证：
+- `npm run typecheck`
+- `npm run build`
+- `npm run eval:score`：固定 32 用例 `overall: 1`。
+- `npm run eval:flow`：15 cases，3 flows，本地模式 `overall: 1`。
+
+下一步：
+- 可对 `/hub` 做一次浏览器截图验收；产品侧下一轮优先考虑 Flow 多次采样稳定性或公开部署前体验细节。
+
+---
+### V5 Flow Steps 自动化 Eval
+
+完成：
+- 新增 `tests/fixtures/flow-cases.json`，覆盖 probability / timeline / comparison 三类知识类型，每类 5 个固定检查点，共 15 个 Flow Eval case。
+- 新增 `tests/eval/flow-score.ts`，支持本地 mock 模式和 API 模式：默认不消耗 LLM；带 `--url` 时调用 `/api/flow` 验证真实生成链路。
+- 新增 `npm run eval:flow`，输出 overall、flow_validity、pattern_fit、payload_completeness、copy_safety、concept_anchor 和 failed_cases。
+- 将 `bayes-starter` 与 `industrial-revolution` 的 mock fallback 改为显式 V2 payload，使 fallback、LLM spec 和 Eval 标准对齐。
+- Flow 生成后处理补齐 pattern 默认结构：parameter slider 默认 scenarios / outputs / insight_rules，timeline 默认完整 events，comparison 默认 dimensions。
+
+验证：
+- `npm run eval:flow`：15 cases，3 flows，本地模式 `overall: 1`。
+- `npm run eval:flow -- --url=http://127.0.0.1:3020/api/flow?debug=1 --runs=1`：3 个 topic 均为 `source=llm`，API 模式 `overall: 1`。
+- `npm run typecheck`
+- `npm run build`
+- `npm run eval:score`：固定 32 用例 `overall: 1`。
+
+下一步：
+- Flow Eval 已有第一版自动化基线；后续可以把 `--runs` 提高到 3-5 做稳定性抽样，再推进 Hub V5 简化。
+
+---
+### V5 Flow Steps 多知识类型扩展
+
+完成：
+- 将 `src/lib/content/flow-generation.ts` 从 `bayes-starter` 专用生成器重构为 topic spec 驱动的通用 Flow Steps 生成器。
+- 新增 LLM Flow topic：`industrial-revolution`，用于验证 timeline / process_timeline 类知识。
+- 新增 LLM Flow topic：`inflation-deflation`，用于验证 comparison 类知识。
+- `/api/flow` 改为按支持列表选择 LLM 生成；未接入的话题继续稳定返回 mock Flow。
+- `/flow/[flowId]` 前端生成态支持三个 LLM topic，不再只对贝叶斯触发生成。
+- `eval:flow-manual` 报告改为按 flowId 命名，并补充 timeline events 与 comparison dimensions 摘要。
+
+手动采样：
+- `industrial-revolution`：10/10 `source=llm`，目标 Pattern 覆盖 `knowledge_check/single_question`、`process_timeline/horizontal_timeline`、`concept_memory/term_cards`。
+- `inflation-deflation`：10/10 `source=llm`，目标 Pattern 覆盖 `knowledge_check/single_question`、`comparison/split_panel`、`comparison/overlay_fade`。
+- 两个报告均未命中 schema fallback、`{result}` / `{output1}` / `{calculated}` 占位符残留或过度游戏化 reward 禁词。
+
+输出：
+- `output/manual-flow-eval/industrial-revolution-2026-06-12T01-26-13-507Z.md`
+- `output/manual-flow-eval/inflation-deflation-2026-06-12T01-29-01-084Z.md`
+
+验证：
+- `npm run typecheck`
+- `npm run build`
+- `npm run eval:score`，固定 32 用例 `overall: 1`。
+
+下一步：
+- 三个知识类型（probability / timeline / comparison）都稳定后，再开始 Flow Steps 自动化 Eval，覆盖 3 种知识类型 × 每种 5 个固定用例。
+
+---
+## 2026-06-11
+
+### V5 bayes-starter LLM Flow Steps 垂直切片
+
+完成：
+- 新增 `src/lib/content/flow-generation.ts`，为 `bayes-starter` 建立一次生成 3 个 `KnowledgePlay` 的 LLM Flow Steps 链路。
+- 新增 `/api/flow?flowId=bayes-starter`，优先返回 LLM 生成 Flow，失败时回退 mock Flow；本地 `debug=1` 可查看失败原因和原始输出。
+- 新增 `src/components/explore/flow-route-client.tsx`，`/flow/bayes-starter` 进入时先生成三关，失败时不中断用户体验。
+- 新增 `npm run eval:flow-manual`，采样 10 次并输出 Markdown/JSON，支持人工判断“3 关下来是否有啊哈感”。
+- 为 Flow Step schema 加入轻量字段修复，处理 DeepSeek 常见的 `text/label`、`name/label`、`description/text` 等漂移。
+- 补强 Flow Step 生成稳定性：修复 pattern/template 对调、`v1/v2` 模板别名、滑块 payload 字段漂移、未替换占位符和过度游戏化 reward 文案。
+
+手动采样：
+- 命令：`npm run eval:flow-manual -- --runs=10 --url=http://127.0.0.1:3016/api/flow?flowId=bayes-starter`
+- 结果：10 次中 7 次 `source=llm`，3 次回退 mock。
+- 输出：`output/manual-flow-eval/bayes-starter-2026-06-11T09-47-45-906Z.md`。
+- 初步人工判断：LLM 成功样本基本形成“先猜 -> 认识先验/证据/后验 -> 调证据强度”的体验链条，方向成立；下一步需要降低 3 次 fallback，并清理部分滑块文案里的占位符表达。
+
+稳定性收口采样：
+- 命令：`npm run eval:flow-manual -- --runs=10 --url=http://127.0.0.1:3018/api/flow?flowId=bayes-starter&debug=1`
+- 结果：10 次全部 `source=llm`，未再出现 schema fallback；未命中 `{result}` / `{output1}` / `{calculated}` 等占位符残留。
+- 输出：`output/manual-flow-eval/bayes-starter-2026-06-11T10-03-48-466Z.md`。
+- 回归：`npm run eval:score` 仍为 `overall: 1`，32 个固定用例无退化。
+
+验证：
+- `npm run typecheck`
+- `npm run build`
+- `npm run eval:score`
+
+---
+### V5 轻消费闯关转向
+
+完成：
+- 读取并整合 `docs/input-docs/PRODUCT_V5.md`，将正式产品定位改为“知识版休闲游戏 / 不内疚的知识消遣”。
+- 更新 `docs/PRODUCT.md`：V5 取代旧版产品定位、页面架构、V1 范围和成功指标，保留互动组件质量标准与隐喻生成语言。
+- 更新 `docs/TECHNICAL.md`：新增 V5 路由职责、`KnowledgeFlow` 内容模型、Flow 渲染规则和 Flow Steps 后续生成策略。
+- 扩展 `src/lib/content/mock-flows.ts` 为 8 个冷启动精选话题，覆盖科技、经济、哲学、心理、历史、数理分类。
+- 将 `/explore` 改为精选话题卡入口，支持分类筛选、搜索和随机体验，不再内嵌 Flow 或暴露 Studio 主入口。
+- 新增 `/flow/[flowId]` 独立全屏闯关页，采用顶部退出/进度条、中央单组件舞台、底部操作台的 V5 三段式结构。
+
+验证：
+- `npm run typecheck`
+
+---
+### Round 4 Explore 消费级视觉收口
+
+完成：
+- `/explore` Hero 删除重复的 Studio/Hub 大按钮，改为单主 CTA“随机体验一个概念”。
+- Flow 列表从卡片墙改为轻量左侧导航，未选中项无边框，选中项使用浅绿底和左侧激活条。
+- 右侧 Flow 主舞台改为白色大容器、轻阴影和更明确的 12 列对齐关系，减少盒中盒和边框噪音。
+- Explore 场景下弱化 Generative UI 外框、组件标题分割线和内部卡片边框，改用背景、留白、hover 上浮和轻阴影表达层级。
+- 翻牌/选项类卡片增加角标与 hover 浮起，强化可点击暗示。
+- “标记完成”改为“点亮这一关”，“下一关”改为“继续下一步”；趣灵提示改为气泡式向导呈现。
+
+验证：
+- `npm run typecheck`
+
+---
+### Round 4 平台化转型启动
+
+完成：
+- 新增 `docs/input-docs/ROUND4_PLATFORM_TRANSFORMATION.md`，记录 Explore / Studio / Hub / Pattern Skills 平台方向。
+- 更新 `PRODUCT.md` 和 `TECHNICAL.md`，将 Round 4 的路由结构、Knowledge Flow、`visual_asset` 和视觉资源注册表纳入长期文档。
+- 引入 `framer-motion`，作为 Flow 切换、趣灵状态提示和奖励反馈的轻量动画底座。
+- V2 / Normalized Schema 新增 optional `visual_asset` 字段；Zod 校验、Tool Calling 构建和 JSON fallback Prompt 均接受该字段，旧 Schema 不带字段仍可渲染。
+- 新增 `src/lib/content/visual-assets.ts`，为 10 个 Pattern 提供本地默认视觉资源映射。
+- 新增 `src/lib/content/mock-flows.ts`，提供 3 组本地 Knowledge Flow：贝叶斯入门、半导体通识、宏观经济入门。
+- 新增 `/explore` 默认探索页和 Flow 播放容器，支持精选 Flow、静态图谱节点、关卡切换和完成奖励。
+- 将原首页生成工作台迁移到 `/studio`，`/` 默认跳转 `/explore`。
+- 新增 `/hub` 个人图鉴页，复用已学资产读取和导出能力；`/sandbox` 作为兼容入口保留。
+- Studio 增加“保存草稿”“发布到探索页”的前端 mock 行为，为后续真实发布流留接口。
+
+验证：
+- `npm run typecheck`
+
+---
 ## 2026-06-08
 
 ### Round 3 MVP 1.0 收束规划

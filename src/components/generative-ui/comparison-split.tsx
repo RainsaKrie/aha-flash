@@ -91,20 +91,20 @@ export function ComparisonSplit({
       {activeDimension ? (
         <Panel className="mt-4 grid min-h-80 gap-4 p-5">
           <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr] md:items-stretch">
-            <article className="rounded-xl border border-[var(--line)] bg-[var(--pattern-raised)] p-4">
+            <article className="rounded-xl border border-[var(--line)] bg-[var(--pattern-raised)] p-5">
               <div className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">{subjectA}</div>
               <h3 className="mt-2 text-base font-medium text-[var(--accent-2)]">{activeDimension.a}</h3>
             </article>
             <div className="grid place-items-center px-2 text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
               {activeDimension.label}
             </div>
-            <article className="rounded-xl border border-[var(--line)] bg-[var(--pattern-raised)] p-4">
+            <article className="rounded-xl border border-[var(--line)] bg-[var(--pattern-raised)] p-5">
               <div className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">{subjectB}</div>
               <h3 className="mt-2 text-base font-medium text-[var(--accent)]">{activeDimension.b}</h3>
             </article>
           </div>
 
-          <div className="ui-result flex items-start gap-4 rounded-xl border border-[rgba(247,201,72,0.32)] bg-[rgba(247,201,72,0.08)] p-4 text-sm leading-6 text-[var(--accent-2)]">
+          <div className="ui-result flex items-start gap-4 rounded-xl border border-[rgba(247,201,72,0.32)] bg-[rgba(247,201,72,0.08)] p-5 text-sm leading-relaxed text-[var(--accent-2)]">
             <Lightbulb size={18} className="mt-0.5 shrink-0" />
             <strong>{activeDimension.insight}</strong>
           </div>
@@ -118,9 +118,9 @@ export function ComparisonSplit({
             ].join(" ")}
           >
             <h3 className="text-base font-medium text-[var(--accent-2)]">{config.left.label}</h3>
-            <ul className="mt-4 grid gap-4 text-sm leading-6 text-[var(--muted)]">
+            <ul className="mt-4 grid gap-4 text-sm leading-relaxed text-[var(--muted)]">
               {(leftPoints.length ? leftPoints : [config.left.content]).map((point, index) => (
-                <li key={`${point}-${index}`} className="rounded-xl border border-[var(--line)] bg-[var(--pattern-raised)] p-3">
+                <li key={`${point}-${index}`} className="rounded-xl border border-[var(--line)] bg-[var(--pattern-raised)] p-5">
                   {point}
                 </li>
               ))}
@@ -128,9 +128,9 @@ export function ComparisonSplit({
           </article>
           <article className={["bg-[var(--pattern-raised)] p-5 transition", focus === "left" ? "opacity-35" : "opacity-100"].join(" ")}>
             <h3 className="text-base font-medium text-[var(--accent)]">{config.right.label}</h3>
-            <ul className="mt-4 grid gap-4 text-sm leading-6 text-[var(--muted)]">
+            <ul className="mt-4 grid gap-4 text-sm leading-relaxed text-[var(--muted)]">
               {(rightPoints.length ? rightPoints : [config.right.content]).map((point, index) => (
-                <li key={`${point}-${index}`} className="rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-3">
+                <li key={`${point}-${index}`} className="rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-5">
                   {point}
                 </li>
               ))}

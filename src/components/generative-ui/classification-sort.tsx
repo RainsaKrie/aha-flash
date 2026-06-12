@@ -65,14 +65,14 @@ export function ClassificationSort({
           <ProgressMeter value={answeredCount} total={items.length} />
           <div className="mt-4 flex items-center justify-between gap-4">
             <span>当前正确数</span>
-            <strong className="animate-value-pop text-[var(--accent)]">
+            <strong key={score} className="animate-value-pop text-3xl font-bold text-[var(--accent)]">
               {score} / {items.length || 1}
             </strong>
           </div>
           {lastAnswer && (
             <div
               className={[
-                "ui-result mt-4 rounded-lg border p-3",
+                "ui-result mt-4 rounded-xl border p-5 text-sm leading-relaxed",
                 lastAnswer.correct
                   ? "animate-success-flash border-[rgba(53,230,155,0.42)] bg-[rgba(53,230,155,0.1)] text-[var(--accent)]"
                   : "animate-error-shake border-[rgba(255,107,107,0.42)] bg-[rgba(255,107,107,0.08)] text-[var(--danger)]",
@@ -109,16 +109,16 @@ export function ClassificationSort({
           <div className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">
             {Math.min(answeredCount + 1, items.length)} / {items.length}
           </div>
-          <h3 className="mt-2 text-base font-medium leading-7">{currentItem.label}</h3>
-          <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+          <h3 className="mt-2 text-base font-medium leading-relaxed">{currentItem.label}</h3>
+          <p className="mt-3 text-sm leading-relaxed text-[var(--muted)]">
             {answeredCount >= items.length ? "全部分类完成，可以看下方回顾。" : "把它放进最贴切的分类桶。"}
           </p>
           </Panel>
         ) : allAnswered ? (
           <Panel className="p-5">
             <div className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">completed</div>
-            <h3 className="mt-2 text-base font-medium leading-7">分类完成</h3>
-            <p className="mt-3 text-sm leading-6 text-[var(--muted)]">答案已锁定，可以查看下方回顾。</p>
+            <h3 className="mt-2 text-base font-medium leading-relaxed">分类完成</h3>
+            <p className="mt-3 text-sm leading-relaxed text-[var(--muted)]">答案已锁定，可以查看下方回顾。</p>
           </Panel>
         ) : (
           <EmptyState detail="模型没有给出待分类条目，重新生成后应包含 4-8 个项目。" />

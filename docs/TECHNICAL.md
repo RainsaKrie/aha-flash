@@ -10,7 +10,7 @@ User
   v
 Next.js App Router
   |
-  +-- UI Shell: topbar + centered component stage + bottom input bar
+  +-- UI Shell: Explore topic feed + Flow player + Hub + internal Studio
   |
   +-- API Layer
       |
@@ -34,7 +34,7 @@ LLM Layer
 
 Generative UI Layer
   |
-  +-- V2 Schema: pattern + template + payload + depth + next_concepts
+  +-- V2 Schema: pattern + template + payload + depth + next_concepts + visual_asset?
   +-- Registry maps pattern/template to React components
 ```
 
@@ -173,6 +173,7 @@ POST /api/chat
   config: Record<string, unknown>;
   depth: "rapid" | "scenario" | "mapping";
   next_concepts: Array<{ label: string; relation: string }>;
+  visual_asset?: VisualAssetHint;
 }
 ```
 
@@ -181,7 +182,7 @@ POST /api/chat
 - `comparison` 可携带 `subject_a`、`subject_b`、`dimensions`、`summary`。
 - `parameter_explore` 可携带 `outputs`、`insight_rules`。
 - `system_builder` 可携带 `required_module_ids`、`expected_sequence`、`connections`、`success_summary`。
-- 所有 payload 可携带 `metaphor_trace`，用于记录隐喻推理，不在前端渲染。
+- 所有 payload 可携带 `metaphor_trace`，用于记录隐喻推理，不在前端渲染。Schema 顶层可携带 optional `visual_asset`，用于前端从本地资源表匹配图标、emoji theme 或轻动画。
 
 这些字段是可选增强项；缺失时组件仍保留兼容兜底，但 Prompt 应优先输出带交互结构的 payload。
 
@@ -205,7 +206,92 @@ POST /api/chat
 - `mapping_checks` 说明抽象概念与领域机制为何成立。
 - `chosen_terms` 记录最终采用的术语体系，辅助检查是否混用。
 
-## 7. Pattern / Template 注册
+## 7. V5 路由与内容模型
+
+V5 的主体验从“输入生成组件”改为“浏览话题 -> 全屏 Flow 闯关 -> Hub 回顾”。现有 10 个 Pattern、Schema 校验和生成链路保留为底层 Skills，不再作为用户首页心智。
+
+路由职责：
+
+| Route | V5 职责 | 数据来源 | 备注 |
+|---|---|---|---|
+| `/` | 默认跳转 Explore | - | 入口页不承载聊天流 |
+| `/explore` | 作品集首页：3 个精选 topic 卡、随机开始、Hub 入口 | `getShowcaseFlows()` | 公开链接优先展示完整垂直切片，不暴露未完成产品入口 |
+| `/flow/[flowId]` | 全屏三段式闯关：退出/进度条、单组件舞台、底部操作台 | `KnowledgeFlow` | V5 核心体验 |
+| `/hub` | 已闯关数、邂逅概念数、概念卡片墙、快速回顾 | `/api/state` + 本地 mock | 轻量回顾，不做知识管理 |
+| `/studio` | 内部生成工作台 / 技术验证入口 | `/api/chat` | V5 V1 不作为主导航入口 |
+| `/sandbox` | 旧知识沙盒兼容入口 | `/api/state` | 不再作为公开主入口 |
+
+前端内容模型：
+
+```ts
+type TopicCategory = "科技" | "经济" | "哲学" | "心理" | "历史" | "数理";
+type TopicDifficulty = "轻松" | "进阶" | "烧脑一点";
+
+interface KnowledgePlay {
+  id: string;
+  title: string;
+  concept: string;
+  schema: UISchema;
+  estimated_minutes: number;
+  reward_copy: string;
+}
+
+interface KnowledgeFlow {
+  id: string;
+  title: string;
+  concept: string;
+  hook: string;
+  description: string;
+  category: TopicCategory;
+  difficulty: TopicDifficulty;
+  estimated_minutes: number;
+  summary: string;
+  concepts: string[];
+  plays: KnowledgePlay[];
+}
+```
+
+公开作品集配置：
+
+- `src/lib/content/mock-flows.ts` 维护 `SHOWCASE_FLOW_IDS`，当前固定为 `bayes-starter`、`industrial-revolution`、`inflation-deflation`。
+- `/explore` 只读取 `getShowcaseFlows()`，不展示完整 mock flow 列表、分类筛选或搜索。
+- 三个展示 topic 分别覆盖 probability、timeline、comparison 三类知识结构；每个 topic 都有三关 fallback Flow，LLM 失败时仍可完整体验。
+- 作品集模式的目标是让面试官 3 分钟内看见能力闭环：话题选择 -> 三关互动 -> 完成记录进入 Hub。
+Flow 渲染规则：
+
+- Explore 只展示话题卡，不内嵌互动组件。
+- Flow 页每次只渲染一个 `KnowledgePlay.schema`。
+- 顶栏展示退出按钮和绿色进度条，退出不弹窗、不挽留。
+- 用户必须先与中央舞台互动，底部操作台才允许检查/继续。
+- 最后一关完成后展示小结卡片和“继续探索”。
+- 旧 Schema 不带 `visual_asset` 时仍按 Pattern 默认视觉资源渲染。
+
+Flow Steps 生成策略：
+
+- 当前 V5 第一阶段由 `src/lib/content/mock-flows.ts` 提供 8 个手工精选话题。
+- `src/lib/content/flow-generation.ts` 以 topic spec 驱动 Flow Steps 生成，当前 LLM topic 包括 `bayes-starter`、`industrial-revolution`、`inflation-deflation`。
+- Flow 生成先走 LLM，失败时回退对应 mock Flow，不影响用户继续闯关；未接入 LLM 的 Flow 保持 mock。
+- Flow 生成器会校验每个 step 的 `UISchema`，并对常见字段漂移做轻量修复，例如 `options[].text -> label`、`cards[].term -> front`、`events/stages/milestones -> events`、`comparison_dimensions/rows -> dimensions`、`scenarios[].name -> label`、`insight_rules[].description -> text`。
+- Flow 生成器会修复 DeepSeek 偶发的顶层漂移：`pattern/template` 对调、`template=v1/v2` 等别名、缺失 `version`。
+- `parameter_explore/single_slider` 会额外归一化 3 个 scenarios、2 个 outputs、3 条 low/mid/high insight rules，并移除 `{result}`、`{output1}`、`{calculated}` 等未替换占位符文案。
+- `process_timeline` 会归一化 4-6 个阶段事件，保证每个事件都有短 label 和因果 description。
+- `comparison` 会归一化 left/right、subject_a/subject_b 和 dimensions，保证对比维度平行可切换。
+- `reward_copy` 使用克制型知识反馈，发现“工具箱更新了 / 卡片已入库 / 魔力 / 升级版”等过度游戏化表达时回退为“你又想通了一层”。
+- `npm run eval:flow-manual -- --runs=10 --url=http://127.0.0.1:<port>/api/flow?flowId=<flowId>` 用于手动采样，生成 Markdown 供人工判断 10 次里是否至少 8 次产生“啊哈感”；本阶段稳定性收口目标提高到 9/10 以上。
+- 2026-06-11 采样：`bayes-starter` 10/10 `source=llm`，无 schema fallback。
+- 2026-06-12 采样：`industrial-revolution` 10/10 `source=llm`，`inflation-deflation` 10/10 `source=llm`；固定回归 `npm run eval:score` 保持 `overall: 1`。
+- Flow Steps 已纳入第一版自动 Eval：`tests/fixtures/flow-cases.json` 覆盖 probability / timeline / comparison 三种知识类型，每类 5 个固定检查点；`tests/eval/flow-score.ts` 检查步骤数量、Pattern 链、payload 完整度、文案安全和概念锚点。
+- `npm run eval:flow` 默认使用本地 mock Flow，不消耗 LLM；`npm run eval:flow -- --url=http://127.0.0.1:<port>/api/flow?debug=1 --runs=1` 调用真实 `/api/flow` 输出。
+- 2026-06-12 自动化验收：本地模式 15/15，`overall: 1`；API 模式 3 个 topic 均为 `source=llm`，`overall: 1`。
+
+视觉资源注册表：
+
+- 位置：`src/lib/content/visual-assets.ts`。
+- 输入：`pattern` 和 optional `visual_asset.tag`。
+- 输出：emoji、title、description、motion tone 和轻量 CSS class。
+- 只提供本地轻量资源，不依赖在线图片服务。
+
+## 8. Pattern / Template 注册
 
 代码侧以 `src/types/schema.ts` 中的 `SCHEMA_CATALOG` 作为协议映射源，并由 `src/components/generative-ui/registry.tsx` 将 `pattern/template` 映射到 React 组件。
 
@@ -216,7 +302,7 @@ POST /api/chat
 - V1 类型只保留兼容入口，新能力优先走 V2 `pattern/template/payload`。
 - 组件质量规则由 `PRODUCT.md` 的互动组件质量标准约束，具体实现优先落在 `src/components/generative-ui/shared.tsx`。
 
-## 8. Tool 与来源输入
+## 9. Tool 与来源输入
 
 当前工具：
 
@@ -248,7 +334,7 @@ T30 已在 `src/lib/tools/generative-tools.ts` 定义 10 个 Pattern Tool，每�
 - 用户看到外部内容时，近期优先通过直接复制文本进入输入框。
 - 图片、音频、剪贴板、系统分享属于远期自然入口，需要多模态或转录能力支持。
 
-## 9. 前端状态和交互反馈
+## 10. 前端状态和交互反馈
 
 客户端 store：`src/stores/app-store.ts`。
 
@@ -278,7 +364,7 @@ T30 已在 `src/lib/tools/generative-tools.ts` 定义 10 个 Pattern Tool，每�
 知识沙盒支持将单张知识卡导出为 Markdown 文件，内容包括概念、主题、理解深度、Pattern、Template 和学习时间。
 - 模块构建完成
 
-## 10. 质量评估
+## 11. 质量评估
 
 质量体系包含：
 
@@ -303,7 +389,7 @@ npm run eval:score -- --json
 npm run eval:compare -- baseline.json candidate.json
 ```
 
-## 11. 开发工作流
+## 12. 开发工作流
 
 新增规划统一进入 `docs/input-docs/`。处理顺序：
 
@@ -314,13 +400,15 @@ npm run eval:compare -- baseline.json candidate.json
 5. 开发完成后提交并推送。
 6. 审查已处理输入的去留：已整合、重复、过期或无独立追溯价值的直接删除；只有仍需追溯来源的材料才进入 `docs/input-docs/archive/`。
 
-## 12. 验证命令
+## 13. 验证命令
 
 每次功能提交前至少运行：
 
 ```bash
 npm run typecheck
 npm run build
+npm run eval:score
+npm run eval:flow
 ```
 
 涉及前端交互时，启动本地服务并用浏览器或 Playwright 验证至少一个真实路径。
@@ -331,17 +419,37 @@ npm run build
 rg -n "旧入口文档|待处理输入|archive" docs/README.md docs/PRODUCT.md docs/TECHNICAL.md docs/input-docs/README.md
 ```
 
-## 13. 首页布局约束
+## 14. 页面布局约束
 
-首页采用产品级工作台布局，不再展示开发调试侧栏：
+V5 页面布局以轻消费闯关为核心，不再把工作台和知识图谱作为默认体验。
 
-- `src/app/page.tsx` 只渲染顶栏、组件舞台和底部输入栏。
-- 用户状态、输出 pattern/template、交互次数、会话摘要只作为内部状态和 API 上下文，不在首页展示。
-- 对话历史不作为首页主要信息架构。
-- 下一步概念推荐和深度引导出现在组件下方/输入框上方。
-- `src/app/globals.css` 的 `body` 背景保持纯背景色，不使用网格线装饰。
+Explore：
 
-## 14. 组件 UI 规格
+- 公开作品集模式只展示 3 个精选 topic 卡、随机体验 CTA 和 Hub 入口；完整话题流、分类筛选、搜索后置。
+- 不内嵌 Flow、不展示聊天历史、不放 Studio 大按钮、不展示知识图谱。
+- 每张话题卡必须包含概念名、hook、分类、难度、预计时长和关卡数。
+
+Flow：
+
+- 全屏三段式：顶部退出与进度条；中央单一交互组件；底部操作台。
+- 中央舞台只承载当前关卡，不同时堆叠多个组件。
+- 底部按钮根据状态变化：未互动为灰、可检查为待确认、完成为绿色继续。
+- 趣灵提示只出现在底部操作台，不遮挡组件。
+
+Hub：
+
+- 展示“已闯过 X 关 | 邂逅了 Y 个概念”和概念卡片墙。
+- Flow 完成后由 `recordCompletedFlow()` 写入 `localStorage`，记录 flowId、标题、概念、分类、摘要、概念列表、完成关卡数和完成时间。
+- `/hub` 合并本地 Flow 完成记录与 `/api/state` 的 `knowledge_assets`，按最近学习时间排序，并对 Flow 已覆盖概念做去重。
+- 状态接口失败时，Hub 仍展示本地完成记录并给出轻量提示，避免个人页完全空白。
+- 快速回顾优先，不做知识图谱、笔记、收藏、排行或长数据看板；当前仍是本机状态，不是账号级持久化。
+
+Studio / Sandbox：
+
+- `/studio` 保留为内部生成工作台和 Skills 调试入口，V5 V1 不作为主消费路径。
+- `/sandbox` 仅保留兼容，不在公开主导航中强调。
+
+## 15. 组件 UI 规格
 
 共享实现优先放在 `src/components/generative-ui/shared.tsx`：
 
@@ -359,7 +467,7 @@ rg -n "旧入口文档|待处理输入|archive" docs/README.md docs/PRODUCT.md d
 - 间距只使用 8/16/20/24px 节奏，避免 `gap-3` / `gap-7`。
 - 所有可点击元素不低于 44px。
 
-## 15. Prompt 与隐喻推理
+## 16. Prompt 与隐喻推理
 
 当前 JSON fallback 的 `src/lib/llm/prompt-templates.ts` 必须包含：
 
@@ -378,7 +486,7 @@ Round 3 Tool Calling 目标：
 - Pattern 结构约束转移到 `GENERATIVE_TOOLS` 的 `inputSchema`。
 - 现有自然语言 `SCHEMA_REFERENCE` 保留为 JSON fallback，待 T34 完成后再判断是否继续保留。
 
-## 16. 环境变量
+## 17. 环境变量
 
 ```env
 DEEPSEEK_API_KEY=
@@ -399,14 +507,14 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 - Vercel demo 默认写 `/tmp/aha-flash/states`，不保证长期持久。
 - 搜索和 URL 抓取相关环境变量已不再使用。
 
-## 17. 关键决策
+## 18. 关键决策
 
 | 决策 | 当前选择 | 原因 |
 |---|---|---|
 | Schema 协议 | V2 `pattern/template/payload` + V1 兼容 | 降低 LLM 输出复杂度，支持骨架复用 |
 | LLM fallback | 无 key 时使用 mock schema | 保证 demo 和开发链路可运行 |
 | 状态存储 | 本地文件 / Vercel `/tmp` | 当前阶段轻量；生产需迁移 |
-| UI 组件 | 自建 React 组件 | 控制交互体验和协议映射 |
+| UI 组件 | 自建 React 组件 + framer-motion 过渡 | 控制交互体验和协议映射，Flow/奖励动画不重写业务组件 |
 | 路由分类 | 规则默认，LLM 预算集中给 Schema 生成 | 降低成本和延迟，避免前置分类消耗模型调用 |
 
 ## 19. Round 3 MVP 1.0 收束任务
@@ -426,9 +534,10 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 | T38 | 默认体验额度与自定义 API Key 请求方案 | 搁置 |
 | T39 | Eval 用例扩展到 30+，score 不低于 0.9 | 完成 |
 
-## 18. 已知技术债
+## 20. 已知技术债
 
 - Vercel `/tmp` 状态不持久，不能作为生产记忆。
 - 当前 mock schema 仍承担较多验收输入路由。
 - 追问检测和路由分类已默认改为规则判别，后续需要真实对话样本回归。
 - 当前流式生成是 `/api/chat` 的 NDJSON 阶段事件流，最后仍以完整 Schema 渲染；后续如需边生成边预览，需要重新设计增量 Schema 协议。
+- V5 Explore/Flow/Hub 先使用前端 mock 和本地状态；Flow Steps LLM 生成、真实埋点、账号和生产持久化仍未实现。

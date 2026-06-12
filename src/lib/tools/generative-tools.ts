@@ -1,4 +1,4 @@
-import { jsonSchema, tool, type ToolSet } from "ai";
+﻿import { jsonSchema, tool, type ToolSet } from "ai";
 import {
   SCHEMA_CATALOG,
   isLearningDepth,
@@ -36,6 +36,17 @@ const nextConceptsProperty = {
   },
 };
 
+const visualAssetProperty = {
+  type: "object",
+  properties: {
+    tag: { type: "string", description: "可选视觉资源标签，如 probability-card、memory-terms、timeline-path。" },
+    mood: { type: "string", enum: ["idle", "loading", "success", "error", "reward"] },
+    emoji: { type: "string", description: "可选 emoji theme，1-2 个字符。" },
+  },
+  required: ["tag"],
+  additionalProperties: false,
+};
+
 const metaphorTraceProperty = {
   type: "object",
   properties: {
@@ -57,6 +68,7 @@ function schema(properties: Record<string, unknown>, required: string[]) {
       template: { type: "string", description: "可选模板 ID，必须属于当前 Pattern 的模板列表。" },
       depth: depthProperty,
       next_concepts: nextConceptsProperty,
+      visual_asset: visualAssetProperty,
       metaphor_trace: metaphorTraceProperty,
     },
     required,
@@ -454,6 +466,20 @@ export function isGenerativeToolName(name: string): name is GenerativeToolName {
   return Object.hasOwn(GENERATIVE_TOOLS, name);
 }
 
+function normalizeVisualAsset(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const record = value as Record<string, unknown>;
+  if (typeof record.tag !== "string" || !record.tag.trim()) return undefined;
+
+  return {
+    tag: record.tag.trim().slice(0, 48),
+    mood: ["idle", "loading", "success", "error", "reward"].includes(String(record.mood))
+      ? (record.mood as "idle" | "loading" | "success" | "error" | "reward")
+      : undefined,
+    emoji: typeof record.emoji === "string" ? record.emoji.slice(0, 4) : undefined,
+  };
+}
+
 function normalizeNextConcepts(value: unknown): NextConcept[] | undefined {
   if (!Array.isArray(value)) return undefined;
   const concepts = value
@@ -471,7 +497,7 @@ function normalizeNextConcepts(value: unknown): NextConcept[] | undefined {
 
 export function buildSchemaFromGenerativeToolCall(name: GenerativeToolName, args: Record<string, unknown>) {
   const tool = GENERATIVE_TOOLS[name];
-  const { depth, next_concepts, template, ...payload } = args;
+  const { depth, next_concepts, template, visual_asset, ...payload } = args;
   const templateId =
     typeof template === "string" && SCHEMA_CATALOG[tool.pattern].templates.includes(template as TemplateId)
       ? (template as TemplateId)
@@ -483,6 +509,7 @@ export function buildSchemaFromGenerativeToolCall(name: GenerativeToolName, args
     version: "2.0",
     depth: isLearningDepth(depth) ? depth : undefined,
     next_concepts: normalizeNextConcepts(next_concepts),
+    visual_asset: normalizeVisualAsset(visual_asset),
     payload,
   };
 }
@@ -498,3 +525,5 @@ export function buildGenerativeAiTools() {
     ]),
   ) as ToolSet;
 }
+
+

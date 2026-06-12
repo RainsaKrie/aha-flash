@@ -81,7 +81,7 @@ export function SimulationPlay({
           <div className="grid gap-4">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <span>{step >= maxSteps ? "模拟完成，观察最终结果和参数之间的关系。" : "逐步推进，看看结果如何被参数放大或拖慢。"}</span>
-              <strong className="animate-value-pop text-[var(--accent)]">
+              <strong key={step} className="animate-value-pop text-3xl font-bold text-[var(--accent)]">
                 {step} / {maxSteps}
               </strong>
             </div>
@@ -96,11 +96,11 @@ export function SimulationPlay({
         <div className="grid content-center gap-4">
           {config.params.length >= 2 ? (
             config.params.map((param) => (
-              <Panel key={param.label} className="grid gap-4 p-4">
+              <Panel key={param.label} className="grid gap-4 p-5">
                 <label className="grid gap-4">
                   <div className="flex items-end justify-between gap-4">
                     <span className="text-sm text-[var(--muted)]">{param.label}</span>
-                    <strong className="animate-value-pop text-3xl font-bold text-[var(--accent)]">
+                    <strong key={`${param.label}-${values[param.label]}`} className="animate-value-pop text-3xl font-bold text-[var(--accent)]">
                       {values[param.label]}
                       {param.unit}
                     </strong>
@@ -126,7 +126,7 @@ export function SimulationPlay({
           <div className="flex items-end justify-between gap-4">
             <div>
               <div className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">step {step}</div>
-              <div className="mt-2 animate-value-pop text-3xl font-bold text-[var(--accent)]">{currentValue}</div>
+              <div key={currentValue} className="mt-2 animate-value-pop text-3xl font-bold text-[var(--accent)]">{currentValue}</div>
             </div>
             <div className="text-right text-sm text-[var(--muted)]">基准 100</div>
           </div>
@@ -143,18 +143,23 @@ export function SimulationPlay({
         </Panel>
       </div>
 
-      <Panel className="flex flex-wrap items-center justify-between gap-4 p-4">
+      <Panel className="flex flex-wrap items-center justify-between gap-4 p-5">
         <div className="text-sm text-[var(--muted)]">{playing ? "自动播放中" : "手动推进或自动播放模拟。"}</div>
         <div className="flex gap-2">
-          <Button type="button" onClick={reset} title="重置">
+          <Button type="button" onClick={reset} title="重置" className="transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]">
             <RotateCcw size={16} />
             重置
           </Button>
-          <Button type="button" onClick={() => setStep((value) => Math.min(maxSteps, value + 1))} title="下一步">
+          <Button type="button" onClick={() => setStep((value) => Math.min(maxSteps, value + 1))} title="下一步" className="transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]">
             <StepForward size={16} />
             下一步
           </Button>
-          <Button type="button" onClick={() => setPlaying((value) => !value)} title={playing ? "暂停" : "播放"}>
+          <Button
+            type="button"
+            onClick={() => setPlaying((value) => !value)}
+            title={playing ? "暂停" : "播放"}
+            className={`${!playing && step === 0 ? "ui-breathe " : ""}transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]`}
+          >
             {playing ? (
               <InlineSpinner label="播放中" />
             ) : (

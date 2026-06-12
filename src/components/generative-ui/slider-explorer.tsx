@@ -61,7 +61,7 @@ export function SliderExplorer({
         <label className="grid gap-4 rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-5">
           <div className="flex items-end justify-between gap-4">
             <span className="text-sm text-[var(--muted)]">{config.variable_label}</span>
-            <strong className="animate-value-pop text-3xl font-bold text-[var(--accent)]">
+            <strong key={value} className="animate-value-pop text-3xl font-bold text-[var(--accent)]">
               {value}
               {config.unit}
             </strong>
@@ -87,6 +87,7 @@ export function SliderExplorer({
           {config.scenarios?.map((scenario) => (
             <Button
               key={scenario.label}
+              className={value === config.default_value ? "ui-breathe transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]" : "transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]"}
               onClick={() => {
                 setValue(scenario.value);
                 onInteraction?.({
@@ -101,12 +102,12 @@ export function SliderExplorer({
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           {outputs.slice(0, 4).map((output) => (
-            <div key={output.label} className="ui-result rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-4">
+            <div key={output.label} className="ui-result rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-5">
               <div className="flex items-center justify-between gap-4">
                 <div className="text-sm text-[var(--muted)]">{output.label}</div>
                 {output.expression_label && <div className="text-xs text-[var(--accent)]">{output.expression_label}</div>}
               </div>
-              <div className="animate-value-pop mt-2 text-3xl font-bold text-[var(--text)]">
+              <div key={`${output.label}-${value}`} className="animate-value-pop mt-2 text-3xl font-bold text-[var(--text)]">
                 {computeOutput(output, value)}
                 {output.unit}
               </div>
@@ -114,7 +115,7 @@ export function SliderExplorer({
             </div>
           ))}
         </div>
-        <p className="ui-result rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-4 text-sm leading-6 text-[var(--muted)]">
+        <p className="ui-result rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-5 text-sm leading-relaxed text-[var(--muted)]">
           {insight || config.explanation_template.replace("{{value}}", String(value))}
         </p>
           </>

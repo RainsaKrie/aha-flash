@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { ArrowLeft, BrainCircuit, Boxes, Clock3, Download, Layers3, Map, Sparkles } from "lucide-react";
 import Link from "next/link";
@@ -81,7 +81,7 @@ export default function SandboxPage() {
         writeUserId(nextState.user_id);
         setState(nextState);
       } catch {
-        setError("知识沙盒暂时无法读取状态。");
+        setError("知识沙盒（兼容入口）暂时无法读取状态。");
       }
     }
 
@@ -100,11 +100,11 @@ export default function SandboxPage() {
         <header className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.18em] text-[var(--accent)]">knowledge sandbox</p>
-            <h1 className="mt-1 text-3xl font-semibold">知识沙盒</h1>
+            <h1 className="mt-1 text-3xl font-semibold">知识沙盒（兼容入口）</h1>
           </div>
-          <Link href="/" className="tool-button px-3">
+          <Link href="/hub" className="tool-button px-3">
             <ArrowLeft size={16} />
-            返回
+            去图鉴
           </Link>
         </header>
 
@@ -228,3 +228,4 @@ export default function SandboxPage() {
     </main>
   );
 }
+

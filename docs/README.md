@@ -1,4 +1,4 @@
-# 趣灵 aha-flash 文档中心
+﻿# 趣灵 aha-flash 文档中心
 
 趣灵是一款 AI 原生交互式知识学习引擎。文档现在只维护少数核心文件，避免产品、规划、设计规范和实现记录互相重复。
 
@@ -38,6 +38,15 @@ npm run dev
 http://localhost:3000
 ```
 
+Round 4 路由：
+
+| 路由 | 用途 |
+|---|---|
+| `/explore` | 默认探索页，展示精选 Knowledge Flow 和知识图谱入口 |
+| `/studio` | 生成工作台，输入概念并实时生成互动组件 |
+| `/hub` | 个人知识图鉴，回看已学概念和资产 |
+| `/sandbox` | 旧知识沙盒兼容入口，后续导向 Hub |
+
 常用验证：
 
 ```bash
@@ -47,3 +56,4 @@ npm run eval:score
 ```
 
 没有配置 `DEEPSEEK_API_KEY` 时，应用会使用 mock schema fallback，方便本地演示和开发。
+

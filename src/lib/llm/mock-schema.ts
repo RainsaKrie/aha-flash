@@ -1,4 +1,4 @@
-import type { LearningDepth, UISchema } from "@/types/schema";
+import type { LearningDepth, UISchema } from "../../types/schema.ts";
 
 const OPTION_NEXT_CONCEPTS = [
   { label: "期货", relation: "同属衍生品，但期货更像约定未来必须交易" },

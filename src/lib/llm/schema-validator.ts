@@ -1,4 +1,4 @@
-import { z } from "zod";
+﻿import { z } from "zod";
 import {
   SCHEMA_CATALOG,
   V1_TO_V2_SCHEMA_MAP,
@@ -27,6 +27,14 @@ const MetaphorTraceZod = z
   })
   .optional();
 
+const VisualAssetZod = z
+  .object({
+    tag: z.string(),
+    mood: z.enum(["idle", "loading", "success", "error", "reward"]).optional(),
+    emoji: z.string().optional(),
+  })
+  .optional();
+
 const NextConceptsZod = z
   .array(
     z.object({
@@ -42,6 +50,7 @@ function schemaObject<TShape extends z.ZodRawShape>(shape: TShape) {
     ...shape,
     next_concepts: NextConceptsZod,
     depth: DepthZod,
+    visual_asset: VisualAssetZod,
   });
 }
 
@@ -405,6 +414,7 @@ interface KnownV2SchemaInput {
   version?: string;
   depth?: LearningDepth;
   next_concepts?: NextConcept[];
+  visual_asset?: unknown;
   payload: unknown;
 }
 
@@ -617,6 +627,7 @@ export function getKnownV2SchemaError(input: KnownV2SchemaInput) {
     version: input.version || "2.0",
     depth: input.depth,
     next_concepts: input.next_concepts,
+    visual_asset: input.visual_asset as never,
     payload: payloadResult.data as Record<string, unknown>,
   });
 
@@ -640,6 +651,7 @@ export function validateKnownV2Schema(input: KnownV2SchemaInput, options: Schema
     version: input.version || "2.0",
     depth: input.depth,
     next_concepts: input.next_concepts,
+    visual_asset: input.visual_asset as never,
     payload: payloadResult.data as Record<string, unknown>,
   } satisfies UISchema;
 
@@ -780,3 +792,5 @@ export function getSchemaFailureReason(text: string, options: SchemaValidationOp
 
   return "No JSON object found in model output.";
 }
+
+

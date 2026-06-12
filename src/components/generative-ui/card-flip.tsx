@@ -2,7 +2,7 @@
 
 import { CopyCheck } from "lucide-react";
 import { useState } from "react";
-import { ChoiceButton, ComponentFrame, EmptyState } from "./shared";
+import { ChoiceButton, ComponentFrame, EmptyState, GeneratedRichText, normalizeGeneratedText } from "./shared";
 import type { CardFlipConfig, InteractionEvent } from "@/types/schema";
 
 export function CardFlip({
@@ -21,7 +21,7 @@ export function CardFlip({
         {cards.length ? (
           cards.map((card, index) => (
           <ChoiceButton
-            key={card.front}
+            key={normalizeGeneratedText(card.front)}
             active={flipped[index]}
             onClick={() =>
               setFlipped((value) => {
@@ -38,8 +38,8 @@ export function CardFlip({
             <span className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
               {flipped[index] ? "meaning" : "term"}
             </span>
-            <span className="ui-result mt-4 block text-base font-medium leading-7">
-              {flipped[index] ? card.back : card.front}
+            <span className={`mt-4 block text-base font-medium leading-relaxed ${flipped[index] ? "ui-result" : ""}`}>
+              <GeneratedRichText value={flipped[index] ? card.back : card.front} />
             </span>
           </ChoiceButton>
           ))
