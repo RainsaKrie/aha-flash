@@ -6,6 +6,88 @@
 
 ## 2026-06-12
 
+
+
+### 首页路径化布局调整
+
+完成：
+- 将 `/explore` 的三张并列话题卡改为纵向学习路径，首张卡作为默认起点并增强视觉权重。
+- 顶栏新增“首页”入口并高亮当前页，导航高度提升到 56px。
+- 用“选择一个话题开始”替代证明条，减少自证式信息，强化行动引导。
+- 话题卡内部改为横向信息展开，降低纵向堆叠感，并保留移动端单列适配。
+
+---
+### 单行文案策略修正
+
+完成：
+- 将首页 Hero 副标题、展示卡片 hook、Hub 回顾文案改为源头短文案。
+- 明确“单行”不是 CSS 省略号策略，而是文案长度约束。
+- V5 页面取消关键标题/说明文字的 ellipsis 隐藏，避免超长文案被样式掩盖。
+
+---
+### 活泼奶油视觉方向收口
+
+完成：
+- 将 `docs/input-docs/input.md` 的长期视觉要求整合进产品文档，并明确该输入文档保留不删除。
+- 建立主蓝、行动橙、完成绿、辅助紫的配色优先级。
+- Explore / Hub 进入“单色实底按钮 + 白字”“一行标题/副标题”“奶油色块卡片”的统一方向。
+
+验证：
+- `npm run typecheck`
+- `npm run build`
+- `npm run eval:score`
+- `npm run eval:flow`
+
+---
+### 首页与 Hub 风格统一
+
+完成：
+- `/explore` 去除“作品演示”表达，改为更像正式 ToC 产品的精选学习入口。
+- 压缩首页 Hero 高度与标题尺度，收紧卡片区间距，减少下半屏空白感。
+- 顶栏品牌图标和导航按钮改为中性色，避免与三张主题卡抢色。
+- `/hub` 从绿色体系调整为中性暗色 + 暖白标签，统一按钮、图标、标签、弹窗和卡片圆角。
+
+验证：
+- `npm run typecheck`
+- `npm run build`
+- `npm run eval:score`
+- `npm run eval:flow`
+
+---
+### 首页多邻国式色彩收口
+
+完成：
+- `/explore` 作品集首页改为干净白底，移除原有绿/蓝径向渐变底色。
+- 首页主 CTA 改为中性近黑按钮，次级入口改为轻量文字链接，减少配色竞争。
+- 三张 showcase topic 卡片按知识类型注入独立主题色：概率紫、历史陶红、经济松石绿。
+- 卡片圆角、阴影、hover 上浮、装饰编号和分类标签统一改为更偏 ToC 游戏化的视觉语言。
+
+验证：
+- `npm run typecheck`
+- `npm run build`
+
+---
+### 文档整合与冗余收口
+
+完成：
+- 删除已完全吸收到 `PRODUCT.md` / `TECHNICAL.md` / `CHANGELOG.md` 的 `docs/input-docs/PRODUCT_V5.md` 与 `docs/input-docs/ROUND4_PLATFORM_TRANSFORMATION.md`，`input-docs/` 仅保留使用说明。
+- 更新 `docs/README.md`，将文档中心、公开体验路径和验证命令统一到当前 V5 作品集模式。
+- `output/` 加入 `.gitignore`，保留本地验证产物但不再污染 `git status`。
+- `FlowRouteClient` 改为复用 `isShowcaseFlowId()`，去掉重复维护的 LLM Flow ID 列表。
+- `/explore` 将 showcase flow 列表提升为模块级常量，减少 render 内重复计算。
+- `/flow/[flowId]` 的静态预渲染路径收敛到 3 条作品集 Flow，生产构建页面数从 23 降到 17。
+- 移除旧首页筛选遗留的未使用 `TOPIC_CATEGORIES` 常量。
+- 修复 lint 报告的同步 effect setState：Hub 的 localStorage 读取延后到异步回调，Flow 的触碰状态改为按 play id 记录。
+- 为抽卡转盘提供稳定空池常量，避免 `useMemo` 依赖因空数组字面量抖动。
+
+验证：
+- `npm run lint`
+- `npm run typecheck`
+- `npm run build`：仅预渲染 `/flow/bayes-starter`、`/flow/industrial-revolution`、`/flow/inflation-deflation`。
+- `npm run eval:score`：固定 32 用例 `overall: 1`。
+- `npm run eval:flow`：15 cases，3 flows，本地模式 `overall: 1`。
+
+---
 ### V5 作品集部署模式收口
 
 完成：
@@ -734,3 +816,33 @@
 注意：
 - `/tmp` 不提供长期持久化。
 - 生产记忆应迁移到 Vercel KV、Postgres、Redis 或其他数据库。
+
+### V5 Explore / Hub 统一视觉收口
+
+- 按 frontend-design skill 的方法先确定审美方向：玩具感学习路径 + 个人图鉴册。
+- Explore Hero 改为更短的产品表达“把概念玩明白。”，强化纵向学习路径和推荐起点。
+- Hub 重构为同款顶栏、图鉴封面、点亮统计胶囊、最近点亮主卡和主题色回看卡片墙。
+- Hub 空态与回顾弹窗统一为图鉴册语气，不再呈现 SaaS 数据面板风格。
+- Explore 与 Hub 共享白底、低饱和主题色、大圆角、厚 CTA 和胶囊标签规则。
+### V5 连续 Flow 分支
+
+- 新增 `FollowUpTopic` 与 `getFlowFollowUps()`，为每个 Flow 提供下一步知识分支。
+- Flow 最后一关完成后不再只回首页，改为展示“现在往哪走？”分支面板。
+- 分支可直接进入后续 `/flow/[flowId]`，并将所有 mock flows 纳入静态路径生成。
+- Hub 从卡片墙改为知识路径足迹，按用户走过的节点形成纵向旅程。
+- 当前 follow-up 先用静态 mock 验证体验，后续可接 LLM 输出 follow-up topic spec。
+
+### Hub 语义配色
+
+- 将 Hub 路径节点颜色从
+th-child 顺序轮换改为按知识语义映射。
+- 继续复用 V5 的主蓝、行动橙、完成绿、辅助紫，不新增配色体系。
+- 金融/经济记录现在稳定使用完成绿，数理/概率使用辅助紫，历史/时间线使用行动橙，技术/系统使用主蓝。
+
+### 文档状态与 AI 链路边界同步
+
+- 同步 `PRODUCT.md`、`TECHNICAL.md`、`README.md` 的 V5 V1 完成口径。
+- 明确真实 AI 链路：Studio `/api/chat` 与 showcase Flow `/api/flow` 已打通。
+- 明确 mock/静态边界：Explore 起点、follow-up 分支、非 showcase Flow、视觉资源和 Hub 本地记录。
+- 修正 Hub 技术描述：当前是知识路径足迹，不再是概念卡片墙。
+- 保留 `docs/input-docs/input.md` 与 `SKILL.md`，删除已整合的历史规划输入。

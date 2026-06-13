@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import type { GachaPoolItem, GachaSimulatorConfig, InteractionEvent } from "@/types/schema";
 import { ComponentFrame, EmptyState, FeedbackPanel, InlineSpinner, Panel } from "./shared";
 
+const EMPTY_GACHA_POOL: GachaPoolItem[] = [];
+
 function draw(pool: GachaPoolItem[]) {
   const roll = Math.random();
   let cursor = 0;
@@ -37,7 +39,7 @@ export function GachaSpinWheel({
   const [result, setResult] = useState<GachaPoolItem | null>(null);
   const [spinning, setSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
-  const pool = config.pool || [];
+  const pool = config.pool ?? EMPTY_GACHA_POOL;
   const topPrize = useMemo(
     () => pool.reduce<GachaPoolItem | null>((best, item) => (!best || item.value > best.value ? item : best), null),
     [pool],

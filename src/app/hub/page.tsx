@@ -1,10 +1,12 @@
 "use client";
 
-import { ArrowLeft, BookOpen, BrainCircuit, CheckCircle2, Compass, RotateCcw, Sparkles } from "lucide-react";
+import { BookOpen, BrainCircuit, CheckCircle2, Compass, Home, LibraryBig, RotateCcw, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { readCompletedFlows, readUserId, writeUserId, type CompletedFlowRecord } from "@/lib/utils/storage";
 import type { KnowledgeAsset, UserState } from "@/types/state";
+
+type HubTone = "blue" | "purple" | "orange" | "green";
 
 type HubCard = {
   id: string;
@@ -15,6 +17,7 @@ type HubCard = {
   kind: "flow" | "asset";
   learnedAt: string;
   meta: string;
+  tone: HubTone;
 };
 
 const EMPTY_ASSETS: KnowledgeAsset[] = [];
@@ -34,13 +37,35 @@ function unique(values: string[]) {
   return Array.from(new Set(values.filter(Boolean)));
 }
 
+function resolveHubTone(values: Array<string | undefined | null>, fallback: HubTone = "blue"): HubTone {
+  const text = values.filter(Boolean).join(" ").toLowerCase();
+
+  if (/(\u91d1\u878d|\u7ecf\u6d4e|\u80a1\u7968|\u671f\u6743|\u901a\u80c0|\u901a\u7f29|\u4f9b\u9700|\u4ef7\u683c|\u503a\u52a1|\u8d2d\u4e70\u529b|inflation|deflation|supply|demand|finance|stock|option)/i.test(text)) {
+    return "green";
+  }
+
+  if (/(\u5386\u53f2|\u5de5\u4e1a|\u9769\u547d|\u65f6\u95f4|\u6f14\u5316|process_timeline|narrative_branch|history|timeline|industrial)/i.test(text)) {
+    return "orange";
+  }
+
+  if (/(\u6570\u7406|\u6982\u7387|\u8d1d\u53f6\u65af|\u590d\u5229|\u7edf\u8ba1|\u5047\u8bbe|\u5206\u5e03|probability|simulation_play|bayes|statistics)/i.test(text)) {
+    return "purple";
+  }
+
+  if (/(\u79d1\u6280|\u7cfb\u7edf|\u6280\u672f|\u7f51\u7edc|dns|system_builder|concept_memory|knowledge_check|parameter_explore|technology|network|system)/i.test(text)) {
+    return "blue";
+  }
+
+  return fallback;
+}
+
 function assetSummary(asset: KnowledgeAsset) {
   const patternCopy: Record<string, string> = {
-    probability: "你用一次概率互动看见了不确定性如何被选择和成本包住。",
+    probability: "你看见了不确定性如何被选择和成本包住。",
     parameter_explore: "你拖动过关键变量，看见结果如何跟着变化。",
-    concept_memory: "你把几个关键词翻成了容易回忆的概念卡。",
-    process_timeline: "你沿着阶段走了一遍，看见变化不是孤立发生。",
-    comparison: "你把两个相近概念拆到不同维度里比较。",
+    concept_memory: "你把关键词翻成了容易回忆的概念卡。",
+    process_timeline: "你沿着阶段走了一遍，看见变化如何发生。",
+    comparison: "你把相近概念拆到不同维度里比较。",
     knowledge_check: "你通过一次判断题确认了概念边界。",
     system_builder: "你把模块拼进系统里，看见部分如何协作。",
     narrative_branch: "你走过一次选择分支，看见决策后果。",
@@ -59,6 +84,7 @@ function buildHubCards(flows: CompletedFlowRecord[], assets: KnowledgeAsset[]): 
     concepts: flow.concepts,
     kind: "flow" as const,
     learnedAt: flow.completed_at,
+    tone: resolveHubTone([flow.category, flow.title, flow.concept, flow.summary, ...flow.concepts]),
     meta: `${flow.completed_play_count} 关已点亮`,
   }));
 
@@ -73,6 +99,7 @@ function buildHubCards(flows: CompletedFlowRecord[], assets: KnowledgeAsset[]): 
       concepts: [asset.concept],
       kind: "asset" as const,
       learnedAt: asset.learned_at,
+      tone: resolveHubTone([asset.topic_area, asset.concept, asset.pattern, asset.template]),
       meta: `${asset.pattern} / ${asset.template}`,
     }));
 
@@ -86,7 +113,7 @@ export default function HubPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setCompletedFlows(readCompletedFlows());
+    const timer = window.setTimeout(() => setCompletedFlows(readCompletedFlows()), 0);
 
     async function boot() {
       try {
@@ -97,54 +124,57 @@ export default function HubPage() {
         writeUserId(nextState.user_id);
         setState(nextState);
       } catch {
-        setError("个人图鉴暂时无法读取状态，但本机通关记录仍可查看。歇一下再来，它会自己恢复。");
+        setError("图鉴暂时无法同步，本机记录仍可查看。");
       }
     }
 
     void boot();
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   const assets = state?.knowledge_assets ?? EMPTY_ASSETS;
   const cards = useMemo(() => buildHubCards(completedFlows, assets), [assets, completedFlows]);
+  const journeyCards = useMemo(() => [...cards].reverse(), [cards]);
   const conceptCount = unique([...completedFlows.flatMap((flow) => flow.concepts), ...assets.map((asset) => asset.concept)]).length;
   const completedPlayCount = completedFlows.reduce((sum, flow) => sum + flow.completed_play_count, 0);
   const latest = cards[0] || null;
 
   return (
-    <main className="hub-v5-screen">
-      <div className="hub-v5-shell">
-        <header className="hub-v5-topbar">
-          <Link href="/explore" className="hub-v5-back" aria-label="返回探索">
-            <ArrowLeft size={18} />
+    <main className="hub-v5-screen v5-showcase-shell hub-v5-book hub-v5-journey-book">
+      <header className="v5-topbar">
+        <Link href="/explore" className="brand-mark" aria-label="趣灵首页">
+          <span className="brand-mark__icon">
+            <BrainCircuit size={20} />
+          </span>
+          <span className="brand-mark__text">趣灵</span>
+        </Link>
+        <nav className="topbar-actions" aria-label="主导航">
+          <Link href="/explore" className="tool-button" title="回到首页">
+            <Home size={17} /> 首页
           </Link>
-          <div>
-            <p>MY HUB</p>
-            <h1>个人图鉴</h1>
-          </div>
-        </header>
+          <Link href="/hub" className="tool-button tool-button--active" aria-current="page" title="打开我的图鉴">
+            <LibraryBig size={16} /> 我的图鉴
+          </Link>
+        </nav>
+      </header>
 
-        <section className="hub-v5-hero">
-          <div className="hub-v5-hero__copy">
-            <p className="hub-v5-eyebrow">轻量回顾</p>
-            <h2>看看你刚刚点亮了什么。</h2>
-            <span>这里不做知识管理，只帮你在 30 秒内把已经玩过的机制重新捡起来。</span>
+      <div className="hub-v5-shell">
+        <section className="hub-v5-cover" aria-labelledby="hub-title">
+          <div className="hub-v5-cover__copy">
+            <p className="hub-v5-eyebrow">我的路径</p>
+            <h1 id="hub-title">你走过了 {cards.length} 个节点</h1>
+            <p>这里不是卡片仓库，而是你的知识足迹。</p>
+            <div className="hub-v5-cover__chips" aria-label="学习成就">
+              <span><CheckCircle2 size={17} /> {completedPlayCount} 关</span>
+              <span><BrainCircuit size={17} /> {conceptCount} 概念</span>
+              <span><Sparkles size={17} /> {completedFlows.length} 话题</span>
+            </div>
           </div>
-          <div className="hub-v5-stats" aria-label="学习成就">
-            <article>
-              <CheckCircle2 size={20} />
-              <strong>{completedPlayCount}</strong>
-              <span>已闯过关卡</span>
-            </article>
-            <article>
-              <BrainCircuit size={20} />
-              <strong>{conceptCount}</strong>
-              <span>邂逅概念</span>
-            </article>
-            <article>
-              <Sparkles size={20} />
-              <strong>{completedFlows.length}</strong>
-              <span>完成话题</span>
-            </article>
+          <div className="hub-v5-cover__badge" aria-hidden="true">
+            <LibraryBig size={38} />
+            <strong>{cards.length || "0"}</strong>
+            <span>个节点</span>
           </div>
         </section>
 
@@ -153,38 +183,46 @@ export default function HubPage() {
         {cards.length === 0 ? (
           <section className="hub-v5-empty">
             <div className="hub-v5-orb"><Compass size={30} /></div>
-            <h2>图鉴还没点亮</h2>
-            <p>去 Explore 选一个话题，完成三关后这里会出现你的第一张回顾卡。</p>
+            <h2>还没有走过的节点</h2>
+            <p>完成一个话题后，这里会生成你的路径。</p>
             <Link href="/explore" className="hub-v5-primary-action">
-              去探索话题
+              去点亮第一关
             </Link>
           </section>
         ) : (
-          <section className="hub-v5-content">
-            {latest && (
-              <button type="button" className="hub-v5-feature-card" onClick={() => setActiveCard(latest)}>
-                <span>最近点亮</span>
-                <h2>{latest.title}</h2>
-                <p>{latest.summary}</p>
-                <div>
-                  {latest.concepts.slice(0, 4).map((concept) => <strong key={concept}>{concept}</strong>)}
-                </div>
-              </button>
-            )}
+          <section className="hub-v5-journey" aria-label="知识路径足迹">
+            <header className="hub-v5-journey__header">
+              <div>
+                <p className="hub-v5-eyebrow">Journey Trail</p>
+                <h2>走过的路径</h2>
+              </div>
+              {latest && (
+                <button type="button" className="hub-v5-current-node" onClick={() => setActiveCard(latest)}>
+                  <span>最近点亮</span>
+                  <strong>{latest.title}</strong>
+                </button>
+              )}
+            </header>
 
-            <div className="hub-v5-card-grid">
-              {cards.map((card) => (
-                <button key={card.id} type="button" className="hub-v5-card" onClick={() => setActiveCard(card)}>
-                  <div className="hub-v5-card__topline">
-                    <span>{card.subtitle}</span>
-                    <small>{formatDate(card.learnedAt)}</small>
+            <div className="hub-v5-journey__rail">
+              {journeyCards.map((card, index) => (
+                <button key={card.id} type="button" className={`hub-v5-journey-node hub-v5-journey-node--${card.tone}`} onClick={() => setActiveCard(card)}>
+                  <span className="hub-v5-journey-node__index">{String(index + 1).padStart(2, "0")}</span>
+                  <div className="hub-v5-journey-node__body">
+                    <div className="hub-v5-journey-node__topline">
+                      <span>{card.subtitle}</span>
+                      <small>{formatDate(card.learnedAt)}</small>
+                    </div>
+                    <h3>{card.title}</h3>
+                    <p>{card.summary}</p>
+                    <div className="hub-v5-card__concepts">
+                      {card.concepts.slice(0, 3).map((concept) => <span key={concept}>{concept}</span>)}
+                    </div>
                   </div>
-                  <h3>{card.title}</h3>
-                  <p>{card.summary}</p>
-                  <div className="hub-v5-card__footer">
-                    <span>{card.meta}</span>
+                  <span className="hub-v5-journey-node__meta">
+                    {card.meta}
                     <BookOpen size={16} />
-                  </div>
+                  </span>
                 </button>
               ))}
             </div>

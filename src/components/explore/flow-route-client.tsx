@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { KnowledgeFlowPlayer } from "@/components/explore/knowledge-flow";
 import { SpiritHint } from "@/components/spirit-hint";
-import type { KnowledgeFlow } from "@/lib/content/mock-flows";
+import { isShowcaseFlowId, type KnowledgeFlow } from "@/lib/content/mock-flows";
 
 interface FlowApiResponse {
   flow: KnowledgeFlow;
@@ -12,19 +12,17 @@ interface FlowApiResponse {
   validation_error?: string;
 }
 
-const LLM_FLOW_IDS = new Set(["bayes-starter", "industrial-revolution", "inflation-deflation"]);
-
 export function FlowRouteClient({ flowId, fallbackFlow }: { flowId: string; fallbackFlow: KnowledgeFlow }) {
   const [flow, setFlow] = useState<KnowledgeFlow>(fallbackFlow);
   const [source, setSource] = useState<"llm" | "mock">("mock");
   const [error, setError] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(LLM_FLOW_IDS.has(flowId));
+  const [isGenerating, setIsGenerating] = useState(isShowcaseFlowId(flowId));
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadGeneratedFlow() {
-      if (!LLM_FLOW_IDS.has(flowId)) return;
+      if (!isShowcaseFlowId(flowId)) return;
       setIsGenerating(true);
       setError(null);
 

@@ -28,8 +28,6 @@ export interface KnowledgeFlow {
   plays: KnowledgePlay[];
 }
 
-export const TOPIC_CATEGORIES: TopicCategory[] = ["科技", "经济", "哲学", "心理", "历史", "数理"];
-
 function withAsset(schema: UISchema, visual_asset: VisualAssetHint): UISchema {
   return { ...schema, visual_asset };
 }
@@ -99,7 +97,7 @@ export const MOCK_KNOWLEDGE_FLOWS: KnowledgeFlow[] = [
     id: "bayes-starter",
     title: "贝叶斯入门",
     concept: "贝叶斯定理",
-    hook: "看到新证据时，怎样更新原来的判断？",
+    hook: "新证据会怎样改判断？",
     description: "用三关把先验、证据和后验连成一条判断更新链。",
     category: "数理",
     topic_area: "数理",
@@ -295,7 +293,7 @@ export const MOCK_KNOWLEDGE_FLOWS: KnowledgeFlow[] = [
     id: "industrial-revolution",
     title: "工业革命",
     concept: "工业革命",
-    hook: "为什么几台机器会改变整个社会的节奏？",
+    hook: "机器怎样改写社会节奏？",
     description: "沿着时间线看能源、工厂和城市如何互相推着走。",
     category: "历史",
     topic_area: "历史",
@@ -388,13 +386,13 @@ export const MOCK_KNOWLEDGE_FLOWS: KnowledgeFlow[] = [
     id: "inflation-deflation",
     title: "通胀 vs 通缩",
     concept: "通货膨胀与通货紧缩",
-    hook: "价格整体上涨和整体下跌，为什么都会影响普通人的选择？",
+    hook: "价格变动，怎样影响选择？",
     description: "用对比维度看价格、现金、债务和消费决策如何一起变化。",
     category: "经济",
     topic_area: "经济",
     difficulty: "轻松",
     estimated_minutes: 4,
-    summary: "通胀和通缩都会改变购买力、债务压力和人们的消费节奏。",
+    summary: "它们会改变购买力和消费节奏。",
     concepts: ["价格水平", "购买力", "债务压力"],
     plays: [
       makeQuiz(
@@ -449,7 +447,8 @@ export const MOCK_KNOWLEDGE_FLOWS: KnowledgeFlow[] = [
         { tag: "check-spark", mood: "reward" },
       ),
     ],
-  },  {
+  },
+  {
     id: "supply-demand",
     title: "供需曲线",
     concept: "供需",
@@ -471,13 +470,168 @@ export const MOCK_KNOWLEDGE_FLOWS: KnowledgeFlow[] = [
 
 export const SHOWCASE_FLOW_IDS = ["bayes-starter", "industrial-revolution", "inflation-deflation"] as const;
 
+export function isShowcaseFlowId(id: string) {
+  return SHOWCASE_FLOW_IDS.includes(id as (typeof SHOWCASE_FLOW_IDS)[number]);
+}
+
 export function getShowcaseFlows() {
   return SHOWCASE_FLOW_IDS.map((id) => findFlowById(id)).filter((flow): flow is KnowledgeFlow => Boolean(flow));
 }
+
 export function getFlowById(id: string) {
   return MOCK_KNOWLEDGE_FLOWS.find((flow) => flow.id === id) || MOCK_KNOWLEDGE_FLOWS[0];
 }
 
 export function findFlowById(id: string) {
   return MOCK_KNOWLEDGE_FLOWS.find((flow) => flow.id === id);
+}
+
+export interface FollowUpTopic {
+  id: string;
+  title: string;
+  concept: string;
+  hook: string;
+  relation: string;
+  kind: "curated" | "ai_seed";
+  target_flow_id: string;
+}
+
+const FLOW_FOLLOW_UPS: Record<string, FollowUpTopic[]> = {
+  "bayes-starter": [
+    {
+      id: "bayes-to-compound",
+      title: "去看复利",
+      concept: "复利",
+      hook: "同样是累积更新，只是变量换成时间。",
+      relation: "从判断更新走向增长反馈",
+      kind: "curated",
+      target_flow_id: "compound-interest",
+    },
+    {
+      id: "bayes-to-supply",
+      title: "试试供需",
+      concept: "供需曲线",
+      hook: "把证据强弱换成市场信号。",
+      relation: "从概率证据走向价格信号",
+      kind: "ai_seed",
+      target_flow_id: "supply-demand",
+    },
+    {
+      id: "bayes-to-inflation",
+      title: "连接通胀",
+      concept: "通胀 vs 通缩",
+      hook: "判断会变，人的选择也会变。",
+      relation: "从个人判断走向群体预期",
+      kind: "curated",
+      target_flow_id: "inflation-deflation",
+    },
+  ],
+  "industrial-revolution": [
+    {
+      id: "industrial-to-dns",
+      title: "拆一个系统",
+      concept: "DNS 解析",
+      hook: "从工厂系统换到网络系统。",
+      relation: "从历史连锁走向系统协作",
+      kind: "ai_seed",
+      target_flow_id: "dns-router",
+    },
+    {
+      id: "industrial-to-supply",
+      title: "看供需变化",
+      concept: "供需曲线",
+      hook: "机器改变供给，价格跟着移动。",
+      relation: "从生产方式走向市场信号",
+      kind: "curated",
+      target_flow_id: "supply-demand",
+    },
+    {
+      id: "industrial-to-inflation",
+      title: "接到经济波动",
+      concept: "通胀 vs 通缩",
+      hook: "产能、价格和消费互相推着走。",
+      relation: "从社会节奏走向价格预期",
+      kind: "curated",
+      target_flow_id: "inflation-deflation",
+    },
+  ],
+  "inflation-deflation": [
+    {
+      id: "inflation-to-supply",
+      title: "追到供需",
+      concept: "供需曲线",
+      hook: "价格为什么动，先看两股力量。",
+      relation: "从价格结果走向市场机制",
+      kind: "curated",
+      target_flow_id: "supply-demand",
+    },
+    {
+      id: "inflation-to-bayes",
+      title: "回到判断",
+      concept: "贝叶斯定理",
+      hook: "新数据会改写你的预期。",
+      relation: "从经济预期走向判断更新",
+      kind: "curated",
+      target_flow_id: "bayes-starter",
+    },
+    {
+      id: "inflation-to-marginal",
+      title: "看边际选择",
+      concept: "边际效应",
+      hook: "价格变了，下一步值不值得也变了。",
+      relation: "从宏观价格走向个人选择",
+      kind: "ai_seed",
+      target_flow_id: "marginal-effect",
+    },
+  ],
+  "compound-interest": [
+    {
+      id: "compound-to-bayes",
+      title: "回到更新",
+      concept: "贝叶斯定理",
+      hook: "增长会累积，判断也会更新。",
+      relation: "从时间反馈走向证据反馈",
+      kind: "curated",
+      target_flow_id: "bayes-starter",
+    },
+    {
+      id: "compound-to-marginal",
+      title: "看下一步值不值",
+      concept: "边际效应",
+      hook: "不是总量，而是下一步变化。",
+      relation: "从累积增长走向边际判断",
+      kind: "curated",
+      target_flow_id: "marginal-effect",
+    },
+  ],
+  "supply-demand": [
+    {
+      id: "supply-to-inflation",
+      title: "接到通胀",
+      concept: "通胀 vs 通缩",
+      hook: "价格水平移动后，选择会变化。",
+      relation: "从局部市场走向整体价格",
+      kind: "curated",
+      target_flow_id: "inflation-deflation",
+    },
+    {
+      id: "supply-to-marginal",
+      title: "拆到个人选择",
+      concept: "边际效应",
+      hook: "市场变化最终落到下一次选择。",
+      relation: "从市场均衡走向个体决策",
+      kind: "ai_seed",
+      target_flow_id: "marginal-effect",
+    },
+  ],
+};
+
+const DEFAULT_FOLLOW_UPS = FLOW_FOLLOW_UPS["bayes-starter"];
+
+export function getFlowFollowUps(flowId: string) {
+  return FLOW_FOLLOW_UPS[flowId] || DEFAULT_FOLLOW_UPS;
+}
+
+export function getAllFlows() {
+  return MOCK_KNOWLEDGE_FLOWS;
 }

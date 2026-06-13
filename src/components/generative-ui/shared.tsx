@@ -200,7 +200,7 @@ export function FeedbackPanel({
 }) {
   const toneClass =
     tone === "success"
-      ? "border-[rgba(53,230,155,0.42)] bg-[rgba(53,230,155,0.1)] text-[var(--accent)] animate-success-flash"
+      ? "border-[rgba(34,197,94,0.46)] bg-[rgba(34,197,94,0.12)] text-[#166534] animate-success-flash"
       : tone === "danger"
         ? "border-[rgba(255,107,107,0.42)] bg-[rgba(255,107,107,0.08)] text-[var(--danger)] animate-error-shake"
         : tone === "warning"
@@ -241,7 +241,7 @@ export function ChoiceButton({
 }) {
   const stateClass =
     correct === true
-      ? "border-[var(--accent)] bg-[rgba(53,230,155,0.12)] text-[var(--text)]"
+      ? "border-[rgba(34,197,94,0.62)] bg-[rgba(34,197,94,0.12)] text-[#14532d]"
       : correct === false
         ? "border-[var(--danger)] bg-[rgba(255,107,107,0.08)] text-[var(--text)]"
       : active

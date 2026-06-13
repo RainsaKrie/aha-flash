@@ -1,35 +1,32 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, CheckCircle2, Home, RotateCcw, Sparkles, X } from "lucide-react";
+import { ArrowRight, CheckCircle2, GitBranch, Home, RotateCcw, Sparkles, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { renderBySchema } from "@/components/generative-ui/registry";
 import { SpiritHint } from "@/components/spirit-hint";
 import { getVisualAsset } from "@/lib/content/visual-assets";
+import { getFlowFollowUps, type KnowledgeFlow } from "@/lib/content/mock-flows";
 import { recordCompletedFlow } from "@/lib/utils/storage";
-import type { KnowledgeFlow } from "@/lib/content/mock-flows";
 import { normalizeUISchema, type InteractionEvent } from "@/types/schema";
 
 export function KnowledgeFlowPlayer({ flow }: { flow: KnowledgeFlow }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
-  const [hasTouchedStage, setHasTouchedStage] = useState(false);
+  const [touchedPlayIds, setTouchedPlayIds] = useState<string[]>([]);
 
   const activePlay = flow.plays[activeIndex] || flow.plays[0];
   const normalized = useMemo(() => normalizeUISchema(activePlay.schema), [activePlay.schema]);
+  const followUps = useMemo(() => getFlowFollowUps(flow.id), [flow.id]);
   const asset = getVisualAsset(normalized.pattern, normalized.visual_asset);
   const isCompleted = completedIds.includes(activePlay.id);
+  const hasTouchedStage = isCompleted || touchedPlayIds.includes(activePlay.id);
   const hasNext = activeIndex < flow.plays.length - 1;
   const progress = Math.round(((activeIndex + (isCompleted ? 1 : 0)) / flow.plays.length) * 100);
-  const showSummary = isCompleted && !hasNext;
+  const showBranches = isCompleted && !hasNext;
 
-  useEffect(() => {
-    setHasTouchedStage(completedIds.includes(activePlay.id));
-  }, [activePlay.id, completedIds]);
-
-  useEffect(() => {
-    if (!showSummary) return;
+  function persistCompletion() {
     recordCompletedFlow({
       flow_id: flow.id,
       title: flow.title,
@@ -39,10 +36,19 @@ export function KnowledgeFlowPlayer({ flow }: { flow: KnowledgeFlow }) {
       concepts: flow.concepts,
       completed_play_count: flow.plays.length,
     });
-  }, [flow, showSummary]);
+  }
+
+  useEffect(() => {
+    if (!showBranches) return;
+    persistCompletion();
+  }, [flow, showBranches]);
+
+  function touchStage() {
+    setTouchedPlayIds((ids) => (ids.includes(activePlay.id) ? ids : [...ids, activePlay.id]));
+  }
 
   function markComplete(_event?: InteractionEvent) {
-    setHasTouchedStage(true);
+    touchStage();
     setCompletedIds((ids) => (ids.includes(activePlay.id) ? ids : [...ids, activePlay.id]));
   }
 
@@ -54,7 +60,7 @@ export function KnowledgeFlowPlayer({ flow }: { flow: KnowledgeFlow }) {
   function restart() {
     setActiveIndex(0);
     setCompletedIds([]);
-    setHasTouchedStage(false);
+    setTouchedPlayIds([]);
   }
 
   return (
@@ -87,24 +93,34 @@ export function KnowledgeFlowPlayer({ flow }: { flow: KnowledgeFlow }) {
         </div>
 
         <AnimatePresence mode="wait">
-          {showSummary ? (
+          {showBranches ? (
             <motion.div
-              key="summary"
-              className="v5-flow-summary"
+              key="branches"
+              className="v5-flow-summary v5-flow-branch-panel"
               initial={{ opacity: 0, y: 18, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.28, ease: "easeOut" }}
             >
               <Sparkles size={30} />
-              <p>本话题完成</p>
-              <h2>已掌握 {flow.concepts.length} 个概念</h2>
+              <p>这个节点已点亮</p>
+              <h2>现在往哪走？</h2>
+              <strong>{flow.summary}</strong>
               <div className="v5-flow-summary__chips">
                 {flow.concepts.map((concept) => (
                   <span key={concept}>{concept}</span>
                 ))}
               </div>
-              <strong>{flow.summary}</strong>
+              <div className="v5-flow-branches" aria-label="下一步知识分支">
+                {followUps.map((topic) => (
+                  <Link key={topic.id} href={`/flow/${topic.target_flow_id}`} className="v5-flow-branch-card" onClick={persistCompletion}>
+                    <span><GitBranch size={16} /> {topic.kind === "ai_seed" ? "AI 延伸" : "精选路径"}</span>
+                    <h3>{topic.title}</h3>
+                    <p>{topic.hook}</p>
+                    <small>{topic.relation}</small>
+                  </Link>
+                ))}
+              </div>
             </motion.div>
           ) : (
             <motion.div
@@ -114,10 +130,10 @@ export function KnowledgeFlowPlayer({ flow }: { flow: KnowledgeFlow }) {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -24 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
-              onPointerDown={() => setHasTouchedStage(true)}
+              onPointerDown={touchStage}
             >
               {renderBySchema(activePlay.schema, {
-                onInteraction: () => setHasTouchedStage(true),
+                onInteraction: touchStage,
                 onComplete: (event) => markComplete(event),
               })}
             </motion.div>
@@ -127,11 +143,13 @@ export function KnowledgeFlowPlayer({ flow }: { flow: KnowledgeFlow }) {
 
       <footer className="v5-flow-actionbar" data-state={isCompleted ? "success" : hasTouchedStage ? "ready" : "idle"}>
         <SpiritHint tone={isCompleted ? "reward" : hasTouchedStage ? "idle" : "neutral"} compact title="趣灵">
-          {isCompleted
-            ? activePlay.reward_copy
-            : hasTouchedStage
-              ? "准备好了就检查这一关。"
-              : "先和中间的卡片互动一下，再看反馈。"}
+          {showBranches
+            ? "选一个分支继续走；只有想换领域时，再回首页。"
+            : isCompleted
+              ? activePlay.reward_copy
+              : hasTouchedStage
+                ? "准备好了就检查这一关。"
+                : "先和中间的卡片互动一下，再看反馈。"}
         </SpiritHint>
 
         <div className="v5-flow-actionbar__buttons">
@@ -145,13 +163,13 @@ export function KnowledgeFlowPlayer({ flow }: { flow: KnowledgeFlow }) {
               继续下一关 <ArrowRight size={18} />
             </button>
           )}
-          {showSummary && (
+          {showBranches && (
             <>
-              <Link href="/explore" className="v5-flow-main-action">
-                <Home size={18} /> 继续探索
+              <Link href="/explore" className="v5-flow-secondary-action" onClick={showBranches ? persistCompletion : undefined}>
+                <Home size={17} /> 换个起点
               </Link>
               <button type="button" className="v5-flow-secondary-action" onClick={restart}>
-                <RotateCcw size={17} /> 再玩一遍
+                <RotateCcw size={17} /> 再走一遍
               </button>
             </>
           )}

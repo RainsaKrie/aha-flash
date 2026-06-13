@@ -217,7 +217,7 @@ V5 的主体验从“输入生成组件”改为“浏览话题 -> 全屏 Flow �
 | `/` | 默认跳转 Explore | - | 入口页不承载聊天流 |
 | `/explore` | 作品集首页：3 个精选 topic 卡、随机开始、Hub 入口 | `getShowcaseFlows()` | 公开链接优先展示完整垂直切片，不暴露未完成产品入口 |
 | `/flow/[flowId]` | 全屏三段式闯关：退出/进度条、单组件舞台、底部操作台 | `KnowledgeFlow` | V5 核心体验 |
-| `/hub` | 已闯关数、邂逅概念数、概念卡片墙、快速回顾 | `/api/state` + 本地 mock | 轻量回顾，不做知识管理 |
+| `/hub` | 知识路径足迹、节点回看、完成统计 | localStorage + `/api/state` | 轻量图鉴，不做知识管理 |
 | `/studio` | 内部生成工作台 / 技术验证入口 | `/api/chat` | V5 V1 不作为主导航入口 |
 | `/sandbox` | 旧知识沙盒兼容入口 | `/api/state` | 不再作为公开主入口 |
 
@@ -268,7 +268,7 @@ Flow 渲染规则：
 
 Flow Steps 生成策略：
 
-- 当前 V5 第一阶段由 `src/lib/content/mock-flows.ts` 提供 8 个手工精选话题。
+- `src/lib/content/mock-flows.ts` 保留一组内部 mock Flow 库；公开作品集首页只通过 `SHOWCASE_FLOW_IDS` 暴露三条已验证垂直切片。
 - `src/lib/content/flow-generation.ts` 以 topic spec 驱动 Flow Steps 生成，当前 LLM topic 包括 `bayes-starter`、`industrial-revolution`、`inflation-deflation`。
 - Flow 生成先走 LLM，失败时回退对应 mock Flow，不影响用户继续闯关；未接入 LLM 的 Flow 保持 mock。
 - Flow 生成器会校验每个 step 的 `UISchema`，并对常见字段漂移做轻量修复，例如 `options[].text -> label`、`cards[].term -> front`、`events/stages/milestones -> events`、`comparison_dimensions/rows -> dimensions`、`scenarios[].name -> label`、`insight_rules[].description -> text`。
@@ -438,7 +438,7 @@ Flow：
 
 Hub：
 
-- 展示“已闯过 X 关 | 邂逅了 Y 个概念”和概念卡片墙。
+- 展示“已闯过 X 关 | 邂逅了 Y 个概念”和知识路径足迹。
 - Flow 完成后由 `recordCompletedFlow()` 写入 `localStorage`，记录 flowId、标题、概念、分类、摘要、概念列表、完成关卡数和完成时间。
 - `/hub` 合并本地 Flow 完成记录与 `/api/state` 的 `knowledge_assets`，按最近学习时间排序，并对 Flow 已覆盖概念做去重。
 - 状态接口失败时，Hub 仍展示本地完成记录并给出轻量提示，避免个人页完全空白。
@@ -540,4 +540,30 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 - 当前 mock schema 仍承担较多验收输入路由。
 - 追问检测和路由分类已默认改为规则判别，后续需要真实对话样本回归。
 - 当前流式生成是 `/api/chat` 的 NDJSON 阶段事件流，最后仍以完整 Schema 渲染；后续如需边生成边预览，需要重新设计增量 Schema 协议。
-- V5 Explore/Flow/Hub 先使用前端 mock 和本地状态；Flow Steps LLM 生成、真实埋点、账号和生产持久化仍未实现。
+- V5 Explore 是静态精选入口；showcase Flow 已接入 `/api/flow` LLM 生成并保留 mock fallback；Hub 使用本地完成记录和 `/api/state`。真实埋点、账号系统、生产级持久化仍未实现。
+
+<!-- AI_CHAIN_STATUS_START -->
+## 21. 当前 AI 链路与 mock 边界（2026-06-13）
+
+### 已打通的真实 AI 链路
+
+| 链路 | 入口 | 说明 |
+|---|---|---|
+| 互动组件生成 | `/studio` -> `/api/chat` | 使用 DeepSeek，经 Tool Calling 优先生成 10 类 Pattern Schema；失败进入 JSON fallback；最终 mock fallback 防崩。 |
+| Flow Steps 生成 | `/flow/[flowId]` -> `/api/flow` | `bayes-starter`、`industrial-revolution`、`inflation-deflation` 会请求 LLM 生成三关 Flow，失败回退本地 Flow。 |
+| 状态更新 | `/api/chat` + `/api/state` | 规则优先更新当前线程、知识资产和轻量状态；不是每一步都调用 LLM。 |
+
+### 当前仍是 mock / 静态的部分
+
+| 功能 | 当前实现 | 原因 |
+|---|---|---|
+| Explore topic 列表 | `getShowcaseFlows()` 静态精选 3 个起点 | 作品集要保证 3 分钟稳定体验，不做动态信息流。 |
+| Follow-up topic 分支 | `getFlowFollowUps()` 静态映射 | 先验证连续知识穿行体验，后续再接 LLM 生成 follow-up topic spec。 |
+| 非 showcase Flow | `mock-flows.ts` 本地 Flow | 用作分支可继续走的稳定内容池。 |
+| Hub 图鉴 | localStorage + `/api/state` | 记录真实本机完成路径，但不做账号级持久化。 |
+| 视觉资源 | `visual-assets.ts` 本地 registry | `visual_asset` 是增强提示，不调用外部图像生成。 |
+
+### 完成口径
+
+V5 V1 的“求职作品集体验”已经具备：`Explore -> Flow 三关 -> 分支继续 -> Hub 路径记录`。未实现项集中在生产化能力：账号、数据库、真实社区发布、审核、真实埋点和跨设备同步。
+<!-- AI_CHAIN_STATUS_END -->

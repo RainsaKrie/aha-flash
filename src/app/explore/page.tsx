@@ -1,18 +1,18 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, BrainCircuit, Gauge, LibraryBig, Shuffle, Timer } from "lucide-react";
+import { ArrowRight, BrainCircuit, Gauge, Home, LibraryBig, Shuffle, Timer } from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { getShowcaseFlows } from "@/lib/content/mock-flows";
 
+const SHOWCASE_FLOWS = getShowcaseFlows();
+
 export default function ExplorePage() {
   const router = useRouter();
-  const showcaseFlows = useMemo(() => getShowcaseFlows(), []);
 
   function startRandomFlow() {
-    const pool = showcaseFlows.length > 0 ? showcaseFlows : getShowcaseFlows();
+    const pool = SHOWCASE_FLOWS.length > 0 ? SHOWCASE_FLOWS : getShowcaseFlows();
     const next = pool[Math.floor(Math.random() * pool.length)];
     if (next) router.push(`/flow/${next.id}`);
   }
@@ -27,18 +27,19 @@ export default function ExplorePage() {
           <span className="brand-mark__text">趣灵</span>
         </Link>
         <nav className="topbar-actions" aria-label="主导航">
-          <Link href="/hub" className="tool-button" title="打开个人图鉴">
+          <Link href="/explore" className="tool-button tool-button--active" aria-current="page" title="回到首页">
+            <Home size={17} /> 首页
+          </Link>
+          <Link href="/hub" className="tool-button" title="打开我的图鉴">
             <LibraryBig size={16} /> 我的图鉴
           </Link>
         </nav>
       </header>
 
       <section className="v5-explore-hero v5-showcase-hero" aria-labelledby="explore-title">
-        <p className="v5-eyebrow">3 分钟作品演示</p>
-        <h1 id="explore-title">点开一个话题，直接玩完三关。</h1>
-        <p>
-          这是趣灵的最小可体验版本：三个精选概念、三种知识类型、完整闯关和图鉴记录。打开链接就能看见 AI 原生交互学习的核心能力。
-        </p>
+        <p className="v5-eyebrow">精选 · AI 原生交互学习</p>
+        <h1 id="explore-title">把概念玩明白。</h1>
+        <p>三种知识路径，三关点亮一个概念。</p>
         <div className="v5-showcase-actions">
           <button type="button" className="v5-primary-button" onClick={startRandomFlow}>
             <Shuffle size={18} /> 随机开始一关
@@ -47,16 +48,16 @@ export default function ExplorePage() {
             查看完成记录 <ArrowRight size={16} />
           </Link>
         </div>
-        <div className="v5-proof-strip" aria-label="作品集验收点">
-          <span>3 个精选 topic</span>
-          <span>每个 3 关可走完</span>
-          <span>完成后写入 Hub</span>
-        </div>
       </section>
 
-      <section className="v5-topic-grid v5-topic-grid--showcase" aria-label="精选演示话题">
-        {showcaseFlows.map((flow, index) => (
+      <section className="v5-topic-grid v5-topic-grid--showcase" aria-label="选择一个话题开始">
+        <header className="v5-topic-section-header">
+          <span>学习路径</span>
+          <h2>选择一个话题开始</h2>
+        </header>
+        {SHOWCASE_FLOWS.map((flow, index) => (
           <motion.div
+            className="v5-topic-card-shell"
             key={flow.id}
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
@@ -67,8 +68,7 @@ export default function ExplorePage() {
                 <span>{flow.category}</span>
                 <span>{flow.difficulty}</span>
               </div>
-              <div>
-                <span className="v5-topic-card__index">0{index + 1}</span>
+              <div className="v5-topic-card__body">
                 <h2>{flow.title}</h2>
                 <p>{flow.hook}</p>
               </div>
@@ -78,8 +78,10 @@ export default function ExplorePage() {
                 ))}
               </div>
               <div className="v5-topic-card__footer">
-                <span><Timer size={15} /> {flow.estimated_minutes} 分钟</span>
-                <span><Gauge size={15} /> {flow.plays.length} 关</span>
+                <span className="v5-topic-card__meta">
+                  <span><Timer size={15} /> {flow.estimated_minutes} 分钟</span>
+                  <span><Gauge size={15} /> {flow.plays.length} 关</span>
+                </span>
                 <strong>开始 <ArrowRight size={15} /></strong>
               </div>
             </Link>
