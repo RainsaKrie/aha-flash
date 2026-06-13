@@ -1,6 +1,6 @@
 # 趣灵 aha-flash 文档中心
 
-趣灵当前以 V5 作品集模式对外展示：一个链接打开后，面试官能在 3 分钟内看到 3 个精选 topic、完整三关 Flow 和 Hub 完成记录。文档只保留核心事实，避免规划稿、产品说明和实现记录互相重复。
+趣灵当前以 V5 自由生成 Flow 模式对外展示：一个链接打开后，用户可以输入任意知识点，选择 AI 推荐或指定 Pattern，生成三关互动 Flow；三条精选 topic 保留为稳定示例入口。文档只保留核心事实，避免规划稿、产品说明和实现记录互相重复。
 
 ## 当前文档
 
@@ -41,8 +41,9 @@ http://localhost:3000
 | 路由 | 用途 |
 |---|---|
 | `/` | 默认跳转 `/explore` |
-| `/explore` | 作品集首页，固定展示 3 个精选 topic 和 Hub 入口 |
-| `/flow/[flowId]` | 全屏三关 Flow，当前展示 topic 为 `bayes-starter`、`industrial-revolution`、`inflation-deflation` |
+| `/explore` | 自由生成主入口：输入任意 topic、选择 AI 推荐或 10 类 Pattern；三条精选 topic 作为示例起点 |
+| `/flow/[flowId]` | 全屏三关精选 Flow，当前稳定示例为 `bayes-starter`、`industrial-revolution`、`inflation-deflation` |
+| `/flow/custom` | 播放 sessionStorage 中的动态生成 Flow，缺失草稿时引导回 `/explore` 重新生成 |
 | `/hub` | 轻量个人图鉴，展示本机完成记录和快速回顾 |
 | `/studio` | 内部生成工作台 / 技术验证入口，不作为公开主体验 |
 | `/sandbox` | 旧知识沙盒兼容入口，不在公开主导航强调 |
@@ -59,10 +60,10 @@ npm run eval:flow
 没有配置 `DEEPSEEK_API_KEY` 时，应用会使用 mock fallback，公开作品集三条 Flow 仍可完整走完。
 <!-- DOCS_STATUS_START -->
 ## 当前状态速览（2026-06-13）
-
-- V5 V1 作品集体验已完成：`/explore` 选起点，`/flow/[flowId]` 完成三关并选择下一步分支，`/hub` 查看走过的路径。
-- 真实 AI 主链路已打通：`/studio` 调用 `/api/chat`，showcase Flow 调用 `/api/flow`。
-- 稳定 mock 边界已明确：Explore 列表、follow-up 分支、非 showcase Flow、视觉资源和 Hub 本地记录仍以静态/本地数据保证演示稳定。
-- 当前未完成项不属于 V5 V1：账号、多设备同步、生产数据库、真实社区发布、审核后台、真实埋点和 T38 API Key 额度方案。
-- `docs/input-docs/input.md` 是用户指定的持续输入文档，保留；`docs/input-docs/SKILL.md` 是前端设计参考，保留。
+- V5 主入口已从“3 个固定 topic 作品集”升级为“首页自由输入任意知识 -> AI 生成三关 Flow -> 完成后继续选择分支”。
+- `/explore` 现在提供自由输入框和 Pattern 选择器：默认 `AI 推荐`，也可手选 10 类 Pattern；三张精选卡片保留为示例起点。
+- 真实 AI 主链路已打通：`/studio` 调用 `/api/chat` 生成单组件；`/api/flow` 的 `GET` 支持三条 showcase Flow，`POST` 支持任意 topic 动态 Flow。
+- 动态 Flow 只保存在当前浏览器会话：Explore 写入 sessionStorage，`/flow/custom?draftId=...` 播放；完成记录继续写入 Hub localStorage。
+- mock 边界已调整：无 API key 或 LLM 失败时，动态 Flow 回退为“按用户 topic 包装的通用 fallback Flow”，不再固定退回贝叶斯/工业革命/通胀。
+- 当前未做：账号、数据库、跨设备同步、真实社区发布、审核后台、真实埋点和生产级持久化。
 <!-- DOCS_STATUS_END -->

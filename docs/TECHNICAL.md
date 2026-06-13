@@ -162,7 +162,8 @@ POST /api/chat
 }
 ```
 
-`normalizeUISchema()` 会把 V1/V2 统一转成：
+
+ormalizeUISchema()` 会把 V1/V2 统一转成：
 
 ```ts
 {
@@ -215,8 +216,9 @@ V5 的主体验从“输入生成组件”改为“浏览话题 -> 全屏 Flow �
 | Route | V5 职责 | 数据来源 | 备注 |
 |---|---|---|---|
 | `/` | 默认跳转 Explore | - | 入口页不承载聊天流 |
-| `/explore` | 作品集首页：3 个精选 topic 卡、随机开始、Hub 入口 | `getShowcaseFlows()` | 公开链接优先展示完整垂直切片，不暴露未完成产品入口 |
-| `/flow/[flowId]` | 全屏三段式闯关：退出/进度条、单组件舞台、底部操作台 | `KnowledgeFlow` | V5 核心体验 |
+| `/explore` | 自由生成主入口：输入任意 topic、选择 AI 推荐或指定 Pattern；三条精选 topic 作为示例起点 | `POST /api/flow` + `getShowcaseFlows()` | 公开链接优先展示“想学什么就生成什么”的核心能力 |
+| `/flow/[flowId]` | 全屏三段式精选闯关：退出/进度条、单组件舞台、底部操作台 | `KnowledgeFlow` | curated 示例体验 |
+| `/flow/custom` | 播放当前浏览器会话中的动态 Flow | sessionStorage | Explore 写入 draft，Custom Flow 页读取并复用播放器 |
 | `/hub` | 知识路径足迹、节点回看、完成统计 | localStorage + `/api/state` | 轻量图鉴，不做知识管理 |
 | `/studio` | 内部生成工作台 / 技术验证入口 | `/api/chat` | V5 V1 不作为主导航入口 |
 | `/sandbox` | 旧知识沙盒兼容入口 | `/api/state` | 不再作为公开主入口 |
@@ -268,7 +270,7 @@ Flow 渲染规则：
 
 Flow Steps 生成策略：
 
-- `src/lib/content/mock-flows.ts` 保留一组内部 mock Flow 库；公开作品集首页只通过 `SHOWCASE_FLOW_IDS` 暴露三条已验证垂直切片。
+- `src/lib/content/mock-flows.ts` 保留一组内部 mock Flow 库；`SHOWCASE_FLOW_IDS` 只作为 `/explore` 的稳定示例起点，不代表系统能力上限。
 - `src/lib/content/flow-generation.ts` 以 topic spec 驱动 Flow Steps 生成，当前 LLM topic 包括 `bayes-starter`、`industrial-revolution`、`inflation-deflation`。
 - Flow 生成先走 LLM，失败时回退对应 mock Flow，不影响用户继续闯关；未接入 LLM 的 Flow 保持 mock。
 - Flow 生成器会校验每个 step 的 `UISchema`，并对常见字段漂移做轻量修复，例如 `options[].text -> label`、`cards[].term -> front`、`events/stages/milestones -> events`、`comparison_dimensions/rows -> dimensions`、`scenarios[].name -> label`、`insight_rules[].description -> text`。
@@ -277,11 +279,15 @@ Flow Steps 生成策略：
 - `process_timeline` 会归一化 4-6 个阶段事件，保证每个事件都有短 label 和因果 description。
 - `comparison` 会归一化 left/right、subject_a/subject_b 和 dimensions，保证对比维度平行可切换。
 - `reward_copy` 使用克制型知识反馈，发现“工具箱更新了 / 卡片已入库 / 魔力 / 升级版”等过度游戏化表达时回退为“你又想通了一层”。
-- `npm run eval:flow-manual -- --runs=10 --url=http://127.0.0.1:<port>/api/flow?flowId=<flowId>` 用于手动采样，生成 Markdown 供人工判断 10 次里是否至少 8 次产生“啊哈感”；本阶段稳定性收口目标提高到 9/10 以上。
+-
+pm run eval:flow-manual -- --runs=10 --url=http://127.0.0.1:<port>/api/flow?flowId=<flowId>` 用于手动采样，生成 Markdown 供人工判断 10 次里是否至少 8 次产生“啊哈感”；本阶段稳定性收口目标提高到 9/10 以上。
 - 2026-06-11 采样：`bayes-starter` 10/10 `source=llm`，无 schema fallback。
-- 2026-06-12 采样：`industrial-revolution` 10/10 `source=llm`，`inflation-deflation` 10/10 `source=llm`；固定回归 `npm run eval:score` 保持 `overall: 1`。
+- 2026-06-12 采样：`industrial-revolution` 10/10 `source=llm`，`inflation-deflation` 10/10 `source=llm`；固定回归
+pm run eval:score` 保持 `overall: 1`。
 - Flow Steps 已纳入第一版自动 Eval：`tests/fixtures/flow-cases.json` 覆盖 probability / timeline / comparison 三种知识类型，每类 5 个固定检查点；`tests/eval/flow-score.ts` 检查步骤数量、Pattern 链、payload 完整度、文案安全和概念锚点。
-- `npm run eval:flow` 默认使用本地 mock Flow，不消耗 LLM；`npm run eval:flow -- --url=http://127.0.0.1:<port>/api/flow?debug=1 --runs=1` 调用真实 `/api/flow` 输出。
+-
+pm run eval:flow` 默认使用本地 mock Flow，不消耗 LLM；
+pm run eval:flow -- --url=http://127.0.0.1:<port>/api/flow?debug=1 --runs=1` 调用真实 `/api/flow` 输出。
 - 2026-06-12 自动化验收：本地模式 15/15，`overall: 1`；API 模式 3 个 topic 均为 `source=llm`，`overall: 1`。
 
 视觉资源注册表：
@@ -321,11 +327,13 @@ Round 3 目标工具：
 | `generate_comparison` | `comparison` |
 | `generate_knowledge_check` | `knowledge_check` |
 | `generate_system_builder` | `system_builder` |
-| `generate_narrative_branch` | `narrative_branch` |
+| `generate_narrative_branch` |
+arrative_branch` |
 | `generate_classification_sort` | `classification_sort` |
 | `generate_simulation_play` | `simulation_play` |
 
-T30 已在 `src/lib/tools/generative-tools.ts` 定义 10 个 Pattern Tool，每个 Tool 的 `inputSchema` 包含该 Pattern 的 payload 字段、可选 `template`、`depth` 和 `next_concepts`。T31 已让 `/api/chat` 优先通过 Tool Calling 选择 Pattern，Tool 参数可携带模板 ID 以覆盖默认模板。若 DeepSeek Tool Calling 不稳定，现有 JSON Schema 生成链路作为 L2 fallback，最终仍可回退 mock schema。
+T30 已在 `src/lib/tools/generative-tools.ts` 定义 10 个 Pattern Tool，每个 Tool 的 `inputSchema` 包含该 Pattern 的 payload 字段、可选 `template`、`depth` 和
+ext_concepts`。T31 已让 `/api/chat` 优先通过 Tool Calling 选择 Pattern，Tool 参数可携带模板 ID 以覆盖默认模板。若 DeepSeek Tool Calling 不稳定，现有 JSON Schema 生成链路作为 L2 fallback，最终仍可回退 mock schema。
 
 来源输入技术原则：
 
@@ -425,7 +433,7 @@ V5 页面布局以轻消费闯关为核心，不再把工作台和知识图谱�
 
 Explore：
 
-- 公开作品集模式只展示 3 个精选 topic 卡、随机体验 CTA 和 Hub 入口；完整话题流、分类筛选、搜索后置。
+- Explore 主入口是自由输入 + Pattern 选择器；三条精选 topic 只作为“试试这些起点”的低风险示例。
 - 不内嵌 Flow、不展示聊天历史、不放 Studio 大按钮、不展示知识图谱。
 - 每张话题卡必须包含概念名、hook、分类、难度、预计时长和关卡数。
 
@@ -540,7 +548,7 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 - 当前 mock schema 仍承担较多验收输入路由。
 - 追问检测和路由分类已默认改为规则判别，后续需要真实对话样本回归。
 - 当前流式生成是 `/api/chat` 的 NDJSON 阶段事件流，最后仍以完整 Schema 渲染；后续如需边生成边预览，需要重新设计增量 Schema 协议。
-- V5 Explore 是静态精选入口；showcase Flow 已接入 `/api/flow` LLM 生成并保留 mock fallback；Hub 使用本地完成记录和 `/api/state`。真实埋点、账号系统、生产级持久化仍未实现。
+- V5 Explore 已升级为自由生成入口；动态 Flow 通过 `POST /api/flow` 接入 LLM 并保留按用户 topic 包装的 fallback，showcase Flow 继续通过 `GET /api/flow` 保留稳定示例；Hub 使用本地完成记录和 `/api/state`。真实埋点、账号系统、生产级持久化仍未实现。
 
 <!-- AI_CHAIN_STATUS_START -->
 ## 21. 当前 AI 链路与 mock 边界（2026-06-13）
@@ -549,21 +557,24 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 
 | 链路 | 入口 | 说明 |
 |---|---|---|
+| 动态 Flow 生成 | `/explore` -> `POST /api/flow` | 用户输入任意 topic，并选择 `AI 推荐` 或指定 Pattern；服务端返回三关 `KnowledgeFlow`。 |
+| 动态 Flow 播放 | `/flow/custom?draftId=...` | Explore 将生成结果写入 sessionStorage，Custom Flow 页读取并复用 `KnowledgeFlowPlayer`。 |
+| Follow-up 延伸 | Flow 完成态 -> `POST /api/flow` | 动态 Flow 自带 `follow_ups`，点击 AI 延伸方向会生成下一组三关。 |
 | 互动组件生成 | `/studio` -> `/api/chat` | 使用 DeepSeek，经 Tool Calling 优先生成 10 类 Pattern Schema；失败进入 JSON fallback；最终 mock fallback 防崩。 |
-| Flow Steps 生成 | `/flow/[flowId]` -> `/api/flow` | `bayes-starter`、`industrial-revolution`、`inflation-deflation` 会请求 LLM 生成三关 Flow，失败回退本地 Flow。 |
+| Showcase Flow 生成 | `/flow/[flowId]` -> `GET /api/flow` | `bayes-starter`、`industrial-revolution`、`inflation-deflation` 会请求 LLM 生成三关 Flow，失败回退本地 Flow。 |
 | 状态更新 | `/api/chat` + `/api/state` | 规则优先更新当前线程、知识资产和轻量状态；不是每一步都调用 LLM。 |
 
-### 当前仍是 mock / 静态的部分
+### 当前 mock / 本地边界
 
 | 功能 | 当前实现 | 原因 |
 |---|---|---|
-| Explore topic 列表 | `getShowcaseFlows()` 静态精选 3 个起点 | 作品集要保证 3 分钟稳定体验，不做动态信息流。 |
-| Follow-up topic 分支 | `getFlowFollowUps()` 静态映射 | 先验证连续知识穿行体验，后续再接 LLM 生成 follow-up topic spec。 |
-| 非 showcase Flow | `mock-flows.ts` 本地 Flow | 用作分支可继续走的稳定内容池。 |
+| 动态 Flow fallback | `dynamic-flow-generation.ts` 按用户 topic 包装通用三关 Flow | 无 key 或 LLM 不稳定时仍保持“输入什么就学什么”的产品承诺。 |
+| Explore 示例卡片 | `getShowcaseFlows()` 静态精选 3 个起点 | 作为低风险示例入口，不再代表系统能力上限。 |
+| 旧 curated follow-up | `getFlowFollowUps()` 静态映射 | 仅作为旧 Flow 或无 `flow.follow_ups` 时的 fallback。 |
 | Hub 图鉴 | localStorage + `/api/state` | 记录真实本机完成路径，但不做账号级持久化。 |
 | 视觉资源 | `visual-assets.ts` 本地 registry | `visual_asset` 是增强提示，不调用外部图像生成。 |
 
 ### 完成口径
 
-V5 V1 的“求职作品集体验”已经具备：`Explore -> Flow 三关 -> 分支继续 -> Hub 路径记录`。未实现项集中在生产化能力：账号、数据库、真实社区发布、审核、真实埋点和跨设备同步。
+V5 当前已经具备：`Explore 任意输入 -> AI 生成三关 Flow -> /flow/custom 播放 -> AI 分支继续 -> Hub 路径记录`。未实现项集中在生产化能力：账号、数据库、真实社区发布、审核、真实埋点和跨设备同步。
 <!-- AI_CHAIN_STATUS_END -->

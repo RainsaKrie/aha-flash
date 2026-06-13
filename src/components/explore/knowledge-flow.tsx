@@ -1,24 +1,34 @@
-"use client";
+﻿"use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, CheckCircle2, GitBranch, Home, RotateCcw, Sparkles, X } from "lucide-react";
+import { ArrowRight, CheckCircle2, GitBranch, Home, Loader2, RotateCcw, Sparkles, X } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { renderBySchema } from "@/components/generative-ui/registry";
 import { SpiritHint } from "@/components/spirit-hint";
+import { getFlowFollowUps, type FollowUpTopic, type KnowledgeFlow } from "@/lib/content/mock-flows";
 import { getVisualAsset } from "@/lib/content/visual-assets";
-import { getFlowFollowUps, type KnowledgeFlow } from "@/lib/content/mock-flows";
-import { recordCompletedFlow } from "@/lib/utils/storage";
+import { recordCompletedFlow, writeFlowDraft } from "@/lib/utils/storage";
 import { normalizeUISchema, type InteractionEvent } from "@/types/schema";
 
+interface FlowApiResponse {
+  flow: KnowledgeFlow;
+  source: "llm" | "mock";
+  validation_error?: string;
+}
+
 export function KnowledgeFlowPlayer({ flow }: { flow: KnowledgeFlow }) {
+  const router = useRouter();
   const [activeIndex, setActiveIndex] = useState(0);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
   const [touchedPlayIds, setTouchedPlayIds] = useState<string[]>([]);
+  const [branchGeneratingId, setBranchGeneratingId] = useState<string | null>(null);
+  const [branchError, setBranchError] = useState<string | null>(null);
 
   const activePlay = flow.plays[activeIndex] || flow.plays[0];
   const normalized = useMemo(() => normalizeUISchema(activePlay.schema), [activePlay.schema]);
-  const followUps = useMemo(() => getFlowFollowUps(flow.id), [flow.id]);
+  const followUps = useMemo(() => (flow.follow_ups?.length ? flow.follow_ups : getFlowFollowUps(flow.id)), [flow.follow_ups, flow.id]);
   const asset = getVisualAsset(normalized.pattern, normalized.visual_asset);
   const isCompleted = completedIds.includes(activePlay.id);
   const hasTouchedStage = isCompleted || touchedPlayIds.includes(activePlay.id);
@@ -35,13 +45,14 @@ export function KnowledgeFlowPlayer({ flow }: { flow: KnowledgeFlow }) {
       summary: flow.summary,
       concepts: flow.concepts,
       completed_play_count: flow.plays.length,
+      source: flow.source || (flow.id.startsWith("custom-") ? "generated" : "curated"),
     });
   }
 
   useEffect(() => {
     if (!showBranches) return;
     persistCompletion();
-  }, [flow, showBranches]);
+  }, [showBranches]);
 
   function touchStage() {
     setTouchedPlayIds((ids) => (ids.includes(activePlay.id) ? ids : [...ids, activePlay.id]));
@@ -61,6 +72,34 @@ export function KnowledgeFlowPlayer({ flow }: { flow: KnowledgeFlow }) {
     setActiveIndex(0);
     setCompletedIds([]);
     setTouchedPlayIds([]);
+    setBranchError(null);
+  }
+
+  async function generateFollowUp(topic: FollowUpTopic) {
+    setBranchGeneratingId(topic.id);
+    setBranchError(null);
+    persistCompletion();
+
+    try {
+      const response = await fetch("/api/flow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic: topic.concept || topic.title,
+          preferredPattern: topic.suggestedPattern || "auto",
+        }),
+      });
+      if (!response.ok) throw new Error(`flow request failed: ${response.status}`);
+      const payload = (await response.json()) as FlowApiResponse;
+      const nextFlow = payload.flow;
+      const draftId = nextFlow.id || crypto.randomUUID();
+      writeFlowDraft(draftId, nextFlow);
+      router.push(`/flow/custom?draftId=${encodeURIComponent(draftId)}`);
+    } catch (error) {
+      setBranchError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setBranchGeneratingId(null);
+    }
   }
 
   return (
@@ -104,7 +143,7 @@ export function KnowledgeFlowPlayer({ flow }: { flow: KnowledgeFlow }) {
             >
               <Sparkles size={30} />
               <p>这个节点已点亮</p>
-              <h2>现在往哪走？</h2>
+              <h2>现在往哪里走？</h2>
               <strong>{flow.summary}</strong>
               <div className="v5-flow-summary__chips">
                 {flow.concepts.map((concept) => (
@@ -112,15 +151,39 @@ export function KnowledgeFlowPlayer({ flow }: { flow: KnowledgeFlow }) {
                 ))}
               </div>
               <div className="v5-flow-branches" aria-label="下一步知识分支">
-                {followUps.map((topic) => (
-                  <Link key={topic.id} href={`/flow/${topic.target_flow_id}`} className="v5-flow-branch-card" onClick={persistCompletion}>
-                    <span><GitBranch size={16} /> {topic.kind === "ai_seed" ? "AI 延伸" : "精选路径"}</span>
-                    <h3>{topic.title}</h3>
-                    <p>{topic.hook}</p>
-                    <small>{topic.relation}</small>
-                  </Link>
-                ))}
+                {followUps.map((topic) => {
+                  const content = (
+                    <>
+                      <span><GitBranch size={16} /> {topic.kind === "ai_seed" ? "AI 延伸" : "精选路径"}</span>
+                      <h3>{topic.title}</h3>
+                      <p>{topic.hook}</p>
+                      <small>{topic.relation}</small>
+                      {branchGeneratingId === topic.id && <em><Loader2 size={14} className="animate-spin" /> 正在生成</em>}
+                    </>
+                  );
+
+                  if (topic.target_flow_id) {
+                    return (
+                      <Link key={topic.id} href={`/flow/${topic.target_flow_id}`} className="v5-flow-branch-card" onClick={persistCompletion}>
+                        {content}
+                      </Link>
+                    );
+                  }
+
+                  return (
+                    <button
+                      key={topic.id}
+                      type="button"
+                      className="v5-flow-branch-card"
+                      disabled={Boolean(branchGeneratingId)}
+                      onClick={() => void generateFollowUp(topic)}
+                    >
+                      {content}
+                    </button>
+                  );
+                })}
               </div>
+              {branchError && <p className="v5-flow-branch-error">延伸生成失败：{branchError}</p>}
             </motion.div>
           ) : (
             <motion.div
@@ -165,7 +228,7 @@ export function KnowledgeFlowPlayer({ flow }: { flow: KnowledgeFlow }) {
           )}
           {showBranches && (
             <>
-              <Link href="/explore" className="v5-flow-secondary-action" onClick={showBranches ? persistCompletion : undefined}>
+              <Link href="/explore" className="v5-flow-secondary-action" onClick={persistCompletion}>
                 <Home size={17} /> 换个起点
               </Link>
               <button type="button" className="v5-flow-secondary-action" onClick={restart}>

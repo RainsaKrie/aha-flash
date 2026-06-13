@@ -1,5 +1,5 @@
 import { createMockSchema } from "../llm/mock-schema.ts";
-import type { UISchema, VisualAssetHint } from "../../types/schema.ts";
+import type { PatternType, UISchema, VisualAssetHint } from "../../types/schema.ts";
 
 export type TopicCategory = "科技" | "经济" | "哲学" | "心理" | "历史" | "数理";
 export type TopicDifficulty = "轻松" | "进阶" | "烧脑一点";
@@ -26,6 +26,8 @@ export interface KnowledgeFlow {
   summary: string;
   concepts: string[];
   plays: KnowledgePlay[];
+  follow_ups?: FollowUpTopic[];
+  source?: "curated" | "generated";
 }
 
 function withAsset(schema: UISchema, visual_asset: VisualAssetHint): UISchema {
@@ -493,7 +495,8 @@ export interface FollowUpTopic {
   hook: string;
   relation: string;
   kind: "curated" | "ai_seed";
-  target_flow_id: string;
+  target_flow_id?: string;
+  suggestedPattern?: PatternType | "auto";
 }
 
 const FLOW_FOLLOW_UPS: Record<string, FollowUpTopic[]> = {

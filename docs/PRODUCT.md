@@ -50,8 +50,8 @@
 ```
 
 **与旧版的根本区别**：
-- 旧版：用户**输入**概念 → LLM 生成组件 → 用户**学习**
-- 新版：用户**浏览**话题 → 进入预设挑战流 → 用户**闯关**
+- 旧版：用户**输入**概念 → LLM 生成单个组件 → 用户**学习**
+- 新版：用户**输入或选择**起点 → AI 生成三关 Flow → 用户**闯关并继续探索分支**
 
 ---
 
@@ -61,20 +61,20 @@
 
 ### 4.1 Explore（入口页）
 
-**用户来到这做什么**：看看有什么好玩的话题，挑一个开始。
+**用户来到这做什么**：输入一个想理解的知识点，或从示例起点里挑一个开始。
 
-**公开作品集模式包含**：
-- 3 个精选 topic 卡片：`bayes-starter`、`industrial-revolution`、`inflation-deflation`。
-- 每张卡片展示概念名、hook、分类、难度、预计时长和 3 关数量。
-- 一个主 CTA：随机开始一个概念。
-- Hub 入口：面试官走完任一 topic 后能看到本机完成记录。
+**公开入口包含**：
+- 自由输入框：用户输入任意 topic 后，默认由 AI 推荐 Pattern 并生成三关 Flow。
+- Pattern 选择器：用户也可以手选 10 类 Pattern，指定本次三关 Flow 的核心互动形态。
+- 3 个精选 topic 卡片：`bayes-starter`、`industrial-revolution`、`inflation-deflation`，作为低风险示例起点。
+- Hub 入口：用户走完任一 Flow 后能看到本机完成记录。
 
 **暂不展示**：
 - 8-12 张完整话题流、分类筛选和搜索（会让公开作品像未完成产品）。
 - 知识图谱入口（太重）。
 - 创作者内容流、热门排行、社交推荐（不是求职作品的重点）。
 
-**冷启动策略**：作品集链接先保证三条完整垂直切片都能 3 分钟内玩完；完整 ToC 话题流作为后续产品化阶段。
+**冷启动策略**：默认展示自由生成入口，三条完整垂直切片作为兜底示例；当用户有明确兴趣时，优先让用户直接生成自己的知识路径。
 
 ### 4.2 Flow（核心体验页）
 
@@ -170,7 +170,7 @@ V5 首页与 Hub 采用白底、低饱和产品色和大圆角卡片。颜色不
 
 配色角色：
 1. 主蓝 `#4A6FA5`：只用于品牌图标和全局品牌锚点，不参与卡片主题竞争。
-2. 行动橙 `#C2703A`：用于主 CTA，例如“随机开始一关”；同时作为历史类卡片主题色。
+2. 行动橙 `#C2703A`：用于主 CTA，例如“开始闯关”；同时作为历史类卡片主题色。
 3. 完成绿 `#3D8B6E`：用于“查看完成记录”、完成/记录/图鉴点亮；同时作为经济类卡片主题色。
 4. 辅助紫 `#6B5D8A`：用于数理/贝叶斯类卡片主题色。
 5. 中性灰 `#7C7C7C`：用于导航、证明条、辅助标签和弱说明文案。
@@ -213,7 +213,8 @@ Pattern 主色：
 | `comparison` | `#F4A261` | 对比/差异 |
 | `knowledge_check` | `#FF6B6B` | 正确/错误 |
 | `system_builder` | `#35E69B` | 连接/构建 |
-| `narrative_branch` | `#E879BA` | 选择/分支 |
+|
+arrative_branch` | `#E879BA` | 选择/分支 |
 | `classification_sort` | `#4DD9C1` | 分类/归位 |
 | `simulation_play` | `#FACC15` | 模拟/推演 |
 
@@ -332,7 +333,7 @@ Pattern 主色：
 
 ### 8.1 V1 做
 
-- [x] Explore 作品集首页：3 个精选 topic 卡片 + 随机开始 + Hub 入口
+- [x] Explore 自由生成首页：任意 topic 输入 + AI 推荐/手选 Pattern + 3 个精选示例起点 + Hub 入口
 - [x] Flow 页：三段式布局 + 进度条 + 底部变色操作栏 + 组件切换动画（framer-motion）
 - [x] Flow Steps 引擎：LLM 生成 3-4 步微挑战流，知识类型自动匹配 Pattern
 - [x] 趣灵精灵：4 态情绪提示（轻量 token 版）
@@ -413,22 +414,22 @@ Hub 的路径节点不按列表顺序轮换颜色，而是复用 V5 既有四个
 
 <!-- CURRENT_STATUS_START -->
 ## 13. 当前完成度快照（2026-06-13）
-
-当前口径：V5 V1 作为求职作品集体验已经代码侧完成；长期社区化、账号化和生产级发布系统不属于本轮完成范围。
+当前口径：V5 已从“求职作品集三条固定切片”推进到“自由生成 Flow 的最小产品闭环”。用户可以在首页输入任意知识点，选择 `AI 推荐` 或指定 Pattern，生成三关互动 Flow，完成后继续点选 AI 延伸分支。
 
 已完成：
-- `/explore`：正式 ToC 入口，展示 3 个精选起点，采用纵向路径化首页和统一 V5 活泼奶油视觉。
-- `/flow/[flowId]`：全屏三关闯关体验，完成后展示 2-3 个下一步知识分支，不再默认把用户送回首页。
-- `/hub`：从卡片仓库改为知识路径足迹，记录用户走过的节点并支持快速回看。
-- `/studio`：保留为内部生成工作台，真实调用 `/api/chat` 生成 Generative UI Schema。
-- Eval：`eval:score` 固定集与 `eval:flow` Flow 固定集均可用于回归验收。
+- `/explore`：主入口为自由输入 + Pattern 选择器；三张精选 topic 降级为“试试这些起点”。
+- `/api/flow`：`GET` 保留 showcase Flow；`POST` 支持 `{ topic, preferredPattern }` 动态生成三关 Flow。
+- `/flow/custom`：播放 sessionStorage 中的动态 Flow；缺失时引导用户回首页重新生成。
+- Flow 完成态：优先展示 `flow.follow_ups`；点击 AI 延伸分支会再次调用 `/api/flow` 生成下一组三关。
+- Hub：动态 Flow 完成后继续写入本机完成记录，并通过 `source: generated` 标记来源。
+- `/studio`：保留为内部单组件生成与协议调试入口。
 
 真实 AI 与 mock 边界：
+- 真实打通：`/explore -> POST /api/flow -> DeepSeek -> 三关 KnowledgeFlow -> /flow/custom`。
 - 真实打通：`/studio -> /api/chat -> DeepSeek -> Tool Calling / JSON fallback -> Schema -> 互动组件`。
-- 真实打通：showcase Flow 的 `/api/flow`，当前支持 `bayes-starter`、`industrial-revolution`、`inflation-deflation`，失败时回退对应 mock Flow。
-- mock/静态：`/explore` 的精选入口、Flow 完成后的 follow-up topic、非 showcase Flow、视觉资源 registry、Hub 本地记录。
+- 真实打通：showcase Flow 的 `/api/flow GET`，当前支持 `bayes-starter`、`industrial-revolution`、`inflation-deflation`，失败时回退对应 mock Flow。
+- fallback：动态 Flow 在无 key、LLM 异常或输出不可解析时，回退为“按用户输入 topic 生成的通用三关 Flow”，不再固定退回三张精选卡。
+- 仍为本地/静态：Explore 示例卡片、旧 curated follow-up、视觉资源 registry、Hub 本机记录、账号级持久化。
 
-暂不做：
-- 账号登录、多设备同步、真实社区发布、内容审核后台、生产级数据库、真实埋点分析。
-- T38 默认体验额度与自定义 API Key 方案仍为搁置项，不计入 V5 V1 作品集完成口径。
+暂不做：账号登录、多设备同步、真实社区发布、内容审核后台、生产级数据库、真实埋点分析、T38 默认体验额度与自定义 API Key 方案。
 <!-- CURRENT_STATUS_END -->

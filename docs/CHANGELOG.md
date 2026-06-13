@@ -4,10 +4,24 @@
 
 ---
 
+## 2026-06-13
+
+### 自由生成 Flow 主入口
+
+完成：
+- `/explore` 从固定 3 个 topic 的作品集入口升级为自由输入主入口，用户可输入任意知识点并选择 `AI 推荐` 或手选 10 类 Pattern。
+- 新增 `POST /api/flow`，支持 `{ topic, preferredPattern }` 动态生成三关 `KnowledgeFlow`；`GET /api/flow` 保留三条 showcase Flow 旧链路。
+- 新增 `/flow/custom?draftId=...`，通过 sessionStorage 播放动态生成的 Flow，缺失草稿时引导回首页重新生成。
+- Flow 完成态优先读取 `flow.follow_ups`；点击 AI 延伸分支会再次调用动态 Flow 生成，形成连续知识穿行。
+- 动态 Flow fallback 改为按用户输入 topic 生成通用三关，不再固定回退到贝叶斯、工业革命或通胀。
+- Hub 完成记录增加 `source: generated`，可区分自由生成路径和精选路径。
+
+验证：
+- `npm run typecheck`
+- `npm run build`
+
+---
 ## 2026-06-12
-
-
-
 ### 首页路径化布局调整
 
 完成：
