@@ -241,18 +241,85 @@ export const MOCK_KNOWLEDGE_FLOWS: KnowledgeFlow[] = [
     id: "dns-router",
     title: "DNS 解析",
     concept: "DNS",
-    hook: "输入网址后，浏览器怎么找到真正的服务器？",
-    description: "把域名解析拆成几个模块，像问路一样理解网络寻址。",
+    hook: "网址怎样变成服务器地址？",
+    description: "把域名解析拆成模块、角色和路径，像问路一样理解网络寻址。",
     category: "科技",
     topic_area: "科技",
     difficulty: "进阶",
     estimated_minutes: 5,
-    summary: "DNS 是把人能读的名字翻译成机器能找的地址。",
+    summary: "DNS 把人能读的域名，翻译成机器能访问的 IP 地址。",
     concepts: ["域名", "递归查询", "IP 地址"],
     plays: [
-      makePlay("dns-system", "先拼模块", "DNS 系统", "DNS 系统 架构 模块", 2, "你把名字、查询和地址放进了同一个系统。", { tag: "system-blocks", mood: "idle" }),
-      makePlay("dns-flow", "连一次路", "解析流程", "DNS 流程 连线", 2, "你顺着查询路径走到了最终地址。", { tag: "system-blocks", mood: "reward" }),
-      makeQuiz("dns-check", "防止误会", "DNS 作用", "DNS 最核心的动作是什么？", "把域名解析成可访问的地址", ["让网页变好看", "直接存储所有网页内容"], "DNS 负责寻址，不负责承载网页内容。", { tag: "check-spark", mood: "reward" }),
+      {
+        id: "dns-system",
+        title: "先拼模块",
+        concept: "DNS 系统",
+        schema: withAsset(
+          {
+            pattern: "system_builder",
+            template: "module_sandbox",
+            version: "2.0",
+            depth: "rapid",
+            payload: {
+              title: "把 DNS 拆成能协作的模块",
+              target: "让浏览器从域名找到 IP 地址",
+              modules: [
+                { id: "browser", label: "浏览器", description: "发起查询，想知道域名对应哪个地址。", role: "requester" },
+                { id: "recursive", label: "递归解析器", description: "替你一路问下去，直到拿到可用答案。", role: "coordinator" },
+                { id: "root", label: "根服务器", description: "告诉你应该去问哪个顶级域服务器。", role: "router" },
+                { id: "authoritative", label: "权威服务器", description: "保存某个域名最终对应的地址记录。", role: "source" },
+                { id: "cache", label: "缓存", description: "记住近期答案，下次不用重新问完整链路。", role: "accelerator" },
+              ],
+              required_module_ids: ["browser", "recursive", "root", "authoritative"],
+              expected_sequence: ["browser", "recursive", "root", "authoritative", "cache"],
+              connections: [
+                { from: "browser", to: "recursive", label: "我想访问 example.com" },
+                { from: "recursive", to: "root", label: "先问入口" },
+                { from: "root", to: "authoritative", label: "指向权威记录" },
+                { from: "authoritative", to: "recursive", label: "返回 IP" },
+                { from: "recursive", to: "browser", label: "交给浏览器访问" },
+              ],
+              success_summary: "你把 DNS 看成了一条协作链，而不是一个神秘黑箱。",
+            },
+            next_concepts: [],
+          },
+          { tag: "system-blocks", mood: "idle" },
+        ),
+        estimated_minutes: 2,
+        reward_copy: "你把名字、查询和地址放进了同一个系统。",
+      },
+      {
+        id: "dns-sort",
+        title: "分清角色",
+        concept: "DNS 角色",
+        schema: withAsset(
+          {
+            pattern: "classification_sort",
+            template: "category_buckets",
+            version: "2.0",
+            depth: "rapid",
+            payload: {
+              title: "把 DNS 里的东西归位",
+              categories: [
+                { id: "question", name: "查询问题" },
+                { id: "helper", name: "中间帮手" },
+                { id: "answer", name: "最终答案" },
+              ],
+              items: [
+                { label: "example.com", correct_category: "question", explanation: "域名是用户提出的问题：这个名字在哪里？" },
+                { label: "递归解析器", correct_category: "helper", explanation: "它负责替浏览器继续追问。" },
+                { label: "权威服务器", correct_category: "helper", explanation: "它保存某个域名的权威记录。" },
+                { label: "93.184.216.34", correct_category: "answer", explanation: "IP 地址才是浏览器最终要拿到的访问地址。" },
+              ],
+            },
+            next_concepts: [],
+          },
+          { tag: "classification-buckets", mood: "idle" },
+        ),
+        estimated_minutes: 2,
+        reward_copy: "你把问题、帮手和答案分清楚了。",
+      },
+      makeQuiz("dns-check", "最后确认", "DNS 作用", "DNS 最核心的动作是什么？", "把域名解析成可访问的地址", ["让网页变好看", "直接存储所有网页内容"], "DNS 负责寻址，不负责承载网页内容。", { tag: "check-spark", mood: "reward" }),
     ],
   },
   {
@@ -289,6 +356,108 @@ export const MOCK_KNOWLEDGE_FLOWS: KnowledgeFlow[] = [
       makePlay("prisoner-branch", "先做选择", "策略选择", "囚徒困境 分支 选择 案例", 2, "你亲手走了一次个体最优的诱惑。", { tag: "branch-choice", mood: "idle" }),
       makePlay("prisoner-compare", "对比结果", "合作与背叛", "囚徒困境 对比 区别", 2, "你看到个人收益表会改变群体结局。", { tag: "compare-lens", mood: "idle" }),
       makeQuiz("prisoner-check", "机制确认", "博弈结构", "囚徒困境最刺眼的地方是什么？", "个人看似理性的选择会让整体变差", ["所有人都会随机行动", "合作永远没有好处"], "它说明激励结构会塑造选择，不是说人都坏。", { tag: "check-spark", mood: "reward" }),
+    ],
+  },
+  {
+    id: "options-risk",
+    title: "期权选择",
+    concept: "期权",
+    hook: "用权利金买一个未来选择权。",
+    description: "用抽卡、模拟和情境选择，看懂期权为什么像有价格的机会。",
+    category: "经济",
+    topic_area: "金融",
+    difficulty: "进阶",
+    estimated_minutes: 5,
+    summary: "期权的关键不是一定赚钱，而是用有限成本买下不确定未来里的选择权。",
+    concepts: ["权利金", "行权价", "不确定性"],
+    plays: [
+      {
+        id: "option-draw",
+        title: "先抽结果",
+        concept: "不确定收益",
+        schema: withAsset(
+          {
+            pattern: "probability",
+            template: "card_flip_reveal",
+            version: "2.0",
+            depth: "rapid",
+            payload: {
+              title: "抽一张行情结果，看看期权值不值",
+              pool: [
+                { name: "大涨", flavor_label: "选择权很值钱", rarity: "5", probability: 20, value: 120 },
+                { name: "小涨", flavor_label: "勉强覆盖成本", rarity: "4", probability: 35, value: 55 },
+                { name: "横盘", flavor_label: "权利金可能损耗", rarity: "3", probability: 30, value: 12 },
+                { name: "下跌", flavor_label: "最多亏掉权利金", rarity: "3", probability: 15, value: 0 },
+              ],
+              option_cost: 10,
+              strike_price: 60,
+              pulls_per_try: 1,
+              explanation_map: {
+                win: "行情越过行权价后，选择权开始显出价值。",
+                lose: "行情没有走到有利区间时，你可以放弃行权，损失被限制在权利金。",
+                push: "结果接近成本线，期权像一张刚好没亏太多的机会票。",
+              },
+            },
+            next_concepts: [],
+          },
+          { tag: "check-spark", mood: "idle" },
+        ),
+        estimated_minutes: 1,
+        reward_copy: "你先感受到了选择权和不确定性的关系。",
+      },
+      {
+        id: "option-sim",
+        title: "调参数",
+        concept: "盈亏结构",
+        schema: withAsset(
+          {
+            pattern: "simulation_play",
+            template: "parameter_simulation",
+            version: "2.0",
+            depth: "rapid",
+            payload: {
+              title: "调权利金和波动率，看盈亏边界",
+              params: [
+                { label: "权利金", min: 1, max: 30, default: 10, unit: "元" },
+                { label: "波动率", min: 5, max: 80, default: 35, unit: "%" },
+                { label: "行权价距离", min: 0, max: 40, default: 15, unit: "%" },
+              ],
+              compute_formula_description: "权利金越高，起步成本越重；波动越大，走到有利区间的机会也越大。",
+              steps: 5,
+            },
+            next_concepts: [],
+          },
+          { tag: "simulation-loop", mood: "idle" },
+        ),
+        estimated_minutes: 2,
+        reward_copy: "你看见成本、波动和机会不是同一件事。",
+      },
+      {
+        id: "option-branch",
+        title: "做选择",
+        concept: "有限亏损",
+        schema: withAsset(
+          {
+            pattern: "narrative_branch",
+            template: "branch_story",
+            version: "2.0",
+            depth: "rapid",
+            payload: {
+              title: "面对不确定行情，你怎么做？",
+              opening: "你看好某只股票会涨，但不确定什么时候涨。现在有三种选择。",
+              branches: [
+                { choice_label: "直接买股票", outcome_description: "涨了收益完整，下跌也要承担完整亏损。", insight: "股票是直接持有，收益和风险都更对称。" },
+                { choice_label: "买入看涨期权", outcome_description: "先付权利金，涨过行权价才有明显收益。", insight: "期权用固定成本换未来选择权。" },
+                { choice_label: "先观望", outcome_description: "你不亏权利金，但也可能错过快速上涨。", insight: "不行动也是选择，只是机会成本不同。" },
+              ],
+            },
+            next_concepts: [],
+          },
+          { tag: "branch-choice", mood: "reward" },
+        ),
+        estimated_minutes: 2,
+        reward_copy: "你把期权理解成了有价格的选择权。",
+      },
     ],
   },
   {
@@ -470,7 +639,7 @@ export const MOCK_KNOWLEDGE_FLOWS: KnowledgeFlow[] = [
   },
 ];
 
-export const SHOWCASE_FLOW_IDS = ["bayes-starter", "industrial-revolution", "inflation-deflation"] as const;
+export const SHOWCASE_FLOW_IDS = ["bayes-starter", "dns-router", "options-risk", "industrial-revolution", "inflation-deflation"] as const;
 
 export function isShowcaseFlowId(id: string) {
   return SHOWCASE_FLOW_IDS.includes(id as (typeof SHOWCASE_FLOW_IDS)[number]);

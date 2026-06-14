@@ -6,6 +6,11 @@
 
 ## 2026-06-14
 
+### 精选集 Pattern 覆盖扩展
+- 将公开精选集从 3 条扩展到 5 条：`bayes-starter`、`dns-router`、`options-risk`、`industrial-revolution`、`inflation-deflation`。
+- 新增“期权选择”精选 Flow，覆盖 `probability`、`simulation_play`、`narrative_branch`。
+- 重写 DNS 精选 Flow 的本地兜底，覆盖 `system_builder` 和 `classification_sort`。
+- 新增 `npm run eval:showcase`，回归检查公开精选集至少 5 条 Flow，并覆盖全部 10 类 Pattern。
 ### 动态 Flow 回归护栏
 - 新增 `npm run eval:flow-dynamic`，覆盖无 API key 时的动态 Flow fallback。
 - 回归用例验证任意 topic 会生成 `custom-*` 三关 Flow，且手选 `system_builder`、`process_timeline`、`comparison`、`parameter_explore` 时对应 Pattern 会进入关卡链。

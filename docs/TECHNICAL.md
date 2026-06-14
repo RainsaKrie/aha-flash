@@ -216,7 +216,7 @@ V5 的主体验从“输入生成组件”改为“浏览话题 -> 全屏 Flow �
 | Route | V5 职责 | 数据来源 | 备注 |
 |---|---|---|---|
 | `/` | 默认跳转 Explore | - | 入口页不承载聊天流 |
-| `/explore` | 自由生成主入口：输入任意 topic、选择 AI 推荐或指定 Pattern；三条精选 topic 作为示例起点 | `POST /api/flow` + `getShowcaseFlows()` | 公开链接优先展示“想学什么就生成什么”的核心能力 |
+| `/explore` | 自由生成主入口：输入任意 topic、选择 AI 推荐或指定 Pattern；五条精选 topic 作为示例起点，覆盖全部 10 类 Pattern | `POST /api/flow` + `getShowcaseFlows()` | 公开链接优先展示“想学什么就生成什么”的核心能力 |
 | `/flow/[flowId]` | 全屏三段式精选闯关：退出/进度条、单组件舞台、底部操作台 | `KnowledgeFlow` | curated 示例体验 |
 | `/flow/custom` | 播放当前浏览器会话中的动态 Flow | sessionStorage | Explore 写入 draft，Custom Flow 页读取并复用播放器 |
 | `/hub` | 知识路径足迹、节点回看、完成统计 | localStorage + `/api/state` | 轻量图鉴，不做知识管理 |
@@ -255,9 +255,9 @@ interface KnowledgeFlow {
 
 公开作品集配置：
 
-- `src/lib/content/mock-flows.ts` 维护 `SHOWCASE_FLOW_IDS`，当前固定为 `bayes-starter`、`industrial-revolution`、`inflation-deflation`。
+- `src/lib/content/mock-flows.ts` 维护 `SHOWCASE_FLOW_IDS`，当前固定为 `bayes-starter`、`dns-router`、`options-risk`、`industrial-revolution`、`inflation-deflation`。
 - `/explore` 主入口调用 `POST /api/flow` 生成动态 Flow；`getShowcaseFlows()` 只用于“试试这些起点”的稳定示例。
-- 三个示例 topic 分别覆盖 probability、timeline、comparison 三类知识结构；每个 topic 都有三关 fallback Flow，LLM 失败时仍可完整体验。
+- 五个示例 topic 共同覆盖全部 10 类 Pattern；每个 topic 都有三关 fallback Flow，LLM 失败时仍可完整体验。
 - 当前公开入口的目标是让用户立即体验能力闭环：自由输入或示例起点 -> 三关互动 -> AI 分支继续 -> 完成记录进入 Hub。
 Flow 渲染规则：
 
@@ -279,16 +279,13 @@ Flow Steps 生成策略：
 - `process_timeline` 会归一化 4-6 个阶段事件，保证每个事件都有短 label 和因果 description。
 - `comparison` 会归一化 left/right、subject_a/subject_b 和 dimensions，保证对比维度平行可切换。
 - `reward_copy` 使用克制型知识反馈，发现“工具箱更新了 / 卡片已入库 / 魔力 / 升级版”等过度游戏化表达时回退为“你又想通了一层”。
--
-pm run eval:flow-manual -- --runs=10 --url=http://127.0.0.1:<port>/api/flow?flowId=<flowId>` 用于手动采样，生成 Markdown 供人工判断 10 次里是否至少 8 次产生“啊哈感”；本阶段稳定性收口目标提高到 9/10 以上。
+- `npm run eval:flow-manual -- --runs=10 --url=http://127.0.0.1:<port>/api/flow?flowId=<flowId>` 用于手动采样，生成 Markdown 供人工判断 10 次里是否至少 8 次产生“啊哈感”；本阶段稳定性收口目标提高到 9/10 以上。
 - 2026-06-11 采样：`bayes-starter` 10/10 `source=llm`，无 schema fallback。
-- 2026-06-12 采样：`industrial-revolution` 10/10 `source=llm`，`inflation-deflation` 10/10 `source=llm`；固定回归
-pm run eval:score` 保持 `overall: 1`。
+- 2026-06-12 采样：`industrial-revolution` 10/10 `source=llm`，`inflation-deflation` 10/10 `source=llm`；固定回归 `npm run eval:score` 保持 `overall: 1`。
 - Flow Steps 已纳入第一版自动 Eval：`tests/fixtures/flow-cases.json` 覆盖 probability / timeline / comparison 三种知识类型，每类 5 个固定检查点；`tests/eval/flow-score.ts` 检查步骤数量、Pattern 链、payload 完整度、文案安全和概念锚点。
--
-pm run eval:flow` 默认使用本地 mock Flow，不消耗 LLM；
-pm run eval:flow -- --url=http://127.0.0.1:<port>/api/flow?debug=1 --runs=1` 调用真实 `/api/flow` 输出。
-- 2026-06-12 自动化验收：本地模式 15/15，`overall: 1`；API 模式 3 个 topic 均为 `source=llm`，`overall: 1`。
+- `npm run eval:flow` 默认使用本地 mock Flow，不消耗 LLM；
+- `npm run eval:flow -- --url=http://127.0.0.1:<port>/api/flow?debug=1 --runs=1` 调用真实 `/api/flow` 输出。
+- 2026-06-12 自动化验收：本地模式 15/15，`overall: 1`；API 模式 3 个早期垂直切片均为 `source=llm`，`overall: 1`。
 
 视觉资源注册表：
 
@@ -417,6 +414,7 @@ npm run build
 npm run eval:score
 npm run eval:flow
 npm run eval:flow-dynamic
+npm run eval:showcase
 ```
 
 涉及前端交互时，启动本地服务并用浏览器或 Playwright 验证至少一个真实路径。
@@ -433,7 +431,7 @@ V5 页面布局以轻消费闯关为核心，不再把工作台和知识图谱�
 
 Explore：
 
-- Explore 主入口是自由输入 + Pattern 选择器；三条精选 topic 只作为“试试这些起点”的低风险示例。
+- Explore 主入口是自由输入 + Pattern 选择器；五条精选 topic 只作为“试试这些起点”的低风险示例，并覆盖全部 10 类 Pattern。
 - 不内嵌 Flow、不展示聊天历史、不放 Studio 大按钮、不展示知识图谱。
 - 每张话题卡必须包含概念名、hook、分类、难度、预计时长和关卡数。
 
@@ -569,7 +567,7 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 | 功能 | 当前实现 | 原因 |
 |---|---|---|
 | 动态 Flow fallback | `dynamic-flow-generation.ts` 按用户 topic 包装通用三关 Flow | 无 key 或 LLM 不稳定时仍保持“输入什么就学什么”的产品承诺。 |
-| Explore 示例卡片 | `getShowcaseFlows()` 静态精选 3 个起点 | 作为低风险示例入口，不再代表系统能力上限。 |
+| Explore 示例卡片 | `getShowcaseFlows()` 静态精选 5 个起点 | 作为低风险示例入口，不再代表系统能力上限。 |
 | 旧 curated follow-up | `getFlowFollowUps()` 静态映射 | 仅作为旧 Flow 或无 `flow.follow_ups` 时的 fallback。 |
 | Hub 图鉴 | localStorage + `/api/state` | 记录真实本机完成路径，但不做账号级持久化。 |
 | 视觉资源 | `visual-assets.ts` 本地 registry | `visual_asset` 是增强提示，不调用外部图像生成。 |
@@ -579,6 +577,7 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 
 - `tests/eval/dynamic-flow-score.ts` 会临时移除 `DEEPSEEK_API_KEY`，直接调用 `generateDynamicFlow()`，验证无 key 时仍返回 `source=mock` 的 `custom-*` 三关 Flow。
 - 覆盖 auto、`system_builder`、`process_timeline`、`comparison`、`parameter_explore` 五种输入，确保手选 Pattern 至少出现在一关里。
+- `tests/eval/showcase-pattern-score.ts` 检查公开精选集是否至少包含 5 条 Flow，并覆盖 `SCHEMA_CATALOG` 中全部 10 类 Pattern。
 
 ### 完成口径
 

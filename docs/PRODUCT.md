@@ -66,7 +66,7 @@
 **公开入口包含**：
 - 自由输入框：用户输入任意 topic 后，默认由 AI 推荐 Pattern 并生成三关 Flow。
 - Pattern 选择器：用户也可以手选 10 类 Pattern，指定本次三关 Flow 的核心互动形态。
-- 3 个精选 topic 卡片：`bayes-starter`、`industrial-revolution`、`inflation-deflation`，作为低风险示例起点。
+- 5 个精选 topic 卡片：`bayes-starter`、`dns-router`、`options-risk`、`industrial-revolution`、`inflation-deflation`，作为低风险示例起点，并覆盖全部 10 类 Pattern。
 - Hub 入口：用户走完任一 Flow 后能看到本机完成记录。
 
 **暂不展示**：
@@ -74,7 +74,7 @@
 - 知识图谱入口（太重）。
 - 创作者内容流、热门排行、社交推荐（不是求职作品的重点）。
 
-**冷启动策略**：默认展示自由生成入口，三条完整垂直切片作为兜底示例；当用户有明确兴趣时，优先让用户直接生成自己的知识路径。
+**冷启动策略**：默认展示自由生成入口，五条完整垂直切片作为兜底示例；当用户有明确兴趣时，优先让用户直接生成自己的知识路径。
 
 ### 4.2 Flow（核心体验页）
 
@@ -158,7 +158,7 @@ Step 4（可选）：回顾巩固（classification_sort / concept_memory）
   → "现在重新排列这些卡片，看看你真的懂了没"
 ```
 
-**质量保障**：沿用现有 Eval 体系（32 个用例 + 自动回归），并新增 Flow Steps 自动化 Eval。当前三个垂直切片验证边界：`bayes-starter` 覆盖 probability，`industrial-revolution` 覆盖 timeline，`inflation-deflation` 覆盖 comparison。`eval:flow-manual` 继续用于 10 次人工采样，`eval:flow` 用于自动检查 3 类知识类型 × 每类 5 个固定检查点，覆盖步骤数量、Pattern 链、payload 完整度、文案安全和概念锚点。
+**质量保障**：沿用现有 Eval 体系（32 个用例 + 自动回归），并新增 Flow Steps 自动化 Eval。当前五个公开切片共同覆盖全部 10 类 Pattern：贝叶斯覆盖小测/卡片/参数，DNS 覆盖系统搭建/分类，期权覆盖概率/模拟/分支，工业革命覆盖时间线，通胀通缩覆盖对比。`eval:flow-manual` 继续用于 10 次人工采样，`eval:flow` 用于自动检查 3 类知识类型 × 每类 5 个固定检查点，覆盖步骤数量、Pattern 链、payload 完整度、文案安全和概念锚点。
 
 ---
 
@@ -179,11 +179,11 @@ V5 首页与 Hub 采用白底、低饱和产品色和大圆角卡片。颜色不
 - 页面底色保持白色，卡片用低饱和奶油色块区分主题。
 - 三张首页卡片必须各有一个稳定主题色，但主题色只服务于识别，不抢主 CTA。
 - CTA 使用实底色和白字，避免黑灰按钮让页面变成工具感。
-- 导航栏和“3 个话题 / 每话题 3 关 / 完成记录写入图鉴”证明条保持中性灰。
+- 导航栏和“5 个话题 / 每话题 3 关 / 覆盖 10 类 Pattern”证明条保持中性灰。
 - 标题优先保证清晰阅读；卡片标题可以使用对应主题色，页面级大标题不参与多色竞争。
 - “只能一行”是文案长度约束，不是视觉截断策略；禁止依赖 `text-overflow: ellipsis` 隐藏超长文案。
 - 首页 Hero 副标题控制在 18 个汉字左右；话题卡 hook 控制在 14 个汉字左右；Hub 卡片摘要控制在 16 个汉字左右。
-- 首页话题不是三个平等选项，而是纵向学习路径；首个话题承担默认起点，其余话题按顺序向下展开。
+- 首页话题不是平等选项，而是纵向学习路径；首个话题承担默认起点，其余话题按顺序向下展开。
 - 顶栏必须反映基础产品结构，至少包含“首页”和“我的图鉴”，当前页需要有明确高亮。
 - 卡片区使用“选择一个话题开始”作为行动标题，替代自证式证明条。
 ---
@@ -333,13 +333,13 @@ arrative_branch` | `#E879BA` | 选择/分支 |
 
 ### 8.1 V1 做
 
-- [x] Explore 自由生成首页：任意 topic 输入 + AI 推荐/手选 Pattern + 3 个精选示例起点 + Hub 入口
+- [x] Explore 自由生成首页：任意 topic 输入 + AI 推荐/手选 Pattern + 5 个精选示例起点 + Hub 入口
 - [x] Flow 页：三段式布局 + 进度条 + 底部变色操作栏 + 组件切换动画（framer-motion）
 - [x] Flow Steps 引擎：LLM 生成 3-4 步微挑战流，知识类型自动匹配 Pattern
 - [x] 趣灵精灵：4 态情绪提示（轻量 token 版）
 - [x] Hub 页：轻量成就数字 + 知识路径足迹 + 快速回顾
 - [x] Eval 体系扩展到 Flow Steps 场景
-- [x] 作品集模式代码侧完成：一个链接打开即可玩 3 个 topic，并在同一浏览器上下文写入 Hub；外部生产部署随 git 推送后由 Vercel 重新发布
+- [x] 作品集模式代码侧完成：一个链接打开即可玩 5 个 topic，并在同一浏览器上下文写入 Hub；外部生产部署随 git 推送后由 Vercel 重新发布
 
 ### 8.2 V1 不做
 
@@ -417,7 +417,7 @@ Hub 的路径节点不按列表顺序轮换颜色，而是复用 V5 既有四个
 当前口径：V5 已从“求职作品集三条固定切片”推进到“自由生成 Flow 的最小产品闭环”。用户可以在首页输入任意知识点，选择 `AI 推荐` 或指定 Pattern，生成三关互动 Flow，完成后继续点选 AI 延伸分支。
 
 已完成：
-- `/explore`：主入口为自由输入 + Pattern 选择器；三张精选 topic 降级为“试试这些起点”。
+- `/explore`：主入口为自由输入 + Pattern 选择器；五张精选 topic 降级为“试试这些起点”，并承担 Pattern 能力展示。
 - `/api/flow`：`GET` 保留 showcase Flow；`POST` 支持 `{ topic, preferredPattern }` 动态生成三关 Flow。
 - `/flow/custom`：播放 sessionStorage 中的动态 Flow；缺失时引导用户回首页重新生成。
 - Flow 完成态：优先展示 `flow.follow_ups`；点击 AI 延伸分支会再次调用 `/api/flow` 生成下一组三关。
@@ -427,8 +427,8 @@ Hub 的路径节点不按列表顺序轮换颜色，而是复用 V5 既有四个
 真实 AI 与 mock 边界：
 - 真实打通：`/explore -> POST /api/flow -> DeepSeek -> 三关 KnowledgeFlow -> /flow/custom`。
 - 真实打通：`/studio -> /api/chat -> DeepSeek -> Tool Calling / JSON fallback -> Schema -> 互动组件`。
-- 真实打通：showcase Flow 的 `/api/flow GET`，当前支持 `bayes-starter`、`industrial-revolution`、`inflation-deflation`，失败时回退对应 mock Flow。
-- fallback：动态 Flow 在无 key、LLM 异常或输出不可解析时，回退为“按用户输入 topic 生成的通用三关 Flow”，不再固定退回三张精选卡。
+- 真实打通：showcase Flow 的 `/api/flow GET`，当前支持 `bayes-starter`、`dns-router`、`options-risk`、`industrial-revolution`、`inflation-deflation`，失败时回退对应 mock Flow。
+- fallback：动态 Flow 在无 key、LLM 异常或输出不可解析时，回退为“按用户输入 topic 生成的通用三关 Flow”，不再固定退回精选卡。
 - 仍为本地/静态：Explore 示例卡片、旧 curated follow-up、视觉资源 registry、Hub 本机记录、账号级持久化。
 
 暂不做：账号登录、多设备同步、真实社区发布、内容审核后台、生产级数据库、真实埋点分析、T38 默认体验额度与自定义 API Key 方案。
