@@ -256,9 +256,9 @@ interface KnowledgeFlow {
 公开作品集配置：
 
 - `src/lib/content/mock-flows.ts` 维护 `SHOWCASE_FLOW_IDS`，当前固定为 `bayes-starter`、`industrial-revolution`、`inflation-deflation`。
-- `/explore` 只读取 `getShowcaseFlows()`，不展示完整 mock flow 列表、分类筛选或搜索。
-- 三个展示 topic 分别覆盖 probability、timeline、comparison 三类知识结构；每个 topic 都有三关 fallback Flow，LLM 失败时仍可完整体验。
-- 作品集模式的目标是让面试官 3 分钟内看见能力闭环：话题选择 -> 三关互动 -> 完成记录进入 Hub。
+- `/explore` 主入口调用 `POST /api/flow` 生成动态 Flow；`getShowcaseFlows()` 只用于“试试这些起点”的稳定示例。
+- 三个示例 topic 分别覆盖 probability、timeline、comparison 三类知识结构；每个 topic 都有三关 fallback Flow，LLM 失败时仍可完整体验。
+- 当前公开入口的目标是让用户立即体验能力闭环：自由输入或示例起点 -> 三关互动 -> AI 分支继续 -> 完成记录进入 Hub。
 Flow 渲染规则：
 
 - Explore 只展示话题卡，不内嵌互动组件。
@@ -332,8 +332,7 @@ arrative_branch` |
 | `generate_classification_sort` | `classification_sort` |
 | `generate_simulation_play` | `simulation_play` |
 
-T30 已在 `src/lib/tools/generative-tools.ts` 定义 10 个 Pattern Tool，每个 Tool 的 `inputSchema` 包含该 Pattern 的 payload 字段、可选 `template`、`depth` 和
-ext_concepts`。T31 已让 `/api/chat` 优先通过 Tool Calling 选择 Pattern，Tool 参数可携带模板 ID 以覆盖默认模板。若 DeepSeek Tool Calling 不稳定，现有 JSON Schema 生成链路作为 L2 fallback，最终仍可回退 mock schema。
+T30 已在 `src/lib/tools/generative-tools.ts` 定义 10 个 Pattern Tool，每个 Tool 的 `inputSchema` 包含该 Pattern 的 payload 字段、可选 `template`、`depth` 和 `next_concepts`。T31 已让 `/api/chat` 优先通过 Tool Calling 选择 Pattern，Tool 参数可携带模板 ID 以覆盖默认模板。若 DeepSeek Tool Calling 不稳定，现有 JSON Schema 生成链路作为 L2 fallback，最终仍可回退 mock schema。
 
 来源输入技术原则：
 
@@ -417,6 +416,7 @@ npm run typecheck
 npm run build
 npm run eval:score
 npm run eval:flow
+npm run eval:flow-dynamic
 ```
 
 涉及前端交互时，启动本地服务并用浏览器或 Playwright 验证至少一个真实路径。
@@ -573,6 +573,12 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 | 旧 curated follow-up | `getFlowFollowUps()` 静态映射 | 仅作为旧 Flow 或无 `flow.follow_ups` 时的 fallback。 |
 | Hub 图鉴 | localStorage + `/api/state` | 记录真实本机完成路径，但不做账号级持久化。 |
 | 视觉资源 | `visual-assets.ts` 本地 registry | `visual_asset` 是增强提示，不调用外部图像生成。 |
+
+
+动态 Flow fallback 回归：
+
+- `tests/eval/dynamic-flow-score.ts` 会临时移除 `DEEPSEEK_API_KEY`，直接调用 `generateDynamicFlow()`，验证无 key 时仍返回 `source=mock` 的 `custom-*` 三关 Flow。
+- 覆盖 auto、`system_builder`、`process_timeline`、`comparison`、`parameter_explore` 五种输入，确保手选 Pattern 至少出现在一关里。
 
 ### 完成口径
 

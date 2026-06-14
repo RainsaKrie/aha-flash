@@ -4,6 +4,13 @@
 
 ---
 
+## 2026-06-14
+
+### 动态 Flow 回归护栏
+- 新增 `npm run eval:flow-dynamic`，覆盖无 API key 时的动态 Flow fallback。
+- 回归用例验证任意 topic 会生成 `custom-*` 三关 Flow，且手选 `system_builder`、`process_timeline`、`comparison`、`parameter_explore` 时对应 Pattern 会进入关卡链。
+
+---
 ## 2026-06-13
 
 ### 自由生成 Flow 主入口

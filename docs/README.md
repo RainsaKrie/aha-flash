@@ -55,9 +55,10 @@ npm run typecheck
 npm run build
 npm run eval:score
 npm run eval:flow
+npm run eval:flow-dynamic
 ```
 
-没有配置 `DEEPSEEK_API_KEY` 时，应用会使用 mock fallback，公开作品集三条 Flow 仍可完整走完。
+没有配置 `DEEPSEEK_API_KEY` 时，应用会使用 mock fallback：动态输入会生成按用户 topic 包装的通用三关 Flow，三条精选示例也仍可完整走完。
 <!-- DOCS_STATUS_START -->
 ## 当前状态速览（2026-06-13）
 - V5 主入口已从“3 个固定 topic 作品集”升级为“首页自由输入任意知识 -> AI 生成三关 Flow -> 完成后继续选择分支”。
@@ -66,4 +67,5 @@ npm run eval:flow
 - 动态 Flow 只保存在当前浏览器会话：Explore 写入 sessionStorage，`/flow/custom?draftId=...` 播放；完成记录继续写入 Hub localStorage。
 - mock 边界已调整：无 API key 或 LLM 失败时，动态 Flow 回退为“按用户 topic 包装的通用 fallback Flow”，不再固定退回贝叶斯/工业革命/通胀。
 - 当前未做：账号、数据库、跨设备同步、真实社区发布、审核后台、真实埋点和生产级持久化。
+- `npm run eval:flow-dynamic` 覆盖无 API key 时的动态 fallback：任意 topic 仍生成 `custom-*` 三关 Flow，手选 Pattern 必须进入关卡链。
 <!-- DOCS_STATUS_END -->

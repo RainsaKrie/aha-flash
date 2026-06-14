@@ -1,15 +1,15 @@
 import { generateText } from "ai";
-import { getLLMProvider } from "@/lib/llm/provider";
-import { PATTERN_LABELS, type FlowPatternPreference } from "@/lib/content/flow-pattern-options";
-import { validateSchema } from "@/lib/llm/schema-validator";
+import { getLLMProvider } from "../llm/provider.ts";
+import { PATTERN_LABELS, type FlowPatternPreference } from "./flow-pattern-options.ts";
+import { validateSchema } from "../llm/schema-validator.ts";
 import {
   type FollowUpTopic,
   type KnowledgeFlow,
   type KnowledgePlay,
   type TopicCategory,
   type TopicDifficulty,
-} from "@/lib/content/mock-flows";
-import { SCHEMA_CATALOG, type PatternType, type TemplateId, type UISchema } from "@/types/schema";
+} from "./mock-flows.ts";
+import { SCHEMA_CATALOG, type PatternType, type TemplateId, type UISchema } from "../../types/schema.ts";
 
 export interface DynamicFlowInput {
   topic: string;
