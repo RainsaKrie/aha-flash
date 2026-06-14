@@ -413,12 +413,12 @@ V5 取代旧版 PRODUCT.md 的产品定位、页面体验、V1 范围和成功�
 Hub 的路径节点不按列表顺序轮换颜色，而是复用 V5 既有四个语义角色色：技术/系统使用主蓝，数理/概率使用辅助紫，历史/时间线使用行动橙，经济/金融使用完成绿。无法归类时默认使用主蓝，避免引入新的 Hub 专属配色体系。
 
 <!-- CURRENT_STATUS_START -->
-## 13. 当前完成度快照（2026-06-13）
+## 13. 当前完成度快照（2026-06-14）
 当前口径：V5 已从“求职作品集三条固定切片”推进到“自由生成 Flow 的最小产品闭环”。用户可以在首页输入任意知识点，选择 `AI 推荐` 或指定 Pattern，生成三关互动 Flow，完成后继续点选 AI 延伸分支。
 
 已完成：
 - `/explore`：主入口为自由输入 + Pattern 选择器；五张精选 topic 降级为“试试这些起点”，并承担 Pattern 能力展示。
-- `/api/flow`：`GET` 保留 showcase Flow；`POST` 支持 `{ topic, preferredPattern }` 动态生成三关 Flow。
+- `/api/flow`：`GET` 保留 showcase Flow；`POST` 支持 `{ topic, preferredPattern }` 动态生成三关 Flow，并通过 `grounding_terms` 做通用贴题校验。
 - `/flow/custom`：播放 sessionStorage 中的动态 Flow；缺失时引导用户回首页重新生成。
 - Flow 完成态：优先展示 `flow.follow_ups`；点击 AI 延伸分支会再次调用 `/api/flow` 生成下一组三关。
 - Hub：动态 Flow 完成后继续写入本机完成记录，并通过 `source: generated` 标记来源。
@@ -428,7 +428,8 @@ Hub 的路径节点不按列表顺序轮换颜色，而是复用 V5 既有四个
 - 真实打通：`/explore -> POST /api/flow -> DeepSeek -> 三关 KnowledgeFlow -> /flow/custom`。
 - 真实打通：`/studio -> /api/chat -> DeepSeek -> Tool Calling / JSON fallback -> Schema -> 互动组件`。
 - 真实打通：showcase Flow 的 `/api/flow GET`，当前支持 `bayes-starter`、`dns-router`、`options-risk`、`industrial-revolution`、`inflation-deflation`，失败时回退对应 mock Flow。
-- fallback：动态 Flow 在无 key、LLM 异常或输出不可解析时，回退为“按用户输入 topic 生成的通用三关 Flow”，不再固定退回精选卡。
+- fallback：动态 Flow 在无 key、LLM 异常或输出不可解析时，回退为“按用户输入 topic 生成的通用三关 Flow”，不再固定退回精选卡，也不为单个概念维护专用预制内容。
+- 生成质量护栏：LLM 输出必须给出 3-5 个专业锚点 `grounding_terms`，系统检查这些锚点是否进入三关内容；不通过时自动 repair 一次，仍失败才进入通用 fallback。
 - 仍为本地/静态：Explore 示例卡片、旧 curated follow-up、视觉资源 registry、Hub 本机记录、账号级持久化。
 
 暂不做：账号登录、多设备同步、真实社区发布、内容审核后台、生产级数据库、真实埋点分析、T38 默认体验额度与自定义 API Key 方案。

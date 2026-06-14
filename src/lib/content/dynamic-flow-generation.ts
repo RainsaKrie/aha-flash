@@ -71,8 +71,15 @@ function makeDynamicId(topic: string) {
   return `custom-${Date.now().toString(36)}-${hash.toString(36).slice(0, 6)}`;
 }
 
-function baseSchema(pattern: PatternType, topic: string): UISchema {
+function pickAnchor(groundingTerms: string[], index: number, fallback: string) {
+  return cleanText(groundingTerms[index], fallback, 18);
+}
+
+function baseSchema(pattern: PatternType, topic: string, groundingTerms: string[] = []): UISchema {
   const title = `把${topic}玩明白`;
+  const anchorA = pickAnchor(groundingTerms, 0, `${topic}入口`);
+  const anchorB = pickAnchor(groundingTerms, 1, `${topic}动力`);
+  const anchorC = pickAnchor(groundingTerms, 2, `${topic}边界`);
   const common = {
     version: "2.0",
     depth: "rapid" as const,
@@ -88,9 +95,9 @@ function baseSchema(pattern: PatternType, topic: string): UISchema {
       payload: {
         title,
         pool: [
-          { name: "核心机会", rarity: "5", probability: 20, value: 90 },
-          { name: "普通路径", rarity: "4", probability: 50, value: 55 },
-          { name: "误判风险", rarity: "3", probability: 30, value: 20 },
+          { name: anchorA, rarity: "5", probability: 20, value: 90 },
+          { name: anchorB, rarity: "4", probability: 50, value: 55 },
+          { name: anchorC, rarity: "3", probability: 30, value: 20 },
         ],
         option_cost: 10,
         strike_price: 60,
@@ -110,7 +117,7 @@ function baseSchema(pattern: PatternType, topic: string): UISchema {
       template: "single_slider",
       payload: {
         title,
-        variable_label: "关键变量",
+        variable_label: anchorA,
         min: 0,
         max: 100,
         default_value: 50,
@@ -142,9 +149,9 @@ function baseSchema(pattern: PatternType, topic: string): UISchema {
       payload: {
         title,
         cards: [
-          { front: "核心动作", back: `${topic}真正重要的是它让什么发生变化。` },
-          { front: "关键条件", back: `先找出${topic}成立时必须具备的条件。` },
-          { front: "常见误区", back: `不要只背定义，要看它在具体情境里怎么起作用。` },
+          { front: anchorA, back: `先看${anchorA}怎样让${topic}进入具体场景。` },
+          { front: anchorB, back: `${anchorB}通常决定${topic}会朝哪个方向发展。` },
+          { front: anchorC, back: `理解${anchorC}，才知道${topic}什么时候不适用。` },
         ],
       },
     };
@@ -174,10 +181,10 @@ function baseSchema(pattern: PatternType, topic: string): UISchema {
       template: "split_panel",
       payload: {
         title,
-        subject_a: "表面理解",
-        subject_b: "机制理解",
-        left: { label: "表面理解", content: `只记住${topic}的定义。` },
-        right: { label: "机制理解", content: `看见${topic}如何改变选择、结果或系统。` },
+        subject_a: "只看名称",
+        subject_b: "看见动作",
+        left: { label: "只看名称", content: `只记住${topic}叫什么，容易停在解释层。` },
+        right: { label: "看见动作", content: `把${anchorA}、${anchorB}和${anchorC}连起来，才知道它怎么起作用。` },
         dimensions: [
           { label: "关注点", a: "名词解释", b: "动作和机制", insight: "先看它做了什么，再记它叫什么。" },
           { label: "使用方式", a: "背答案", b: "解释新情境", insight: "能迁移到新情境才算真的懂。" },
@@ -197,9 +204,9 @@ function baseSchema(pattern: PatternType, topic: string): UISchema {
         title,
         question: `理解${topic}时，最应该先抓住什么？`,
         options: [
-          { label: "它改变了什么", correct: true, explanation: "概念的核心通常藏在它推动的变化里。" },
-          { label: "它的字面名字", correct: false, explanation: "名字只是入口，不是理解本身。" },
-          { label: "越复杂越准确", correct: false, explanation: "复杂不等于更接近机制。" },
+          { label: `先抓住${anchorA}`, correct: true, explanation: `${anchorA}能把${topic}从名词变成可判断的线索。` },
+          { label: "只背它叫什么", correct: false, explanation: "名字只是入口，不足以解释它怎样起作用。" },
+          { label: "堆更多术语", correct: false, explanation: "术语变多不代表理解更准，关键是能把线索连起来。" },
         ],
       },
     };
@@ -287,13 +294,13 @@ function baseSchema(pattern: PatternType, topic: string): UISchema {
   };
 }
 
-function makeFallbackPlay(topic: string, pattern: PatternType, index: number): KnowledgePlay {
+function makeFallbackPlay(topic: string, pattern: PatternType, index: number, groundingTerms: string[] = []): KnowledgePlay {
   const titles = ["先猜一下", "看见机制", "动手验证"];
   return {
     id: `dynamic-${index + 1}`,
     title: titles[index] || "继续探索",
     concept: topic,
-    schema: baseSchema(pattern, topic),
+    schema: baseSchema(pattern, topic, groundingTerms),
     estimated_minutes: index === 1 ? 2 : 1,
     reward_copy: ["你先抓住了问题的入口。", "你看见机制开始动起来了。", "这一关把线索连起来了。"][index] || "你又想通了一层。",
   };
@@ -305,341 +312,145 @@ function fallbackPatternChain(preferredPattern: FlowPatternPreference): PatternT
 }
 
 
-const AGENT_RELEVANCE_TERMS = [
-  "agent",
-  "智能体",
-  "目标",
-  "规划",
-  "计划",
-  "工具",
-  "调用",
-  "执行",
-  "观察",
-  "反馈",
-  "记忆",
-  "环境",
-  "工作流",
-  "workflow",
-  "chatbot",
-  "自主",
+const GENERIC_GROUNDING_TERMS = [
+  "概念",
+  "机制",
+  "关键",
+  "变量",
+  "结果",
+  "影响",
+  "系统",
+  "结构",
+  "流程",
+  "变化",
+  "理解",
+  "应用",
+  "边界",
+  "条件",
+  "动作",
+  "问题",
+  "答案",
+  "定义",
+  "核心",
+  "表面",
+  "topic",
+  "concept",
+  "thing",
+  "system",
+  "process",
+  "factor",
+  "result",
+  "change",
+  "mechanism",
 ];
 
-function isAgentTopic(topic: string) {
-  const normalized = topic.toLowerCase().replace(/\s+/g, "");
-  return /\bagents?\b/i.test(topic) || normalized.includes("aiagent") || topic.includes("智能体") || topic.includes("工具调用");
+const PLACEHOLDER_PHRASES = [
+  "相近概念",
+  "这个概念",
+  "关键变量",
+  "核心机会",
+  "普通路径",
+  "误判风险",
+  "表面理解",
+  "机制理解",
+  "它改变了什么",
+  "它的字面名字",
+  "越复杂越准确",
+];
+
+function normalizeGroundingText(value: string) {
+  return value.toLowerCase().replace(/[\s\-_，。,.。:：;；、/()（）\[\]【】]+/g, "");
 }
 
-function canonicalAgentConcept(topic: string) {
-  if (/workflow|工作流|相近|类似|vs|VS|对比/.test(topic)) return "AI Agent vs 工作流";
-  if (/chatbot|聊天|机器人/.test(topic)) return "AI Agent vs 聊天机器人";
-  return "AI Agent";
+function uniqueCleanStrings(value: unknown, fallback: string[] = [], maxLength = 24) {
+  const source = Array.isArray(value) ? value : fallback;
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const item of source) {
+    const text = cleanText(item, "", maxLength);
+    if (!text) continue;
+    const key = normalizeGroundingText(text);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    result.push(text);
+  }
+
+  return result;
 }
 
-function agentPatternChain(preferredPattern: FlowPatternPreference): PatternType[] {
-  if (preferredPattern === "auto" || preferredPattern === "knowledge_check") return ["knowledge_check", "system_builder", "comparison"];
-  return ["knowledge_check", preferredPattern, preferredPattern === "comparison" ? "system_builder" : "comparison"];
+function isGenericGroundingTerm(term: string, topic: string) {
+  const normalized = normalizeGroundingText(term);
+  const topicKey = normalizeGroundingText(topic);
+  if (!normalized || normalized === topicKey) return true;
+  if (normalized.length <= 1) return true;
+  return GENERIC_GROUNDING_TERMS.some((generic) => normalized === normalizeGroundingText(generic));
 }
 
-function agentCommon(pattern: PatternType) {
-  return {
-    version: "2.0",
-    depth: "rapid" as const,
-    visual_asset: { tag: VISUAL_TAGS[pattern], mood: "idle" as const },
-    next_concepts: [],
-  };
+function normalizeGroundingTerms(value: unknown, topic: string, concepts: string[]) {
+  const candidates = uniqueCleanStrings(value, concepts, 28);
+  return candidates
+    .filter((term) => !isGenericGroundingTerm(term, topic))
+    .slice(0, 5);
 }
 
-function agentSchema(pattern: PatternType, concept: string): UISchema {
-  const common = agentCommon(pattern);
+function countIncludes(text: string, term: string) {
+  const normalizedText = normalizeGroundingText(text);
+  const normalizedTerm = normalizeGroundingText(term);
+  if (!normalizedTerm) return 0;
+  return normalizedText.includes(normalizedTerm) ? 1 : 0;
+}
 
-  if (pattern === "knowledge_check") {
-    return {
-      ...common,
-      pattern,
-      template: "single_question",
-      payload: {
-        title: "先分清 Agent",
-        question: "AI Agent 和普通聊天机器人最关键的区别是什么？",
-        options: [
-          { label: "围绕目标规划步骤，并能调用工具执行", correct: true, explanation: "Agent 不只是回答文本，而是把目标拆成行动，调用工具，观察结果再调整。" },
-          { label: "回答更长、更像真人", correct: false, explanation: "语气像不像人不是 Agent 的核心，能否行动和反馈才是关键。" },
-          { label: "提前写好固定流程", correct: false, explanation: "固定流程更像 workflow；Agent 的特点是根据目标和反馈动态决策。" },
-        ],
-      },
-    };
+function evaluateFlowGrounding(flow: KnowledgeFlow, topic: string, groundingTerms: string[]) {
+  const text = JSON.stringify(flow);
+  const failures: string[] = [];
+  const cleanTerms = normalizeGroundingTerms(groundingTerms, topic, []);
+  const placeholderHits = PLACEHOLDER_PHRASES.filter((phrase) => text.includes(phrase));
+  const topicVisible = countIncludes(text, topic) > 0;
+  const presentTerms = cleanTerms.filter((term) => countIncludes(text, term) > 0);
+
+  if (!topicVisible && presentTerms.length < 2) {
+    failures.push("内容没有明显围绕用户输入的主题展开");
   }
 
-  if (pattern === "system_builder") {
-    return {
-      ...common,
-      pattern,
-      template: "module_sandbox",
-      payload: {
-        title: "搭一个 Agent 执行闭环",
-        target: "拼出 AI Agent 从目标到行动的核心结构",
-        modules: [
-          { id: "goal", label: "目标", description: "用户给出的任务或要达成的结果。", role: "start" },
-          { id: "planner", label: "规划器", description: "把目标拆成可以执行的步骤。", role: "plan" },
-          { id: "tool", label: "工具调用", description: "搜索、写文件、查数据库等外部能力。", role: "act" },
-          { id: "observe", label: "观察反馈", description: "读取工具结果，判断下一步是否要调整。", role: "observe" },
-          { id: "memory", label: "记忆状态", description: "保存上下文、偏好和已经完成的步骤。", role: "state" },
-          { id: "tone", label: "说话风格", description: "会影响体验，但不是 Agent 能行动的必需模块。", role: "optional" },
-        ],
-        required_module_ids: ["goal", "planner", "tool", "observe", "memory"],
-        expected_sequence: ["goal", "planner", "tool", "observe", "memory"],
-        connections: [
-          { from: "goal", to: "planner", label: "拆成步骤" },
-          { from: "planner", to: "tool", label: "选择工具" },
-          { from: "tool", to: "observe", label: "拿到结果" },
-          { from: "observe", to: "memory", label: "更新下一步" },
-        ],
-        success_summary: "你把 Agent 看成了目标、规划、工具、反馈和记忆组成的行动闭环。",
-      },
-    };
+  if (cleanTerms.length < 2) {
+    failures.push("缺少足够具体的 grounding_terms");
   }
 
-  if (pattern === "comparison") {
-    return {
-      ...common,
-      pattern,
-      template: "split_panel",
-      payload: {
-        title: "Agent 和工作流差在哪",
-        subject_a: "固定工作流",
-        subject_b: "AI Agent",
-        left: { label: "固定工作流", content: "人提前写好每一步，系统按顺序执行。遇到新情况时，需要人改流程。" },
-        right: { label: "AI Agent", content: "系统围绕目标做规划，调用工具，观察反馈，再决定下一步。" },
-        dimensions: [
-          { label: "决策方式", a: "预设规则", b: "基于目标和上下文动态规划", insight: "Agent 的关键不是自动化，而是能根据反馈调整。" },
-          { label: "外部能力", a: "通常只跑内部步骤", b: "可以调用搜索、代码、数据库等工具", insight: "工具调用让 Agent 从会说变成会做。" },
-          { label: "失败处理", a: "失败后停住或报错", b: "观察结果后重试、换工具或改计划", insight: "反馈循环决定它是不是像一个行动者。" },
-        ],
-        summary: "工作流强调预设步骤，Agent 强调围绕目标的动态行动闭环。",
-      },
-    };
+  if (cleanTerms.length >= 2 && presentTerms.length < Math.min(2, cleanTerms.length)) {
+    failures.push(`专业锚点没有进入关卡内容: ${cleanTerms.join("、")}`);
   }
 
-  if (pattern === "parameter_explore") {
-    return {
-      ...common,
-      pattern,
-      template: "single_slider",
-      payload: {
-        title: "调一调 Agent 的自主度",
-        variable_label: "自主程度",
-        min: 0,
-        max: 100,
-        default_value: 55,
-        unit: "%",
-        explanation_template: "自主度越高，Agent 越会自己拆任务和调用工具，但也越需要边界和审核。",
-        scenarios: [
-          { label: "只回答", value: 20 },
-          { label: "能用工具", value: 55 },
-          { label: "能自调", value: 85 },
-        ],
-        outputs: [
-          { label: "任务完成度", model: "linear", min: 0, max: 100, default: 55 },
-          { label: "失控风险", model: "logarithmic", min: 0, max: 60, default: 18 },
-        ],
-        insight_rules: [
-          { when: "low", text: "低自主度更像聊天机器人：稳定，但很难独立完成复杂任务。" },
-          { when: "mid", text: "中等自主度会开始调用工具，Agent 的行动能力变得明显。" },
-          { when: "high", text: "高自主度需要权限边界、观察反馈和人类审核一起约束。" },
-        ],
-      },
-    };
-  }
-
-  if (pattern === "concept_memory") {
-    return {
-      ...common,
-      pattern,
-      template: "term_cards",
-      payload: {
-        title: "记住 Agent 三件事",
-        cards: [
-          { front: "目标", back: "Agent 必须围绕一个明确目标行动，而不是随便聊天。" },
-          { front: "工具调用", back: "Agent 通过搜索、代码、数据库等工具把想法变成动作。" },
-          { front: "反馈循环", back: "Agent 会观察执行结果，再决定继续、重试还是换策略。" },
-        ],
-      },
-    };
-  }
-
-  if (pattern === "process_timeline") {
-    return {
-      ...common,
-      pattern,
-      template: "horizontal_timeline",
-      payload: {
-        title: "Agent 如何跑一轮任务",
-        events: [
-          { label: "接收目标", description: "用户给出想完成的任务，而不是只问一个问题。" },
-          { label: "规划步骤", description: "Agent 把目标拆成可执行的小任务。" },
-          { label: "调用工具", description: "它选择搜索、代码、文件或 API 等工具去执行。" },
-          { label: "观察反馈", description: "读取执行结果，判断是否达成目标。" },
-          { label: "调整继续", description: "如果结果不够好，就改计划再试。" },
-        ],
-      },
-    };
-  }
-
-  if (pattern === "classification_sort") {
-    return {
-      ...common,
-      pattern,
-      template: "category_buckets",
-      payload: {
-        title: "分清 Agent 的核心和表象",
-        categories: [
-          { id: "core", name: "Agent 核心" },
-          { id: "surface", name: "表面特征" },
-        ],
-        items: [
-          { label: "目标驱动", correct_category: "core", explanation: "没有目标，Agent 就只是在回应输入。" },
-          { label: "工具调用", correct_category: "core", explanation: "工具让 Agent 能执行真实动作。" },
-          { label: "反馈调整", correct_category: "core", explanation: "观察结果并修正计划，是 Agent 区别于固定流程的关键。" },
-          { label: "语气像人", correct_category: "surface", explanation: "拟人语气能改善体验，但不是 Agent 的本质。" },
-        ],
-      },
-    };
-  }
-
-  if (pattern === "narrative_branch") {
-    return {
-      ...common,
-      pattern,
-      template: "branch_story",
-      payload: {
-        title: "遇到任务时怎么选",
-        opening: "你想让系统帮你整理一份竞品报告，现在有三种做法。",
-        branches: [
-          { choice_label: "只问聊天机器人", outcome_description: "它能解释思路，但不会主动查资料和整理来源。", insight: "聊天机器人偏回答，行动能力有限。" },
-          { choice_label: "跑固定工作流", outcome_description: "它能按固定步骤抓取和汇总，但遇到异常时容易停住。", insight: "工作流稳定，但灵活性来自人提前设计。" },
-          { choice_label: "交给 Agent", outcome_description: "它会拆任务、查资料、观察结果，再调整下一步。", insight: "Agent 的价值在动态规划和反馈循环。" },
-        ],
-      },
-    };
-  }
-
-  if (pattern === "simulation_play") {
-    return {
-      ...common,
-      pattern,
-      template: "parameter_simulation",
-      payload: {
-        title: "模拟 Agent 能力边界",
-        params: [
-          { label: "工具权限", min: 0, max: 100, default: 60, unit: "%" },
-          { label: "人类审核", min: 0, max: 100, default: 55, unit: "%" },
-          { label: "任务复杂度", min: 0, max: 100, default: 45, unit: "%" },
-        ],
-        compute_formula_description: "工具权限提高行动能力，人类审核降低风险，任务复杂度会放大规划和反馈的重要性。",
-        steps: 5,
-      },
-    };
+  if (placeholderHits.includes("相近概念") || placeholderHits.length >= 3) {
+    failures.push(`出现占位式泛化文案: ${placeholderHits.join("、")}`);
   }
 
   return {
-    ...common,
-    pattern: "probability",
-    template: "card_flip_reveal",
-    payload: {
-      title: "抽一次 Agent 执行结果",
-      pool: [
-        { name: "目标清楚", flavor_label: "规划顺利", rarity: "5", probability: 25, value: 90 },
-        { name: "工具可用", flavor_label: "行动成功", rarity: "4", probability: 35, value: 70 },
-        { name: "反馈含糊", flavor_label: "需要重试", rarity: "3", probability: 25, value: 35 },
-        { name: "权限不足", flavor_label: "只能停住", rarity: "3", probability: 15, value: 10 },
-      ],
-      option_cost: 10,
-      strike_price: 60,
-      pulls_per_try: 1,
-      explanation_map: {
-        win: "目标、工具和反馈都对齐时，Agent 才像一个可靠行动者。",
-        lose: "缺少权限或反馈时，Agent 会退化成只会回答的助手。",
-      },
-    },
+    ok: failures.length === 0,
+    reason: failures.join("；"),
+    groundingTerms: cleanTerms,
   };
 }
 
-function makeAgentFallbackPlay(concept: string, pattern: PatternType, index: number): KnowledgePlay {
-  const titles = ["先分清", "搭闭环", "看边界"];
-  const rewards = [
-    "你抓住了 Agent 和普通聊天的区别。",
-    "你把 Agent 的行动闭环拼起来了。",
-    "你看清了 Agent 和工作流的边界。",
-  ];
-  return {
-    id: `agent-${index + 1}`,
-    title: titles[index] || "继续理解",
-    concept,
-    schema: agentSchema(pattern, concept),
-    estimated_minutes: index === 1 ? 2 : 1,
-    reward_copy: rewards[index] || "你又想通了一层。",
-  };
-}
+function buildRepairUserPrompt(topic: string, preferredPattern: FlowPatternPreference, reason: string, previousOutput: string) {
+  const preferred = preferredPattern === "auto" ? "AI 推荐 Pattern" : `用户指定 Pattern: ${preferredPattern}`;
+  const clippedOutput = previousOutput.slice(0, 6000);
+  return `上一次输出没有通过趣灵的贴题校验。
+失败原因：${reason}
+主题：${topic}
+Pattern 要求：${preferred}
 
-function makeAgentFallbackFollowUps(): FollowUpTopic[] {
-  return [
-    {
-      id: "agent-follow-up-workflow",
-      title: "和工作流比较",
-      concept: "AI Agent vs 工作流",
-      hook: "看清动态决策和固定流程的边界。",
-      relation: "从 Agent 本体走向相近概念辨析。",
-      kind: "ai_seed",
-      suggestedPattern: "comparison",
-    },
-    {
-      id: "agent-follow-up-tools",
-      title: "看工具调用闭环",
-      concept: "Agent 工具调用",
-      hook: "理解它怎样从会说变成会做。",
-      relation: "从概念定义走向执行结构。",
-      kind: "ai_seed",
-      suggestedPattern: "system_builder",
-    },
-    {
-      id: "agent-follow-up-memory",
-      title: "看记忆与规划",
-      concept: "Agent 记忆与规划",
-      hook: "为什么长期任务需要状态和计划？",
-      relation: "从一次执行走向持续任务。",
-      kind: "ai_seed",
-      suggestedPattern: "process_timeline",
-    },
-  ];
-}
+请重新生成完整 JSON，不要解释。
+修复要求：
+- 先提炼 3-5 个 grounding_terms，它们必须是这个主题的专业锚点，不要写“概念/机制/变量/结果/关键”这类空词。
+- 三关的题目、选项、模块、滑块、解析都要围绕这些专业锚点展开。
+- 不要出现“相近概念”“这个概念”“关键变量”这类占位文案。
+- 如果主题是英文或缩写，保留原词，同时给出对应的专业语义。
 
-function makeAgentFallbackFlow(topicInput: string, preferredPattern: FlowPatternPreference): KnowledgeFlow {
-  const concept = canonicalAgentConcept(topicInput);
-  const patterns = agentPatternChain(preferredPattern);
-  return {
-    id: makeDynamicId(concept),
-    title: concept.includes("vs") ? "Agent 对比" : "Agent 入门",
-    concept,
-    hook: "它不只是会聊天，而是会围绕目标行动。",
-    description: "用三关看懂 Agent 的目标、工具调用和反馈循环。",
-    category: "科技",
-    topic_area: "AI",
-    difficulty: "进阶",
-    estimated_minutes: 4,
-    summary: "AI Agent 的核心是目标驱动、工具调用、观察反馈和状态记忆组成的行动闭环。",
-    concepts: ["目标驱动", "工具调用", "反馈循环", "记忆状态"],
-    plays: patterns.map((pattern, index) => makeAgentFallbackPlay(concept, pattern, index)),
-    follow_ups: makeAgentFallbackFollowUps(),
-    source: "generated",
-  };
-}
-
-function agentFlowLooksRelevant(flow: KnowledgeFlow) {
-  const text = JSON.stringify(flow).toLowerCase();
-  const hits = AGENT_RELEVANCE_TERMS.filter((term) => text.includes(term.toLowerCase())).length;
-  return hits >= 4;
+上一次输出如下，只作为反例参考：
+${clippedOutput}`;
 }
 function makeFallbackFollowUps(topic: string): FollowUpTopic[] {
-  if (isAgentTopic(topic)) return makeAgentFallbackFollowUps();
   return [
     {
       id: "dynamic-follow-up-mechanism",
@@ -652,10 +463,10 @@ function makeFallbackFollowUps(topic: string): FollowUpTopic[] {
     },
     {
       id: "dynamic-follow-up-compare",
-      title: "找一个相近概念比较",
-      concept: `${topic} vs 相近概念`,
-      hook: "通过对比看清边界。",
-      relation: "从单点理解走向边界辨析",
+      title: "看清适用边界",
+      concept: `${topic}的适用边界`,
+      hook: "知道它什么时候有用，什么时候会误导。",
+      relation: "从单点理解走向边界判断",
       kind: "ai_seed",
       suggestedPattern: "comparison",
     },
@@ -673,8 +484,8 @@ function makeFallbackFollowUps(topic: string): FollowUpTopic[] {
 
 function makeFallbackFlow(topicInput: string, preferredPattern: FlowPatternPreference): KnowledgeFlow {
   const topic = cleanTopic(topicInput);
-  if (isAgentTopic(topic)) return makeAgentFallbackFlow(topic, preferredPattern);
   const patterns = fallbackPatternChain(preferredPattern);
+  const groundingTerms = [`${topic}入口`, `${topic}动力`, `${topic}边界`];
   return {
     id: makeDynamicId(topic),
     title: `${topic}入门`,
@@ -686,8 +497,8 @@ function makeFallbackFlow(topicInput: string, preferredPattern: FlowPatternPrefe
     difficulty: "轻松",
     estimated_minutes: 4,
     summary: `你已经把${topic}从一个名词变成了一条能操作的理解路径。`,
-    concepts: [topic, "关键机制", "适用边界"],
-    plays: patterns.map((pattern, index) => makeFallbackPlay(topic, pattern, index)),
+    concepts: groundingTerms,
+    plays: patterns.map((pattern, index) => makeFallbackPlay(topic, pattern, index, groundingTerms)),
     follow_ups: makeFallbackFollowUps(topic),
     source: "generated",
   };
@@ -757,9 +568,9 @@ function templateOwner(template: string) {
   return null;
 }
 
-function repairSchema(rawSchema: unknown, fallbackPattern: PatternType, topic: string): UISchema {
+function repairSchema(rawSchema: unknown, fallbackPattern: PatternType, topic: string, groundingTerms: string[] = []): UISchema {
   const record = asRecord(rawSchema);
-  if (!record) return baseSchema(fallbackPattern, topic);
+  if (!record) return baseSchema(fallbackPattern, topic, groundingTerms);
 
   let pattern = typeof record.pattern === "string" ? record.pattern : "";
   let template = typeof record.template === "string" ? record.template : "";
@@ -771,7 +582,7 @@ function repairSchema(rawSchema: unknown, fallbackPattern: PatternType, topic: s
   }
 
   const catalog = SCHEMA_CATALOG[pattern as PatternType];
-  if (!catalog) return baseSchema(fallbackPattern, topic);
+  if (!catalog) return baseSchema(fallbackPattern, topic, groundingTerms);
   if (!template || !(catalog.templates as readonly string[]).includes(template)) template = catalog.defaultTemplate;
 
   const candidate = {
@@ -780,14 +591,13 @@ function repairSchema(rawSchema: unknown, fallbackPattern: PatternType, topic: s
     template,
     version: typeof record.version === "string" ? record.version : "2.0",
     depth: record.depth === "scenario" || record.depth === "mapping" ? record.depth : "rapid",
-    payload: record.payload || record.config || baseSchema(pattern as PatternType, topic).payload,
+    payload: record.payload || record.config || baseSchema(pattern as PatternType, topic, groundingTerms).payload,
   } as UISchema;
 
-  return validateSchema(candidate) || baseSchema(pattern as PatternType, topic);
+  return validateSchema(candidate) || baseSchema(pattern as PatternType, topic, groundingTerms);
 }
 
 function normalizeFollowUps(value: unknown, topic: string): FollowUpTopic[] {
-  if (isAgentTopic(topic)) return makeAgentFallbackFollowUps();
   if (!Array.isArray(value)) return makeFallbackFollowUps(topic);
   const followUps = value.slice(0, 3).map((item, index) => {
     const record = asRecord(item) || {};
@@ -811,15 +621,19 @@ function normalizeGeneratedFlow(raw: unknown, topicInput: string, preferredPatte
   const fallback = makeFallbackFlow(topicInput, preferredPattern);
   const root = asRecord(raw);
   const candidate = asRecord(root?.flow) || root;
-  if (!candidate) return { flow: fallback, error: "LLM 输出不是对象" };
+  if (!candidate) return { flow: fallback, error: "LLM 输出不是对象", groundingTerms: [] };
 
   const topic = cleanTopic(typeof candidate.concept === "string" ? candidate.concept : topicInput);
+  const concepts = Array.isArray(candidate.concepts)
+    ? candidate.concepts.filter((item): item is string => typeof item === "string" && item.trim().length > 0).slice(0, 5)
+    : fallback.concepts;
+  const groundingTerms = normalizeGroundingTerms(candidate.grounding_terms ?? candidate.groundingTerms, topic, concepts);
   const patternChain = fallbackPatternChain(preferredPattern);
   const rawPlays = Array.isArray(candidate.plays) ? candidate.plays.slice(0, 3) : [];
   const plays = rawPlays.map((rawPlay, index) => {
     const record = asRecord(rawPlay) || {};
     const fallbackPattern = patternChain[index] || "knowledge_check";
-    const schema = repairSchema(record.schema, fallbackPattern, topic);
+    const schema = repairSchema(record.schema, fallbackPattern, topic, groundingTerms);
     return {
       id: cleanText(record.id, `dynamic-${index + 1}`, 48),
       title: cleanText(record.title, fallback.plays[index]?.title || `第 ${index + 1} 关`, 18),
@@ -831,16 +645,13 @@ function normalizeGeneratedFlow(raw: unknown, topicInput: string, preferredPatte
   });
 
   while (plays.length < 3) {
-    plays.push(makeFallbackPlay(topic, patternChain[plays.length] || "knowledge_check", plays.length));
+    plays.push(makeFallbackPlay(topic, patternChain[plays.length] || "knowledge_check", plays.length, groundingTerms));
   }
 
   if (preferredPattern !== "auto" && !plays.some((play) => "pattern" in play.schema && play.schema.pattern === preferredPattern)) {
-    plays[1] = makeFallbackPlay(topic, preferredPattern, 1);
+    plays[1] = makeFallbackPlay(topic, preferredPattern, 1, groundingTerms);
   }
 
-  const concepts = Array.isArray(candidate.concepts)
-    ? candidate.concepts.filter((item): item is string => typeof item === "string" && item.trim().length > 0).slice(0, 5)
-    : fallback.concepts;
 
   return {
     flow: {
@@ -859,6 +670,7 @@ function normalizeGeneratedFlow(raw: unknown, topicInput: string, preferredPatte
       follow_ups: normalizeFollowUps(candidate.follow_ups, topic),
       source: "generated",
     } satisfies KnowledgeFlow,
+    groundingTerms,
   };
 }
 
@@ -904,6 +716,7 @@ ${patternDirectory}
   "topic_area": "短领域名",
   "difficulty": "轻松|进阶|烧脑一点",
   "summary": "完成三关后的总结",
+  "grounding_terms": ["专业锚点1", "专业锚点2", "专业锚点3"],
   "concepts": ["概念1", "概念2", "概念3"],
   "follow_ups": [
     { "title": "下一步标题", "concept": "延伸概念", "relation": "和当前概念的关系", "hook": "一句吸引人的问题", "suggestedPattern": "comparison" }
@@ -925,6 +738,8 @@ ${patternDirectory}
 - 每个 schema 必须能通过对应 Pattern 的 payload 校验。
 - 所有文本必须是纯文本，禁止 HTML、Markdown、花括号占位符。
 - 每一关都要让用户做动作，不要只输出定义。
+- grounding_terms 必须是 3-5 个专业锚点，禁止写“概念/机制/变量/结果/关键”这类空词。
+- 三关内容必须实际使用 grounding_terms，不能只在数组里列出来。
 - follow_ups 必须给 2-3 个 AI 延伸方向，suggestedPattern 必须是允许的 Pattern 之一。
 - 标题和 hook 要短，不要靠省略号截断。`;
 }
@@ -947,26 +762,47 @@ export async function generateDynamicFlow(
   }
 
   try {
+    const system = buildDynamicSystemPrompt(topic, preferredPattern);
     const result = await retryGenerateText({
       model,
-      system: buildDynamicSystemPrompt(topic, preferredPattern),
+      system,
       messages: [{ role: "user", content: `为「${topic}」生成三关 Flow。` }],
     });
     const parsed = parseJson(result.text);
     const normalized = normalizeGeneratedFlow(parsed, topic, preferredPattern);
-    if (isAgentTopic(topic) && !agentFlowLooksRelevant(normalized.flow)) {
+    const grounding = evaluateFlowGrounding(normalized.flow, topic, normalized.groundingTerms);
+
+    if (grounding.ok) {
       return {
-        flow: makeAgentFallbackFlow(topic, preferredPattern),
-        source: "mock",
-        validation_error: "Agent 相关性不足，已使用 Agent 专用兜底。",
+        flow: normalized.flow,
+        source: "llm",
+        validation_error: normalized.error,
         raw_output: includeRaw ? result.text : undefined,
       };
     }
+
+    const repair = await retryGenerateText({
+      model,
+      system,
+      messages: [{ role: "user", content: buildRepairUserPrompt(topic, preferredPattern, grounding.reason, result.text) }],
+    });
+    const repaired = normalizeGeneratedFlow(parseJson(repair.text), topic, preferredPattern);
+    const repairedGrounding = evaluateFlowGrounding(repaired.flow, topic, repaired.groundingTerms);
+
+    if (repairedGrounding.ok) {
+      return {
+        flow: repaired.flow,
+        source: "llm",
+        validation_error: [normalized.error, `初次贴题校验失败，已自动修复: ${grounding.reason}`].filter(Boolean).join(" | ") || undefined,
+        raw_output: includeRaw ? repair.text : undefined,
+      };
+    }
+
     return {
-      flow: normalized.flow,
-      source: "llm",
-      validation_error: normalized.error,
-      raw_output: includeRaw ? result.text : undefined,
+      flow: fallback,
+      source: "mock",
+      validation_error: `贴题校验失败: ${grounding.reason} | 修复失败: ${repairedGrounding.reason}`,
+      raw_output: includeRaw ? repair.text : undefined,
     };
   } catch (error) {
     return {

@@ -272,7 +272,8 @@ Flow Steps 生成策略：
 
 - `src/lib/content/mock-flows.ts` 保留一组内部 mock Flow 库；`SHOWCASE_FLOW_IDS` 只作为 `/explore` 的稳定示例起点，不代表系统能力上限。
 - `src/lib/content/flow-generation.ts` 以 topic spec 驱动 Flow Steps 生成，当前 LLM topic 包括 `bayes-starter`、`industrial-revolution`、`inflation-deflation`。
-- Flow 生成先走 LLM，失败时回退对应 mock Flow，不影响用户继续闯关；未接入 LLM 的 Flow 保持 mock。
+- Flow 生成先走 LLM；动态自由生成会要求模型输出 `grounding_terms`，服务端校验专业锚点是否实际进入三关内容，不通过时带失败原因自动 repair 一次。
+- repair 后仍不贴题、无 key、网络异常或 JSON 不可解析时，回退按用户 topic 包装的通用三关 Flow，不再依赖单个概念的专用预制兜底。
 - Flow 生成器会校验每个 step 的 `UISchema`，并对常见字段漂移做轻量修复，例如 `options[].text -> label`、`cards[].term -> front`、`events/stages/milestones -> events`、`comparison_dimensions/rows -> dimensions`、`scenarios[].name -> label`、`insight_rules[].description -> text`。
 - Flow 生成器会修复 DeepSeek 偶发的顶层漂移：`pattern/template` 对调、`template=v1/v2` 等别名、缺失 `version`。
 - `parameter_explore/single_slider` 会额外归一化 3 个 scenarios、2 个 outputs、3 条 low/mid/high insight rules，并移除 `{result}`、`{output1}`、`{calculated}` 等未替换占位符文案。
@@ -576,7 +577,7 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 动态 Flow fallback 回归：
 
 - `tests/eval/dynamic-flow-score.ts` 会临时移除 `DEEPSEEK_API_KEY`，直接调用 `generateDynamicFlow()`，验证无 key 时仍返回 `source=mock` 的 `custom-*` 三关 Flow。
-- 覆盖 auto、`system_builder`、`process_timeline`、`comparison`、`parameter_explore` 五种输入，确保手选 Pattern 至少出现在一关里。
+- 覆盖 auto、`system_builder`、`process_timeline`、`comparison`、`parameter_explore` 五种输入，确保手选 Pattern 至少出现在一关里；补充 `Agent` 与 `Kubernetes operator` 等非预制概念，禁止回退到“相近概念”等占位式文案。
 - `tests/eval/showcase-pattern-score.ts` 检查公开精选集是否至少包含 5 条 Flow，并覆盖 `SCHEMA_CATALOG` 中全部 10 类 Pattern。
 
 ### 完成口径

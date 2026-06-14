@@ -9,6 +9,7 @@ interface DynamicFlowEvalCase {
   expectedPattern?: PatternType;
   expectedConceptIncludes?: string;
   requiredTerms?: string[];
+  bannedTerms?: string[];
 }
 
 interface CaseResult {
@@ -25,7 +26,8 @@ const cases: DynamicFlowEvalCase[] = [
   { id: "dynamic-timeline-industrial", topic: "industrial revolution", preferredPattern: "process_timeline", expectedPattern: "process_timeline" },
   { id: "dynamic-comparison-inflation", topic: "inflation vs deflation", preferredPattern: "comparison", expectedPattern: "comparison" },
   { id: "dynamic-parameter-utility", topic: "marginal utility", preferredPattern: "parameter_explore", expectedPattern: "parameter_explore" },
-  { id: "dynamic-agent-grounding", topic: "Agent", preferredPattern: "auto", expectedPattern: "system_builder", expectedConceptIncludes: "Agent", requiredTerms: ["工具调用", "规划", "反馈", "工作流"] },
+  { id: "dynamic-agent-grounding", topic: "Agent", preferredPattern: "auto", expectedConceptIncludes: "Agent", bannedTerms: ["相近概念", "专用兜底"] },
+  { id: "dynamic-kubernetes-operator", topic: "Kubernetes operator", preferredPattern: "auto", expectedConceptIncludes: "Kubernetes operator", bannedTerms: ["相近概念"] },
 ];
 
 function average(values: number[]) {
@@ -58,6 +60,10 @@ async function scoreCase(testCase: DynamicFlowEvalCase): Promise<CaseResult> {
   const flowText = JSON.stringify(flow);
   for (const term of testCase.requiredTerms || []) {
     if (!flowText.includes(term)) failures.push(`missing required term ${term}`);
+  }
+
+  for (const term of testCase.bannedTerms || []) {
+    if (flowText.includes(term)) failures.push(`contains banned term ${term}`);
   }
 
   if (testCase.expectedPattern && !patterns.includes(testCase.expectedPattern)) {
