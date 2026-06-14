@@ -7,6 +7,8 @@ interface DynamicFlowEvalCase {
   topic: string;
   preferredPattern: FlowPatternPreference;
   expectedPattern?: PatternType;
+  expectedConceptIncludes?: string;
+  requiredTerms?: string[];
 }
 
 interface CaseResult {
@@ -23,6 +25,7 @@ const cases: DynamicFlowEvalCase[] = [
   { id: "dynamic-timeline-industrial", topic: "industrial revolution", preferredPattern: "process_timeline", expectedPattern: "process_timeline" },
   { id: "dynamic-comparison-inflation", topic: "inflation vs deflation", preferredPattern: "comparison", expectedPattern: "comparison" },
   { id: "dynamic-parameter-utility", topic: "marginal utility", preferredPattern: "parameter_explore", expectedPattern: "parameter_explore" },
+  { id: "dynamic-agent-grounding", topic: "Agent", preferredPattern: "auto", expectedPattern: "system_builder", expectedConceptIncludes: "Agent", requiredTerms: ["工具调用", "规划", "反馈", "工作流"] },
 ];
 
 function average(values: number[]) {
@@ -42,14 +45,21 @@ async function scoreCase(testCase: DynamicFlowEvalCase): Promise<CaseResult> {
   const flow = result.flow;
   const patterns = getPatterns(flow);
   const failures: string[] = [];
+  const expectedConcept = testCase.expectedConceptIncludes || testCase.topic;
 
   if (result.source !== "mock") failures.push(`expected mock fallback, got ${result.source}`);
   if (!flow.id.startsWith("custom-")) failures.push(`id ${flow.id} does not start with custom-`);
   if (flow.source !== "generated") failures.push(`flow source is ${flow.source || "missing"}`);
   if (flow.plays.length !== 3) failures.push(`plays ${flow.plays.length}/3`);
-  if (flow.concept.toLowerCase() !== testCase.topic.toLowerCase()) failures.push(`concept ${flow.concept} does not match topic`);
-  if (!flow.title.toLowerCase().includes(testCase.topic.toLowerCase())) failures.push("title is not anchored to topic");
+  if (!flow.concept.toLowerCase().includes(expectedConcept.toLowerCase())) failures.push(`concept ${flow.concept} is not anchored to ${expectedConcept}`);
+  if (!flow.title.toLowerCase().includes(expectedConcept.toLowerCase())) failures.push("title is not anchored to topic");
   if (!flow.follow_ups || flow.follow_ups.length < 2) failures.push("missing follow_ups");
+
+  const flowText = JSON.stringify(flow);
+  for (const term of testCase.requiredTerms || []) {
+    if (!flowText.includes(term)) failures.push(`missing required term ${term}`);
+  }
+
   if (testCase.expectedPattern && !patterns.includes(testCase.expectedPattern)) {
     failures.push(`missing expected pattern ${testCase.expectedPattern}; got ${patterns.join(" -> ")}`);
   }

@@ -4828,3 +4828,72 @@ button.v5-flow-branch-card {
     margin-left: 0;
   }
 }
+
+/* System builder compact path track */
+.system-path-track {
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.system-path-track__rail {
+  min-width: 720px;
+  display: grid;
+  align-items: start;
+  gap: 8px;
+}
+
+.system-path-track__node {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.system-path-track__dot {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent), white 86%);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.system-path-track__label {
+  max-width: 96px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.system-path-track__edge {
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding-top: 23px;
+  text-align: center;
+}
+
+.system-path-track__line {
+  width: 100%;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1;
+}
+
+.system-path-track__hint {
+  max-width: 108px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+@media (max-width: 720px) {
+  .system-path-track__rail {
+    min-width: 620px;
+  }
+}

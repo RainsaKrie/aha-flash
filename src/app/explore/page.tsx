@@ -80,8 +80,8 @@ export default function ExplorePage() {
 
       <section className="v5-explore-hero v5-showcase-hero v5-ai-hero" aria-labelledby="explore-title">
         <p className="v5-eyebrow">自由生成 · AI 原生交互学习</p>
-        <h1 id="explore-title">想学什么，就把它变成三关。</h1>
-        <p>输入一个概念，趣灵会自动拆成能点击、能选择、能反馈的互动路径。</p>
+        <h1 id="explore-title">想学什么，玩三关。</h1>
+        <p>输入概念，趣灵自动生成互动路径。</p>
 
         <form
           className="v5-flow-generator"

@@ -214,11 +214,21 @@ function baseSchema(pattern: PatternType, topic: string): UISchema {
         title,
         target: `拼出${topic}的核心结构`,
         modules: [
-          { id: "input", label: "输入条件", description: "事情开始前已有的条件。" },
-          { id: "mechanism", label: "作用机制", description: "真正推动变化的部分。" },
-          { id: "output", label: "结果反馈", description: "最后被观察到的变化。" },
+          { id: "goal", label: "目标", description: "先明确这套结构要解决的问题。", role: "start" },
+          { id: "input", label: "输入", description: "进入系统的条件、材料或信号。", role: "input" },
+          { id: "mechanism", label: "机制", description: "真正推动变化的核心环节。", role: "core" },
+          { id: "feedback", label: "反馈", description: "让系统修正或继续运转的回路。", role: "loop" },
+          { id: "output", label: "结果", description: "最后能被观察到的变化。", role: "result" },
+          { id: "noise", label: "表象", description: "看起来相关，但不是当前目标必需模块。", role: "distractor" },
         ],
-        required_module_ids: ["input", "mechanism", "output"],
+        required_module_ids: ["goal", "input", "mechanism", "feedback", "output"],
+        expected_sequence: ["goal", "input", "mechanism", "feedback", "output"],
+        connections: [
+          { from: "goal", to: "input", label: "先确定入口" },
+          { from: "input", to: "mechanism", label: "条件进入机制" },
+          { from: "mechanism", to: "feedback", label: "变化产生反馈" },
+          { from: "feedback", to: "output", label: "反馈沉淀结果" },
+        ],
         success_summary: `你把${topic}拆成了条件、机制和结果。`,
       },
     };
@@ -294,7 +304,342 @@ function fallbackPatternChain(preferredPattern: FlowPatternPreference): PatternT
   return ["knowledge_check", "concept_memory", "parameter_explore"];
 }
 
+
+const AGENT_RELEVANCE_TERMS = [
+  "agent",
+  "智能体",
+  "目标",
+  "规划",
+  "计划",
+  "工具",
+  "调用",
+  "执行",
+  "观察",
+  "反馈",
+  "记忆",
+  "环境",
+  "工作流",
+  "workflow",
+  "chatbot",
+  "自主",
+];
+
+function isAgentTopic(topic: string) {
+  const normalized = topic.toLowerCase().replace(/\s+/g, "");
+  return /\bagents?\b/i.test(topic) || normalized.includes("aiagent") || topic.includes("智能体") || topic.includes("工具调用");
+}
+
+function canonicalAgentConcept(topic: string) {
+  if (/workflow|工作流|相近|类似|vs|VS|对比/.test(topic)) return "AI Agent vs 工作流";
+  if (/chatbot|聊天|机器人/.test(topic)) return "AI Agent vs 聊天机器人";
+  return "AI Agent";
+}
+
+function agentPatternChain(preferredPattern: FlowPatternPreference): PatternType[] {
+  if (preferredPattern === "auto" || preferredPattern === "knowledge_check") return ["knowledge_check", "system_builder", "comparison"];
+  return ["knowledge_check", preferredPattern, preferredPattern === "comparison" ? "system_builder" : "comparison"];
+}
+
+function agentCommon(pattern: PatternType) {
+  return {
+    version: "2.0",
+    depth: "rapid" as const,
+    visual_asset: { tag: VISUAL_TAGS[pattern], mood: "idle" as const },
+    next_concepts: [],
+  };
+}
+
+function agentSchema(pattern: PatternType, concept: string): UISchema {
+  const common = agentCommon(pattern);
+
+  if (pattern === "knowledge_check") {
+    return {
+      ...common,
+      pattern,
+      template: "single_question",
+      payload: {
+        title: "先分清 Agent",
+        question: "AI Agent 和普通聊天机器人最关键的区别是什么？",
+        options: [
+          { label: "围绕目标规划步骤，并能调用工具执行", correct: true, explanation: "Agent 不只是回答文本，而是把目标拆成行动，调用工具，观察结果再调整。" },
+          { label: "回答更长、更像真人", correct: false, explanation: "语气像不像人不是 Agent 的核心，能否行动和反馈才是关键。" },
+          { label: "提前写好固定流程", correct: false, explanation: "固定流程更像 workflow；Agent 的特点是根据目标和反馈动态决策。" },
+        ],
+      },
+    };
+  }
+
+  if (pattern === "system_builder") {
+    return {
+      ...common,
+      pattern,
+      template: "module_sandbox",
+      payload: {
+        title: "搭一个 Agent 执行闭环",
+        target: "拼出 AI Agent 从目标到行动的核心结构",
+        modules: [
+          { id: "goal", label: "目标", description: "用户给出的任务或要达成的结果。", role: "start" },
+          { id: "planner", label: "规划器", description: "把目标拆成可以执行的步骤。", role: "plan" },
+          { id: "tool", label: "工具调用", description: "搜索、写文件、查数据库等外部能力。", role: "act" },
+          { id: "observe", label: "观察反馈", description: "读取工具结果，判断下一步是否要调整。", role: "observe" },
+          { id: "memory", label: "记忆状态", description: "保存上下文、偏好和已经完成的步骤。", role: "state" },
+          { id: "tone", label: "说话风格", description: "会影响体验，但不是 Agent 能行动的必需模块。", role: "optional" },
+        ],
+        required_module_ids: ["goal", "planner", "tool", "observe", "memory"],
+        expected_sequence: ["goal", "planner", "tool", "observe", "memory"],
+        connections: [
+          { from: "goal", to: "planner", label: "拆成步骤" },
+          { from: "planner", to: "tool", label: "选择工具" },
+          { from: "tool", to: "observe", label: "拿到结果" },
+          { from: "observe", to: "memory", label: "更新下一步" },
+        ],
+        success_summary: "你把 Agent 看成了目标、规划、工具、反馈和记忆组成的行动闭环。",
+      },
+    };
+  }
+
+  if (pattern === "comparison") {
+    return {
+      ...common,
+      pattern,
+      template: "split_panel",
+      payload: {
+        title: "Agent 和工作流差在哪",
+        subject_a: "固定工作流",
+        subject_b: "AI Agent",
+        left: { label: "固定工作流", content: "人提前写好每一步，系统按顺序执行。遇到新情况时，需要人改流程。" },
+        right: { label: "AI Agent", content: "系统围绕目标做规划，调用工具，观察反馈，再决定下一步。" },
+        dimensions: [
+          { label: "决策方式", a: "预设规则", b: "基于目标和上下文动态规划", insight: "Agent 的关键不是自动化，而是能根据反馈调整。" },
+          { label: "外部能力", a: "通常只跑内部步骤", b: "可以调用搜索、代码、数据库等工具", insight: "工具调用让 Agent 从会说变成会做。" },
+          { label: "失败处理", a: "失败后停住或报错", b: "观察结果后重试、换工具或改计划", insight: "反馈循环决定它是不是像一个行动者。" },
+        ],
+        summary: "工作流强调预设步骤，Agent 强调围绕目标的动态行动闭环。",
+      },
+    };
+  }
+
+  if (pattern === "parameter_explore") {
+    return {
+      ...common,
+      pattern,
+      template: "single_slider",
+      payload: {
+        title: "调一调 Agent 的自主度",
+        variable_label: "自主程度",
+        min: 0,
+        max: 100,
+        default_value: 55,
+        unit: "%",
+        explanation_template: "自主度越高，Agent 越会自己拆任务和调用工具，但也越需要边界和审核。",
+        scenarios: [
+          { label: "只回答", value: 20 },
+          { label: "能用工具", value: 55 },
+          { label: "能自调", value: 85 },
+        ],
+        outputs: [
+          { label: "任务完成度", model: "linear", min: 0, max: 100, default: 55 },
+          { label: "失控风险", model: "logarithmic", min: 0, max: 60, default: 18 },
+        ],
+        insight_rules: [
+          { when: "low", text: "低自主度更像聊天机器人：稳定，但很难独立完成复杂任务。" },
+          { when: "mid", text: "中等自主度会开始调用工具，Agent 的行动能力变得明显。" },
+          { when: "high", text: "高自主度需要权限边界、观察反馈和人类审核一起约束。" },
+        ],
+      },
+    };
+  }
+
+  if (pattern === "concept_memory") {
+    return {
+      ...common,
+      pattern,
+      template: "term_cards",
+      payload: {
+        title: "记住 Agent 三件事",
+        cards: [
+          { front: "目标", back: "Agent 必须围绕一个明确目标行动，而不是随便聊天。" },
+          { front: "工具调用", back: "Agent 通过搜索、代码、数据库等工具把想法变成动作。" },
+          { front: "反馈循环", back: "Agent 会观察执行结果，再决定继续、重试还是换策略。" },
+        ],
+      },
+    };
+  }
+
+  if (pattern === "process_timeline") {
+    return {
+      ...common,
+      pattern,
+      template: "horizontal_timeline",
+      payload: {
+        title: "Agent 如何跑一轮任务",
+        events: [
+          { label: "接收目标", description: "用户给出想完成的任务，而不是只问一个问题。" },
+          { label: "规划步骤", description: "Agent 把目标拆成可执行的小任务。" },
+          { label: "调用工具", description: "它选择搜索、代码、文件或 API 等工具去执行。" },
+          { label: "观察反馈", description: "读取执行结果，判断是否达成目标。" },
+          { label: "调整继续", description: "如果结果不够好，就改计划再试。" },
+        ],
+      },
+    };
+  }
+
+  if (pattern === "classification_sort") {
+    return {
+      ...common,
+      pattern,
+      template: "category_buckets",
+      payload: {
+        title: "分清 Agent 的核心和表象",
+        categories: [
+          { id: "core", name: "Agent 核心" },
+          { id: "surface", name: "表面特征" },
+        ],
+        items: [
+          { label: "目标驱动", correct_category: "core", explanation: "没有目标，Agent 就只是在回应输入。" },
+          { label: "工具调用", correct_category: "core", explanation: "工具让 Agent 能执行真实动作。" },
+          { label: "反馈调整", correct_category: "core", explanation: "观察结果并修正计划，是 Agent 区别于固定流程的关键。" },
+          { label: "语气像人", correct_category: "surface", explanation: "拟人语气能改善体验，但不是 Agent 的本质。" },
+        ],
+      },
+    };
+  }
+
+  if (pattern === "narrative_branch") {
+    return {
+      ...common,
+      pattern,
+      template: "branch_story",
+      payload: {
+        title: "遇到任务时怎么选",
+        opening: "你想让系统帮你整理一份竞品报告，现在有三种做法。",
+        branches: [
+          { choice_label: "只问聊天机器人", outcome_description: "它能解释思路，但不会主动查资料和整理来源。", insight: "聊天机器人偏回答，行动能力有限。" },
+          { choice_label: "跑固定工作流", outcome_description: "它能按固定步骤抓取和汇总，但遇到异常时容易停住。", insight: "工作流稳定，但灵活性来自人提前设计。" },
+          { choice_label: "交给 Agent", outcome_description: "它会拆任务、查资料、观察结果，再调整下一步。", insight: "Agent 的价值在动态规划和反馈循环。" },
+        ],
+      },
+    };
+  }
+
+  if (pattern === "simulation_play") {
+    return {
+      ...common,
+      pattern,
+      template: "parameter_simulation",
+      payload: {
+        title: "模拟 Agent 能力边界",
+        params: [
+          { label: "工具权限", min: 0, max: 100, default: 60, unit: "%" },
+          { label: "人类审核", min: 0, max: 100, default: 55, unit: "%" },
+          { label: "任务复杂度", min: 0, max: 100, default: 45, unit: "%" },
+        ],
+        compute_formula_description: "工具权限提高行动能力，人类审核降低风险，任务复杂度会放大规划和反馈的重要性。",
+        steps: 5,
+      },
+    };
+  }
+
+  return {
+    ...common,
+    pattern: "probability",
+    template: "card_flip_reveal",
+    payload: {
+      title: "抽一次 Agent 执行结果",
+      pool: [
+        { name: "目标清楚", flavor_label: "规划顺利", rarity: "5", probability: 25, value: 90 },
+        { name: "工具可用", flavor_label: "行动成功", rarity: "4", probability: 35, value: 70 },
+        { name: "反馈含糊", flavor_label: "需要重试", rarity: "3", probability: 25, value: 35 },
+        { name: "权限不足", flavor_label: "只能停住", rarity: "3", probability: 15, value: 10 },
+      ],
+      option_cost: 10,
+      strike_price: 60,
+      pulls_per_try: 1,
+      explanation_map: {
+        win: "目标、工具和反馈都对齐时，Agent 才像一个可靠行动者。",
+        lose: "缺少权限或反馈时，Agent 会退化成只会回答的助手。",
+      },
+    },
+  };
+}
+
+function makeAgentFallbackPlay(concept: string, pattern: PatternType, index: number): KnowledgePlay {
+  const titles = ["先分清", "搭闭环", "看边界"];
+  const rewards = [
+    "你抓住了 Agent 和普通聊天的区别。",
+    "你把 Agent 的行动闭环拼起来了。",
+    "你看清了 Agent 和工作流的边界。",
+  ];
+  return {
+    id: `agent-${index + 1}`,
+    title: titles[index] || "继续理解",
+    concept,
+    schema: agentSchema(pattern, concept),
+    estimated_minutes: index === 1 ? 2 : 1,
+    reward_copy: rewards[index] || "你又想通了一层。",
+  };
+}
+
+function makeAgentFallbackFollowUps(): FollowUpTopic[] {
+  return [
+    {
+      id: "agent-follow-up-workflow",
+      title: "和工作流比较",
+      concept: "AI Agent vs 工作流",
+      hook: "看清动态决策和固定流程的边界。",
+      relation: "从 Agent 本体走向相近概念辨析。",
+      kind: "ai_seed",
+      suggestedPattern: "comparison",
+    },
+    {
+      id: "agent-follow-up-tools",
+      title: "看工具调用闭环",
+      concept: "Agent 工具调用",
+      hook: "理解它怎样从会说变成会做。",
+      relation: "从概念定义走向执行结构。",
+      kind: "ai_seed",
+      suggestedPattern: "system_builder",
+    },
+    {
+      id: "agent-follow-up-memory",
+      title: "看记忆与规划",
+      concept: "Agent 记忆与规划",
+      hook: "为什么长期任务需要状态和计划？",
+      relation: "从一次执行走向持续任务。",
+      kind: "ai_seed",
+      suggestedPattern: "process_timeline",
+    },
+  ];
+}
+
+function makeAgentFallbackFlow(topicInput: string, preferredPattern: FlowPatternPreference): KnowledgeFlow {
+  const concept = canonicalAgentConcept(topicInput);
+  const patterns = agentPatternChain(preferredPattern);
+  return {
+    id: makeDynamicId(concept),
+    title: concept.includes("vs") ? "Agent 对比" : "Agent 入门",
+    concept,
+    hook: "它不只是会聊天，而是会围绕目标行动。",
+    description: "用三关看懂 Agent 的目标、工具调用和反馈循环。",
+    category: "科技",
+    topic_area: "AI",
+    difficulty: "进阶",
+    estimated_minutes: 4,
+    summary: "AI Agent 的核心是目标驱动、工具调用、观察反馈和状态记忆组成的行动闭环。",
+    concepts: ["目标驱动", "工具调用", "反馈循环", "记忆状态"],
+    plays: patterns.map((pattern, index) => makeAgentFallbackPlay(concept, pattern, index)),
+    follow_ups: makeAgentFallbackFollowUps(),
+    source: "generated",
+  };
+}
+
+function agentFlowLooksRelevant(flow: KnowledgeFlow) {
+  const text = JSON.stringify(flow).toLowerCase();
+  const hits = AGENT_RELEVANCE_TERMS.filter((term) => text.includes(term.toLowerCase())).length;
+  return hits >= 4;
+}
 function makeFallbackFollowUps(topic: string): FollowUpTopic[] {
+  if (isAgentTopic(topic)) return makeAgentFallbackFollowUps();
   return [
     {
       id: "dynamic-follow-up-mechanism",
@@ -328,6 +673,7 @@ function makeFallbackFollowUps(topic: string): FollowUpTopic[] {
 
 function makeFallbackFlow(topicInput: string, preferredPattern: FlowPatternPreference): KnowledgeFlow {
   const topic = cleanTopic(topicInput);
+  if (isAgentTopic(topic)) return makeAgentFallbackFlow(topic, preferredPattern);
   const patterns = fallbackPatternChain(preferredPattern);
   return {
     id: makeDynamicId(topic),
@@ -441,6 +787,7 @@ function repairSchema(rawSchema: unknown, fallbackPattern: PatternType, topic: s
 }
 
 function normalizeFollowUps(value: unknown, topic: string): FollowUpTopic[] {
+  if (isAgentTopic(topic)) return makeAgentFallbackFollowUps();
   if (!Array.isArray(value)) return makeFallbackFollowUps(topic);
   const followUps = value.slice(0, 3).map((item, index) => {
     const record = asRecord(item) || {};
@@ -607,6 +954,14 @@ export async function generateDynamicFlow(
     });
     const parsed = parseJson(result.text);
     const normalized = normalizeGeneratedFlow(parsed, topic, preferredPattern);
+    if (isAgentTopic(topic) && !agentFlowLooksRelevant(normalized.flow)) {
+      return {
+        flow: makeAgentFallbackFlow(topic, preferredPattern),
+        source: "mock",
+        validation_error: "Agent 相关性不足，已使用 Agent 专用兜底。",
+        raw_output: includeRaw ? result.text : undefined,
+      };
+    }
     return {
       flow: normalized.flow,
       source: "llm",
