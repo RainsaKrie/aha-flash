@@ -10,6 +10,7 @@ interface DynamicFlowEvalCase {
   expectedConceptIncludes?: string;
   requiredTerms?: string[];
   bannedTerms?: string[];
+  bannedPatterns?: PatternType[];
 }
 
 interface CaseResult {
@@ -28,6 +29,8 @@ const cases: DynamicFlowEvalCase[] = [
   { id: "dynamic-parameter-utility", topic: "marginal utility", preferredPattern: "parameter_explore", expectedPattern: "parameter_explore" },
   { id: "dynamic-agent-grounding", topic: "Agent", preferredPattern: "auto", expectedConceptIncludes: "Agent", bannedTerms: ["相近概念", "专用兜底"] },
   { id: "dynamic-kubernetes-operator", topic: "Kubernetes operator", preferredPattern: "auto", expectedConceptIncludes: "Kubernetes operator", bannedTerms: ["相近概念"] },
+  { id: "dynamic-linear-programming-grounding", topic: "linear programming", preferredPattern: "auto", expectedConceptIncludes: "linear programming", bannedPatterns: ["probability"] },
+
 ];
 
 function average(values: number[]) {
@@ -64,6 +67,10 @@ async function scoreCase(testCase: DynamicFlowEvalCase): Promise<CaseResult> {
 
   for (const term of testCase.bannedTerms || []) {
     if (flowText.includes(term)) failures.push(`contains banned term ${term}`);
+  }
+
+  for (const bannedPattern of testCase.bannedPatterns || []) {
+    if (patterns.includes(bannedPattern)) failures.push(`contains banned pattern ${bannedPattern}; got ${patterns.join(" -> ")}`);
   }
 
   if (testCase.expectedPattern && !patterns.includes(testCase.expectedPattern)) {

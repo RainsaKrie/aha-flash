@@ -584,3 +584,12 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 
 V5 当前已经具备：`Explore 任意输入 -> AI 生成三关 Flow -> /flow/custom 播放 -> AI 分支继续 -> Hub 路径记录`。未实现项集中在生产化能力：账号、数据库、真实社区发布、审核、真实埋点和跨设备同步。
 <!-- AI_CHAIN_STATUS_END -->
+
+## Dynamic Flow ConceptPlan Pipeline
+
+- POST /api/flow uses a two-stage chain: ConceptPlan -> KnowledgeFlow -> UISchema validation/repair.
+- ConceptPlan is the grounding contract. It preserves the user topic, extracts concrete grounding_terms, chooses recommended_patterns, and lists avoid_patterns before any UI payload is generated.
+- Flow generation must follow ConceptPlan.recommended_patterns and reject ConceptPlan.avoid_patterns. This prevents deterministic topics such as linear programming from being rendered as probability/gacha content.
+- Debug mode (?debug=1 in dev/local) exposes concept_plan and raw_plan_output alongside raw_output and validation_error.
+- If ConceptPlan fails validation after repair, fallback uses makeFallbackFlowFromPlan(plan) instead of a fixed showcase topic.
+- Dynamic fallback regression covers Agent, Kubernetes operator, and linear programming; the latter must not include probability in the generated pattern chain.

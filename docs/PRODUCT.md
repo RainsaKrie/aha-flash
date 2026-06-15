@@ -434,3 +434,10 @@ Hub 的路径节点不按列表顺序轮换颜色，而是复用 V5 既有四个
 
 暂不做：账号登录、多设备同步、真实社区发布、内容审核后台、生产级数据库、真实埋点分析、T38 默认体验额度与自定义 API Key 方案。
 <!-- CURRENT_STATUS_END -->
+
+## Dynamic Free Generation Current Contract
+
+- The visible promise is user topic -> ConceptPlan -> three-step Flow -> follow-up branch, not a finite list of prewritten topics.
+- ConceptPlan makes free generation auditable: every generated Flow must first decide what the concept really is, what terms anchor it, and which patterns should or should not be used.
+- This is the key difference from static authored content: adding or entering a new topic should not require prebuilt content, but it must pass grounding and pattern-fit checks before it is shown as LLM output.
+- Manual local checks now pass for Agent and linear programming with source=llm and topic-specific pattern chains.

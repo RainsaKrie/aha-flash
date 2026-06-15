@@ -16,11 +16,27 @@ export interface DynamicFlowInput {
   preferredPattern?: FlowPatternPreference;
 }
 
+export interface ConceptPlan {
+  topic: string;
+  domain: string;
+  core_question: string;
+  grounding_terms: string[];
+  knowledge_structure: string;
+  recommended_patterns: PatternType[];
+  avoid_patterns: PatternType[];
+  learning_path: string[];
+  category: TopicCategory;
+  topic_area: string;
+  difficulty: TopicDifficulty;
+}
+
 export interface DynamicFlowGenerationResult {
   flow: KnowledgeFlow;
   source: "llm" | "mock";
   validation_error?: string;
   raw_output?: string;
+  raw_plan_output?: string;
+  concept_plan?: ConceptPlan;
 }
 
 const VISUAL_TAGS: Record<PatternType, string> = {
@@ -496,24 +512,295 @@ function evaluateFlowGrounding(flow: KnowledgeFlow, topic: string, groundingTerm
   };
 }
 
-function buildRepairUserPrompt(topic: string, preferredPattern: FlowPatternPreference, reason: string, previousOutput: string) {
-  const preferred = preferredPattern === "auto" ? "AI 推荐 Pattern" : `用户指定 Pattern: ${preferredPattern}`;
-  const clippedOutput = previousOutput.slice(0, 6000);
-  return `上一次输出没有通过趣灵的贴题校验。
-失败原因：${reason}
+function heuristicPatternChain(topic: string, preferredPattern: FlowPatternPreference): PatternType[] {
+  if (preferredPattern !== "auto") return ["knowledge_check", preferredPattern, "parameter_explore"];
+  if (hasAnyHint(topic, DETERMINISTIC_MODELING_HINTS)) return ["knowledge_check", "parameter_explore", "simulation_play"];
+  if (hasAnyHint(topic, PROBABILITY_HINTS)) return ["probability", "parameter_explore", "knowledge_check"];
+  return fallbackPatternChain(preferredPattern);
+}
+
+function fallbackGroundingTerms(topic: string) {
+  if (hasAnyHint(topic, DETERMINISTIC_MODELING_HINTS)) {
+    return ["目标函数", "约束条件", "可行域", "最优解", "资源分配"];
+  }
+  if (hasAnyHint(topic, PROBABILITY_HINTS)) {
+    return ["先验概率", "新证据", "后验判断", "不确定性", "概率更新"];
+  }
+  return [`${topic}入口`, `${topic}关键动作`, `${topic}适用边界`, `${topic}真实场景`];
+}
+
+function normalizePatternList(value: unknown, fallback: PatternType[]) {
+  const source = Array.isArray(value) ? value : fallback;
+  const seen = new Set<PatternType>();
+  const result: PatternType[] = [];
+  for (const item of source) {
+    if (!isPattern(item) || seen.has(item)) continue;
+    seen.add(item);
+    result.push(item);
+  }
+  return result;
+}
+
+function makeFallbackConceptPlan(topicInput: string, preferredPattern: FlowPatternPreference): ConceptPlan {
+  const topic = cleanTopic(topicInput);
+  const recommended = heuristicPatternChain(topic, preferredPattern);
+  return {
+    topic,
+    domain: hasAnyHint(topic, DETERMINISTIC_MODELING_HINTS) ? "建模与优化" : "通用知识",
+    core_question: `怎样真正理解${topic}，并把它用在判断里？`,
+    grounding_terms: fallbackGroundingTerms(topic),
+    knowledge_structure: hasAnyHint(topic, DETERMINISTIC_MODELING_HINTS) ? "optimization_model" : "concept_mechanism",
+    recommended_patterns: recommended,
+    avoid_patterns: hasAnyHint(topic, DETERMINISTIC_MODELING_HINTS) ? ["probability"] : [],
+    learning_path: ["先判断入口", "再看关键机制", "最后动手验证"],
+    category: "数理",
+    topic_area: "自由生成",
+    difficulty: "轻松",
+  };
+}
+
+function normalizeConceptPlan(raw: unknown, topicInput: string, preferredPattern: FlowPatternPreference): ConceptPlan {
+  const fallback = makeFallbackConceptPlan(topicInput, preferredPattern);
+  const root = asRecord(raw);
+  const candidate = asRecord(root?.concept_plan) || asRecord(root?.plan) || root;
+  if (!candidate) return fallback;
+
+  const topic = cleanTopic(topicInput);
+  const rawTerms = uniqueCleanStrings(candidate.grounding_terms ?? candidate.groundingTerms, fallback.grounding_terms, 28);
+  const groundingTerms = rawTerms.filter((term) => !isGenericGroundingTerm(term, topic)).slice(0, 5);
+  const recommended = normalizePatternList(candidate.recommended_patterns ?? candidate.recommendedPatterns, fallback.recommended_patterns);
+  const avoid = normalizePatternList(candidate.avoid_patterns ?? candidate.avoidPatterns, fallback.avoid_patterns);
+  const preferredRecommended: PatternType[] = preferredPattern !== "auto" && !recommended.includes(preferredPattern)
+    ? ([recommended[0] || "knowledge_check", preferredPattern, ...recommended.slice(1)].filter(Boolean) as PatternType[])
+    : recommended;
+
+  return {
+    topic,
+    domain: cleanText(candidate.domain, fallback.domain, 24),
+    core_question: cleanText(candidate.core_question ?? candidate.coreQuestion, fallback.core_question, 60),
+    grounding_terms: groundingTerms.length >= 3 ? groundingTerms : fallback.grounding_terms,
+    knowledge_structure: cleanText(candidate.knowledge_structure ?? candidate.knowledgeStructure, fallback.knowledge_structure, 32),
+    recommended_patterns: preferredRecommended.slice(0, 4),
+    avoid_patterns: avoid.filter((pattern) => preferredPattern === "auto" || pattern !== preferredPattern).slice(0, 4),
+    learning_path: uniqueCleanStrings(candidate.learning_path ?? candidate.learningPath, fallback.learning_path, 36).slice(0, 4),
+    category: coerceCategory(candidate.category, fallback.category),
+    topic_area: cleanText(candidate.topic_area ?? candidate.topicArea, fallback.topic_area, 16),
+    difficulty: coerceDifficulty(candidate.difficulty, fallback.difficulty),
+  };
+}
+
+function evaluateConceptPlan(plan: ConceptPlan, preferredPattern: FlowPatternPreference) {
+  const failures: string[] = [];
+  const cleanTerms = normalizeGroundingTerms(plan.grounding_terms, plan.topic, []);
+  if (!plan.topic) failures.push("plan.topic 缺失");
+  if (cleanTerms.length < 3) failures.push("ConceptPlan 缺少至少 3 个专业锚点");
+  if (plan.learning_path.length < 3) failures.push("ConceptPlan 缺少三步学习路径");
+  if (plan.recommended_patterns.length < 2) failures.push("ConceptPlan 缺少推荐 Pattern 链");
+  if (preferredPattern !== "auto" && !plan.recommended_patterns.includes(preferredPattern)) {
+    failures.push(`ConceptPlan 未包含用户指定 Pattern: ${preferredPattern}`);
+  }
+  if (preferredPattern === "auto" && plan.recommended_patterns.includes("probability") && hasAnyHint([plan.topic, plan.knowledge_structure, ...cleanTerms].join(" "), DETERMINISTIC_MODELING_HINTS)) {
+    failures.push("ConceptPlan 把确定性建模/系统结构类主题误判为 probability");
+  }
+  return {
+    ok: failures.length === 0,
+    reason: failures.join("；"),
+    groundingTerms: cleanTerms,
+  };
+}
+
+function patternChainFromPlan(plan: ConceptPlan, preferredPattern: FlowPatternPreference): PatternType[] {
+  const avoid = new Set(preferredPattern === "auto" ? plan.avoid_patterns : plan.avoid_patterns.filter((pattern) => pattern !== preferredPattern));
+  const candidates = [
+    ...plan.recommended_patterns,
+    ...heuristicPatternChain(plan.topic, preferredPattern),
+    "knowledge_check" as const,
+    "concept_memory" as const,
+    "parameter_explore" as const,
+  ].filter((pattern) => !avoid.has(pattern));
+  const result: PatternType[] = [];
+  for (const pattern of candidates) {
+    if (result.includes(pattern)) continue;
+    result.push(pattern);
+    if (result.length === 3) break;
+  }
+  while (result.length < 3) result.push("knowledge_check");
+  if (preferredPattern !== "auto" && !result.includes(preferredPattern)) result[1] = preferredPattern;
+  return result.slice(0, 3);
+}
+
+function makeFallbackFlowFromPlan(plan: ConceptPlan, preferredPattern: FlowPatternPreference): KnowledgeFlow {
+  const patterns = patternChainFromPlan(plan, preferredPattern);
+  return {
+    id: makeDynamicId(plan.topic),
+    title: `${plan.topic}入门`,
+    concept: plan.topic,
+    hook: plan.core_question,
+    description: `${plan.learning_path.slice(0, 3).join("，")}。`,
+    category: plan.category,
+    topic_area: plan.topic_area,
+    difficulty: plan.difficulty,
+    estimated_minutes: 4,
+    summary: `你已经把${plan.topic}拆成了可以继续探索的理解路径。`,
+    concepts: plan.grounding_terms.slice(0, 5),
+    plays: patterns.map((pattern, index) => makeFallbackPlay(plan.topic, pattern, index, plan.grounding_terms)),
+    follow_ups: makeFallbackFollowUps(plan.topic),
+    source: "generated",
+  };
+}
+
+function evaluateFlowAgainstPlan(flow: KnowledgeFlow, plan: ConceptPlan, preferredPattern: FlowPatternPreference) {
+  const failures: string[] = [];
+  const flowText = JSON.stringify(flow);
+  const patterns = flow.plays.map((play) => play.schema.pattern).filter((pattern): pattern is PatternType => isPattern(pattern));
+  const avoid = preferredPattern === "auto" ? plan.avoid_patterns : plan.avoid_patterns.filter((pattern) => pattern !== preferredPattern);
+  const avoidedUsed = avoid.filter((pattern) => patterns.includes(pattern));
+  const anchorHits = plan.grounding_terms.filter((term) => countIncludes(flowText, term) > 0);
+
+  if (!flow.concept.includes(plan.topic) && !plan.topic.includes(flow.concept)) failures.push("Flow concept 没有服从 ConceptPlan topic");
+  if (anchorHits.length < Math.min(3, plan.grounding_terms.length)) failures.push(`Flow 未覆盖足够 ConceptPlan 锚点: ${plan.grounding_terms.join("、")}`);
+  if (avoidedUsed.length) failures.push(`Flow 使用了 ConceptPlan 禁用 Pattern: ${avoidedUsed.join("、")}`);
+  if (preferredPattern !== "auto" && !patterns.includes(preferredPattern)) failures.push(`Flow 未包含用户指定 Pattern: ${preferredPattern}`);
+  if (preferredPattern === "auto" && !patterns.some((pattern) => plan.recommended_patterns.includes(pattern))) failures.push("Flow 没有使用 ConceptPlan 推荐 Pattern");
+
+  return {
+    ok: failures.length === 0,
+    reason: failures.join("；"),
+  };
+}
+
+function buildConceptPlanSystemPrompt(topic: string, preferredPattern: FlowPatternPreference) {
+  const patternList = Object.entries(PATTERN_LABELS)
+    .map(([pattern, label]) => `- ${pattern}: ${label}`)
+    .join("\n");
+  const preferred = preferredPattern === "auto" ? "AI 推荐" : `用户指定核心 Pattern: ${preferredPattern}`;
+  return `你是趣灵的知识结构规划器。先不要生成 UI，也不要生成三关 payload。
+你的任务是把用户输入的概念转成一个可校验的 ConceptPlan，后续 UI 只能根据这个计划生成。
+只输出合法 JSON，不要 Markdown。
+
+用户输入：${topic}
+Pattern 偏好：${preferred}
+
+可用 Pattern：
+${patternList}
+
+输出 JSON：
+{
+  "topic": "保留用户原词或极短同义名",
+  "domain": "学科/领域",
+  "core_question": "这个概念真正要回答的问题",
+  "grounding_terms": ["3-5个专业锚点"],
+  "knowledge_structure": "optimization_model|system_process|probabilistic_reasoning|comparison_frame|timeline_change|concept_mechanism|classification_rule|simulation_model",
+  "recommended_patterns": ["3个最适合的 Pattern"],
+  "avoid_patterns": ["不适合的 Pattern"],
+  "learning_path": ["第1关学习目标", "第2关学习目标", "第3关学习目标"],
+  "category": "科技|经济|哲学|心理|历史|数理",
+  "topic_area": "短领域名",
+  "difficulty": "轻松|进阶|烧脑一点"
+}
+
+规则：
+- topic 不要写定义，必须保留用户输入原词，例如“线性规划”不能写成“线性规划是在约束条件下...”
+- grounding_terms 必须是专业锚点，不能写“概念/机制/变量/关键/结果”这类空词。
+- recommended_patterns 必须解释知识结构：优化/规划/约束/目标函数/可行域/算法类优先 parameter_explore、simulation_play、system_builder、knowledge_check；概率/随机/风险/贝叶斯/预测类才用 probability。
+- avoid_patterns 明确写出不适合的模式，例如确定性优化问题通常避免 probability。
+- learning_path 必须形成递进：先判断入口，再建立结构，最后动手验证。`;
+}
+
+function buildConceptPlanRepairPrompt(topic: string, preferredPattern: FlowPatternPreference, reason: string, previousOutput: string) {
+  return `上一次 ConceptPlan 没有通过校验。
 主题：${topic}
-Pattern 要求：${preferred}
+Pattern 偏好：${preferredPattern}
+失败原因：${reason}
 
-请重新生成完整 JSON，不要解释。
-修复要求：
-- 先提炼 3-5 个 grounding_terms，它们必须是这个主题的专业锚点，不要写“概念/机制/变量/结果/关键”这类空词。
-- 三关的题目、选项、模块、滑块、解析都要围绕这些专业锚点展开。
-- 如果失败原因提到 Pattern 选择不合适，必须换成更贴合主题结构的 Pattern，不要继续使用 probability 抽卡模板。
-- 不要出现“相近概念”“这个概念”“关键变量”这类占位文案。
-- 如果主题是英文或缩写，保留原词，同时给出对应的专业语义。
+请重新输出完整 ConceptPlan JSON。不要生成 UI。不要解释。
+要求：保留 topic 原词，给出 3-5 个专业锚点，推荐 Pattern 与知识结构匹配，避免不适合的 Pattern。
 
-上一次输出如下，只作为反例参考：
-${clippedOutput}`;
+上一次输出：
+${previousOutput.slice(0, 3000)}`;
+}
+
+function buildFlowUserPrompt(topic: string, plan: ConceptPlan) {
+  return `根据下面的 ConceptPlan 生成 exactly 3 个互动关卡 Flow。不得偏离计划。
+ConceptPlan:
+${JSON.stringify(plan, null, 2)}
+
+生成要求：
+- flow.concept 必须是 "${topic}"。
+- plays 的 schema.pattern 必须优先使用 recommended_patterns，不得使用 avoid_patterns。
+- 每一关必须覆盖 grounding_terms，并对应 learning_path 的一个阶段。
+- 不要把定义塞进标题。`;
+}
+
+async function generateConceptPlan(
+  model: NonNullable<ReturnType<typeof getLLMProvider>>,
+  topic: string,
+  preferredPattern: FlowPatternPreference,
+  includeRaw: boolean,
+) {
+  const fallback = makeFallbackConceptPlan(topic, preferredPattern);
+  const system = buildConceptPlanSystemPrompt(topic, preferredPattern);
+  const result = await retryGenerateText({
+    model,
+    system,
+    messages: [{ role: "user", content: `为「${topic}」生成 ConceptPlan。` }],
+  });
+  const plan = normalizeConceptPlan(parseJson(result.text), topic, preferredPattern);
+  const evaluation = evaluateConceptPlan(plan, preferredPattern);
+  if (evaluation.ok) {
+    return { plan, source: "llm" as const, raw_output: includeRaw ? result.text : undefined };
+  }
+
+  const repair = await retryGenerateText({
+    model,
+    system,
+    messages: [{ role: "user", content: buildConceptPlanRepairPrompt(topic, preferredPattern, evaluation.reason, result.text) }],
+  });
+  const repairedPlan = normalizeConceptPlan(parseJson(repair.text), topic, preferredPattern);
+  const repairedEvaluation = evaluateConceptPlan(repairedPlan, preferredPattern);
+  if (repairedEvaluation.ok) {
+    return {
+      plan: repairedPlan,
+      source: "llm" as const,
+      error: `ConceptPlan 初次失败，已自动修复: ${evaluation.reason}`,
+      raw_output: includeRaw ? repair.text : undefined,
+    };
+  }
+
+  return {
+    plan: fallback,
+    source: "mock" as const,
+    error: `ConceptPlan 失败: ${evaluation.reason} | 修复失败: ${repairedEvaluation.reason}`,
+    raw_output: includeRaw ? repair.text : undefined,
+  };
+}
+function buildRepairUserPrompt(
+  topic: string,
+  preferredPattern: FlowPatternPreference,
+  reason: string,
+  previousOutput: string,
+  plan?: ConceptPlan,
+) {
+  const preferred = preferredPattern === "auto" ? "AI recommends patterns" : "User requires core pattern: " + preferredPattern;
+  const clippedOutput = previousOutput.slice(0, 6000);
+  const planBlock = plan ? "\nConceptPlan, follow it exactly:\n" + JSON.stringify(plan, null, 2) + "\n" : "";
+  return [
+    "The previous Flow JSON failed validation. Repair it and output valid JSON only.",
+    "Topic: " + topic,
+    "Pattern preference: " + preferred,
+    "Failure reason: " + reason,
+    planBlock,
+    "Rules:",
+    "- Keep flow.concept equal to the user topic.",
+    "- Generate exactly 3 plays.",
+    "- Every play must use concrete terms from grounding_terms.",
+    "- Do not use patterns listed in ConceptPlan.avoid_patterns.",
+    "- If the user selected a pattern, at least one play.schema.pattern must equal it.",
+    "- Do not use placeholder copy such as similar concept, key variable, mechanism, result, output1, result, or {value}.",
+    "- User-facing text should be concise Simplified Chinese.",
+    "Previous output, for repair reference only:",
+    clippedOutput,
+  ].filter(Boolean).join("\n");
 }
 function makeFallbackFollowUps(topic: string): FollowUpTopic[] {
   return [
@@ -719,55 +1006,69 @@ function normalizeFollowUps(value: unknown, topic: string): FollowUpTopic[] {
   return followUps.length > 0 ? followUps : makeFallbackFollowUps(topic);
 }
 
-function normalizeGeneratedFlow(raw: unknown, topicInput: string, preferredPattern: FlowPatternPreference) {
-  const fallback = makeFallbackFlow(topicInput, preferredPattern);
+function normalizeGeneratedFlow(
+  raw: unknown,
+  topicInput: string,
+  preferredPattern: FlowPatternPreference,
+  plan?: ConceptPlan,
+) {
+  const fallback = plan ? makeFallbackFlowFromPlan(plan, preferredPattern) : makeFallbackFlow(topicInput, preferredPattern);
   const root = asRecord(raw);
   const candidate = asRecord(root?.flow) || root;
-  if (!candidate) return { flow: fallback, error: "LLM 输出不是对象", groundingTerms: [] };
+  if (!candidate) return { flow: fallback, error: "LLM output is not an object", groundingTerms: plan?.grounding_terms || [] };
 
-  const topic = cleanTopic(topicInput);
+  const topic = plan?.topic || cleanTopic(topicInput);
   const concepts = Array.isArray(candidate.concepts)
     ? candidate.concepts.filter((item): item is string => typeof item === "string" && item.trim().length > 0).slice(0, 5)
     : fallback.concepts;
-  const groundingTerms = normalizeGroundingTerms(candidate.grounding_terms ?? candidate.groundingTerms, topic, concepts);
-  const patternChain = fallbackPatternChain(preferredPattern);
+  const groundingTerms = normalizeGroundingTerms(
+    candidate.grounding_terms ?? candidate.groundingTerms,
+    topic,
+    plan?.grounding_terms || concepts,
+  );
+  const patternChain = plan ? patternChainFromPlan(plan, preferredPattern) : fallbackPatternChain(preferredPattern);
+  const avoid = new Set(plan ? (preferredPattern === "auto" ? plan.avoid_patterns : plan.avoid_patterns.filter((pattern) => pattern !== preferredPattern)) : []);
   const rawPlays = Array.isArray(candidate.plays) ? candidate.plays.slice(0, 3) : [];
   const plays = rawPlays.map((rawPlay, index) => {
     const record = asRecord(rawPlay) || {};
     const fallbackPattern = patternChain[index] || "knowledge_check";
-    const schema = repairSchema(record.schema, fallbackPattern, topic, groundingTerms);
+    let schema = repairSchema(record.schema, fallbackPattern, topic, groundingTerms);
+    if (isPattern(schema.pattern) && avoid.has(schema.pattern)) {
+      schema = baseSchema(fallbackPattern, topic, groundingTerms);
+    }
     return {
-      id: cleanText(record.id, `dynamic-${index + 1}`, 48),
-      title: cleanText(record.title, fallback.plays[index]?.title || `第 ${index + 1} 关`, 18),
+      id: cleanText(record.id, "dynamic-" + (index + 1), 48),
+      title: cleanText(record.title, fallback.plays[index]?.title || "Step " + (index + 1), 18),
       concept: cleanText(record.concept, topic, 28),
       schema,
       estimated_minutes: typeof record.estimated_minutes === "number" ? Math.max(1, Math.min(3, Math.round(record.estimated_minutes))) : 1,
-      reward_copy: cleanText(record.reward_copy, fallback.plays[index]?.reward_copy || "你又想通了一层。", 48),
+      reward_copy: cleanText(record.reward_copy, fallback.plays[index]?.reward_copy || "Nice, this step is clearer.", 48),
     } satisfies KnowledgePlay;
   });
 
   while (plays.length < 3) {
-    plays.push(makeFallbackPlay(topic, patternChain[plays.length] || "knowledge_check", plays.length, groundingTerms));
+    const fallbackPattern: PatternType = patternChain[plays.length] ?? "knowledge_check";
+    plays.push(makeFallbackPlay(topic, fallbackPattern, plays.length, groundingTerms));
   }
 
-  if (preferredPattern !== "auto" && !plays.some((play) => "pattern" in play.schema && play.schema.pattern === preferredPattern)) {
-    plays[1] = makeFallbackPlay(topic, preferredPattern, 1, groundingTerms);
+  const selectedPattern: PatternType | null = preferredPattern === "auto" ? null : preferredPattern;
+  if (selectedPattern && !plays.some((play) => play.schema.pattern === selectedPattern)) {
+    plays[1] = makeFallbackPlay(topic, selectedPattern, 1, groundingTerms);
   }
-
 
   return {
     flow: {
       id: makeDynamicId(topic),
-      title: cleanText(candidate.title, `${topic}入门`, 18),
+      title: cleanText(candidate.title, fallback.title, 18),
       concept: topic,
-      hook: cleanText(candidate.hook, `用三关看懂${topic}。`, 42),
-      description: cleanText(candidate.description, `把${topic}拆成能动手理解的三关。`, 80),
-      category: coerceCategory(candidate.category),
-      topic_area: cleanText(candidate.topic_area, "自由生成", 16),
-      difficulty: coerceDifficulty(candidate.difficulty),
+      hook: cleanText(candidate.hook, plan?.core_question || fallback.hook, 42),
+      description: cleanText(candidate.description, fallback.description, 80),
+      category: coerceCategory(candidate.category, plan?.category || fallback.category),
+      topic_area: cleanText(candidate.topic_area ?? candidate.topicArea, plan?.topic_area || fallback.topic_area, 16),
+      difficulty: coerceDifficulty(candidate.difficulty, plan?.difficulty || fallback.difficulty),
       estimated_minutes: plays.reduce((total, play) => total + play.estimated_minutes, 0),
       summary: cleanText(candidate.summary, fallback.summary, 100),
-      concepts,
+      concepts: concepts.length > 0 ? concepts : fallback.concepts,
       plays,
       follow_ups: normalizeFollowUps(candidate.follow_ups, topic),
       source: "generated",
@@ -790,62 +1091,49 @@ async function retryGenerateText(options: Parameters<typeof generateText>[0], ma
   throw new Error("unreachable");
 }
 
-function buildDynamicSystemPrompt(topic: string, preferredPattern: FlowPatternPreference) {
+function buildDynamicSystemPrompt(topic: string, preferredPattern: FlowPatternPreference, plan?: ConceptPlan) {
   const patternDirectory = Object.entries(SCHEMA_CATALOG)
-    .map(([pattern, item]) => `- ${pattern}: ${PATTERN_LABELS[pattern as PatternType]}；templates: ${item.templates.join(" | ")}`)
+    .map(([pattern, item]) => "- " + pattern + ": " + PATTERN_LABELS[pattern as PatternType] + "; templates: " + item.templates.join(" | "))
     .join("\n");
   const preferenceRule = preferredPattern === "auto"
-    ? "Pattern 由你根据知识结构自动选择，三关必须形成「先猜 -> 建立理解 -> 动手验证」的链条。"
-    : `用户指定核心 Pattern 为 ${preferredPattern}（${PATTERN_LABELS[preferredPattern]}），plays 中至少一关的 schema.pattern 必须等于 ${preferredPattern}。`;
+    ? "Choose patterns from the ConceptPlan recommended_patterns."
+    : "The user selected core pattern " + preferredPattern + "; at least one play.schema.pattern must equal " + preferredPattern + ".";
+  const planBlock = plan ? "\nConceptPlan, mandatory source of truth:\n" + JSON.stringify(plan, null, 2) + "\n" : "";
 
-  return `你是趣灵 aha-flash 的动态 Flow 设计器。
-用户输入任何想理解的知识，你要把它变成 exactly 3 个可以互动的微挑战关卡。
-只输出合法 JSON，不要 Markdown，不要解释。
-
-用户想理解的主题：${topic}
-${preferenceRule}
-
-允许的 Pattern：
-${patternDirectory}
-
-输出 JSON 结构：
-{
-  "title": "2-8字标题",
-  "concept": "核心概念",
-  "hook": "一句短问题",
-  "description": "一句说明",
-  "category": "科技|经济|哲学|心理|历史|数理",
-  "topic_area": "短领域名",
-  "difficulty": "轻松|进阶|烧脑一点",
-  "summary": "完成三关后的总结",
-  "grounding_terms": ["专业锚点1", "专业锚点2", "专业锚点3"],
-  "concepts": ["概念1", "概念2", "概念3"],
-  "follow_ups": [
-    { "title": "下一步标题", "concept": "延伸概念", "relation": "和当前概念的关系", "hook": "一句吸引人的问题", "suggestedPattern": "comparison" }
-  ],
-  "plays": [
-    {
-      "id": "step-1",
-      "title": "2-6字动作标题",
-      "concept": "本关概念",
-      "estimated_minutes": 1,
-      "reward_copy": "克制的完成反馈",
-      "schema": { "pattern": "...", "template": "...", "version": "2.0", "depth": "rapid", "payload": {...}, "visual_asset": {"tag":"...","mood":"idle"} }
-    }
-  ]
-}
-
-硬性规则：
-- plays 必须 exactly 3 项。
-- 每个 schema 必须能通过对应 Pattern 的 payload 校验。
-- 所有文本必须是纯文本，禁止 HTML、Markdown、花括号占位符。
-- 每一关都要让用户做动作，不要只输出定义。
-- concept 必须保留用户输入的原词或极短同义名；不要把完整定义塞进 concept 或 payload.title。
-- Pattern 选择要匹配知识结构：probability 只用于概率/随机/风险/期权/保险/贝叶斯/预测/分布；优化、规划、约束、目标函数、可行域、算法、系统流程类主题优先用 system_builder、parameter_explore、simulation_play、knowledge_check，禁止套抽卡/期权隐喻。
-- grounding_terms 必须是 3-5 个专业锚点，禁止写“概念/机制/变量/结果/关键”这类空词。
-- 三关内容必须实际使用 grounding_terms，不能只在数组里列出来。
-- follow_ups 必须给 2-3 个 AI 延伸方向，suggestedPattern 必须是允许的 Pattern 之一。
-- 标题和 hook 要短，不要靠省略号截断。`;
+  return [
+    "You are the Flow designer for aha-flash. Generate a 3-step interactive learning Flow from the ConceptPlan. Output valid JSON only, no Markdown.",
+    "Topic: " + topic,
+    preferenceRule,
+    planBlock,
+    "Allowed patterns and templates:",
+    patternDirectory,
+    "",
+    "Return this JSON shape:",
+    "{",
+    "  \"title\": \"short title\",",
+    "  \"concept\": \"same as ConceptPlan.topic\",",
+    "  \"hook\": \"short question\",",
+    "  \"description\": \"one sentence\",",
+    "  \"category\": \"same as ConceptPlan.category\",",
+    "  \"topic_area\": \"short area\",",
+    "  \"difficulty\": \"same as ConceptPlan.difficulty\",",
+    "  \"summary\": \"completion summary\",",
+    "  \"grounding_terms\": [\"term1\", \"term2\", \"term3\"],",
+    "  \"concepts\": [\"term1\", \"term2\", \"term3\"],",
+    "  \"follow_ups\": [{ \"title\": \"next\", \"concept\": \"follow-up concept\", \"relation\": \"relation\", \"hook\": \"question\", \"suggestedPattern\": \"comparison\" }],",
+    "  \"plays\": [{ \"id\": \"step-1\", \"title\": \"short action title\", \"concept\": \"step concept\", \"estimated_minutes\": 1, \"reward_copy\": \"warm but not gamey\", \"schema\": { \"pattern\": \"...\", \"template\": \"...\", \"version\": \"2.0\", \"depth\": \"rapid\", \"payload\": {}, \"visual_asset\": {\"tag\":\"...\",\"mood\":\"idle\"} } }]",
+    "}",
+    "",
+    "Hard rules:",
+    "- plays must contain exactly 3 items.",
+    "- flow.concept must equal ConceptPlan.topic.",
+    "- Use ConceptPlan.grounding_terms in visible titles, questions, options, labels, modules, slider outputs, or explanations. Listing terms only in arrays is not enough.",
+    "- Do not use ConceptPlan.avoid_patterns.",
+    "- Keep UI text concise Simplified Chinese.",
+    "- Never use raw placeholders, HTML, Markdown, {result}, {output1}, or generic labels like key variable / similar concept / mechanism / result as the actual educational content.",
+    "- Pattern choice must match knowledge structure: deterministic optimization/planning/constraints should avoid probability unless the topic itself is about uncertainty.",
+    "- Each step should ask the user to do something: guess, choose, sort, connect, slide, compare, or simulate.",
+  ].filter(Boolean).join("\n");
 }
 
 export async function generateDynamicFlow(
@@ -854,65 +1142,99 @@ export async function generateDynamicFlow(
 ): Promise<DynamicFlowGenerationResult> {
   const topic = cleanTopic(input.topic);
   const preferredPattern = normalizePreference(input.preferredPattern || "auto");
-  const fallback = makeFallbackFlow(topic, preferredPattern);
+  const fallbackPlan = makeFallbackConceptPlan(topic, preferredPattern);
+  const fallback = makeFallbackFlowFromPlan(fallbackPlan, preferredPattern);
   const model = getLLMProvider();
 
   if (!model) {
     return {
       flow: fallback,
       source: "mock",
-      validation_error: "DEEPSEEK_API_KEY 未配置，使用按输入主题生成的 fallback Flow。",
+      validation_error: "DEEPSEEK_API_KEY is not configured; using a topic-aware fallback Flow.",
+      concept_plan: fallbackPlan,
     };
   }
 
   try {
-    const system = buildDynamicSystemPrompt(topic, preferredPattern);
-    const result = await retryGenerateText({
-      model,
-      system,
-      messages: [{ role: "user", content: `为「${topic}」生成三关 Flow。` }],
-    });
-    const parsed = parseJson(result.text);
-    const normalized = normalizeGeneratedFlow(parsed, topic, preferredPattern);
-    const grounding = evaluateFlowGrounding(normalized.flow, topic, normalized.groundingTerms, preferredPattern);
+    const planResult = await generateConceptPlan(model, topic, preferredPattern, includeRaw);
+    const plan = planResult.plan;
+    const plannedFallback = makeFallbackFlowFromPlan(plan, preferredPattern);
 
-    if (grounding.ok) {
+    if (planResult.source === "mock") {
       return {
-        flow: normalized.flow,
-        source: "llm",
-        validation_error: normalized.error,
-        raw_output: includeRaw ? result.text : undefined,
+        flow: plannedFallback,
+        source: "mock",
+        validation_error: planResult.error,
+        raw_plan_output: planResult.raw_output,
+        concept_plan: plan,
       };
     }
 
+    const system = buildDynamicSystemPrompt(topic, preferredPattern, plan);
+    const result = await retryGenerateText({
+      model,
+      system,
+      messages: [{ role: "user", content: buildFlowUserPrompt(topic, plan) }],
+    });
+    const parsed = parseJson(result.text);
+    const normalized = normalizeGeneratedFlow(parsed, topic, preferredPattern, plan);
+    const grounding = evaluateFlowGrounding(normalized.flow, topic, normalized.groundingTerms, preferredPattern);
+    const planFit = evaluateFlowAgainstPlan(normalized.flow, plan, preferredPattern);
+
+    if (grounding.ok && planFit.ok) {
+      return {
+        flow: normalized.flow,
+        source: "llm",
+        validation_error: [planResult.error, normalized.error].filter(Boolean).join(" | ") || undefined,
+        raw_output: includeRaw ? result.text : undefined,
+        raw_plan_output: planResult.raw_output,
+        concept_plan: plan,
+      };
+    }
+
+    const repairReason = [grounding.reason, planFit.reason].filter(Boolean).join("; ");
     const repair = await retryGenerateText({
       model,
       system,
-      messages: [{ role: "user", content: buildRepairUserPrompt(topic, preferredPattern, grounding.reason, result.text) }],
+      messages: [{ role: "user", content: buildRepairUserPrompt(topic, preferredPattern, repairReason, result.text, plan) }],
     });
-    const repaired = normalizeGeneratedFlow(parseJson(repair.text), topic, preferredPattern);
+    const repaired = normalizeGeneratedFlow(parseJson(repair.text), topic, preferredPattern, plan);
     const repairedGrounding = evaluateFlowGrounding(repaired.flow, topic, repaired.groundingTerms, preferredPattern);
+    const repairedPlanFit = evaluateFlowAgainstPlan(repaired.flow, plan, preferredPattern);
 
-    if (repairedGrounding.ok) {
+    if (repairedGrounding.ok && repairedPlanFit.ok) {
       return {
         flow: repaired.flow,
         source: "llm",
-        validation_error: [normalized.error, `初次贴题校验失败，已自动修复: ${grounding.reason}`].filter(Boolean).join(" | ") || undefined,
+        validation_error: [
+          planResult.error,
+          normalized.error,
+          "Initial Flow validation failed and was repaired: " + repairReason,
+        ].filter(Boolean).join(" | ") || undefined,
         raw_output: includeRaw ? repair.text : undefined,
+        raw_plan_output: planResult.raw_output,
+        concept_plan: plan,
       };
     }
 
     return {
-      flow: fallback,
+      flow: plannedFallback,
       source: "mock",
-      validation_error: `贴题校验失败: ${grounding.reason} | 修复失败: ${repairedGrounding.reason}`,
+      validation_error: [
+        planResult.error,
+        "Flow validation failed: " + repairReason,
+        "Repair failed: " + [repairedGrounding.reason, repairedPlanFit.reason].filter(Boolean).join("; "),
+      ].filter(Boolean).join(" | "),
       raw_output: includeRaw ? repair.text : undefined,
+      raw_plan_output: planResult.raw_output,
+      concept_plan: plan,
     };
   } catch (error) {
     return {
       flow: fallback,
       source: "mock",
-      validation_error: `动态 Flow 生成异常: ${error instanceof Error ? error.message : String(error)}`,
+      validation_error: "Dynamic Flow generation exception: " + (error instanceof Error ? error.message : String(error)),
+      concept_plan: fallbackPlan,
     };
   }
 }

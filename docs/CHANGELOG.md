@@ -6,6 +6,13 @@
 
 ## 2026-06-14
 
+### Dynamic Flow ConceptPlan pipeline
+- Dynamic free-generation now runs in two stages: ConceptPlan first, then Flow JSON, then per-play Schema repair/validation.
+- ConceptPlan records topic, domain, core question, grounding terms, recommended patterns, avoid patterns, learning path, category, topic area, and difficulty.
+- /api/flow debug mode now exposes concept_plan and raw_plan_output, so failures can be diagnosed as planning error, Flow generation error, or schema repair error.
+- Added a dynamic fallback regression case for linear programming; deterministic optimization/planning topics must avoid probability/gacha-style patterns.
+- Manual local checks: Agent returns LLM source with system_builder -> parameter_explore -> simulation_play; linear programming returns LLM source with terms target function / constraints / feasible region / optimum / simplex and avoids probability.
+
 ### 精选集 Pattern 覆盖扩展
 - 将公开精选集从 3 条扩展到 5 条：`bayes-starter`、`dns-router`、`options-risk`、`industrial-revolution`、`inflation-deflation`。
 - 新增“期权选择”精选 Flow，覆盖 `probability`、`simulation_play`、`narrative_branch`。

@@ -66,6 +66,8 @@ export async function POST(req: Request) {
         source: result.source,
         validation_error: exposeDebug ? result.validation_error : undefined,
         raw_output: exposeDebug ? result.raw_output : undefined,
+        raw_plan_output: exposeDebug ? result.raw_plan_output : undefined,
+        concept_plan: exposeDebug ? result.concept_plan : undefined,
       },
       { headers: { "Cache-Control": "no-store" } },
     );
