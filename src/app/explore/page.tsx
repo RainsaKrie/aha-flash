@@ -10,10 +10,19 @@ import { writeFlowDraft, type FlowDraftDebug } from "@/lib/utils/storage";
 
 const SHOWCASE_FLOWS = getShowcaseFlows();
 
+interface QualityGateSummary {
+  score?: number;
+  reason?: string;
+  failures?: string[];
+  warnings?: string[];
+}
+
 interface FlowFailureResponse {
   message: string;
   title?: string;
   code?: string;
+  retryable?: boolean;
+  quality_gate?: QualityGateSummary;
   actions?: string[];
   curated_flow_ids?: string[];
 }
@@ -46,6 +55,8 @@ export default function ExplorePage() {
   const [generationStep, setGenerationStep] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [failureState, setFailureState] = useState<FlowFailureResponse | null>(null);
+  const [failureAttempts, setFailureAttempts] = useState(0);
+  const [lastFailedTopic, setLastFailedTopic] = useState<string | null>(null);
 
   async function startGeneratedFlow(nextTopic = topic) {
     const trimmed = nextTopic.trim();
@@ -72,9 +83,13 @@ export default function ExplorePage() {
       const payload = (await response.json()) as FlowApiResponse;
       if (payload.failure) {
         setFailureState(payload.failure);
+        setFailureAttempts((count) => (lastFailedTopic === trimmed ? count + 1 : 1));
+        setLastFailedTopic(trimmed);
         return;
       }
       const flow = payload.flow;
+      setFailureAttempts(0);
+      setLastFailedTopic(null);
       const draftId = flow.id || crypto.randomUUID();
       const debug: FlowDraftDebug = {
         source: payload.source,
@@ -94,6 +109,13 @@ export default function ExplorePage() {
       setIsGenerating(false);
     }
   }
+
+  const failureReasons = failureState?.quality_gate?.failures?.length
+    ? failureState.quality_gate.failures.slice(0, 3)
+    : failureState?.quality_gate?.reason
+      ? [failureState.quality_gate.reason]
+      : [];
+  const shouldPreferShowcase = failureAttempts >= 2;
 
   return (
     <main className="v5-shell v5-showcase-shell">
@@ -135,6 +157,8 @@ export default function ExplorePage() {
                 setTopic(event.target.value);
                 setErrorMessage(null);
                 setFailureState(null);
+                setFailureAttempts(0);
+                setLastFailedTopic(null);
               }}
               placeholder="比如：光合作用、DNS 解析、沉没成本"
               disabled={isGenerating}
@@ -158,6 +182,8 @@ export default function ExplorePage() {
                   setTopic(example);
                   setErrorMessage(null);
                   setFailureState(null);
+                  setFailureAttempts(0);
+                  setLastFailedTopic(null);
                 }}
               >
                 {example}
@@ -178,17 +204,36 @@ export default function ExplorePage() {
         {failureState && (
           <div className="v6-failure-card" role="status">
             <span>{"\u8fd9\u6b21\u6ca1\u6709\u786c\u4e0a"}</span>
-            <h2>{failureState.title || "\u8fd9\u6761\u8def\u5f84\u8fd8\u4e0d\u591f\u53ef\u9760"}</h2>
+            <h2>{failureState.title || "\u8fd9\u6761\u8def\u5f84\u8fd8\u6ca1\u6559\u6e05\u695a"}</h2>
             <p>{failureState.message}</p>
+            {failureReasons.length > 0 && (
+              <div className="v6-failure-card__reasons">
+                <strong>{"\u5361\u4f4f\u7684\u5730\u65b9"}</strong>
+                <ul>
+                  {failureReasons.map((reason) => (
+                    <li key={reason}>{reason}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {shouldPreferShowcase && (
+              <p className="v6-failure-card__escape">
+                {"\u8fd9\u4e2a\u6982\u5ff5\u5df2\u7ecf\u8fde\u7eed\u8bd5\u4e86\u51e0\u6b21\uff0c\u5148\u6362\u4e2a\u89d2\u5ea6\u4f1a\u66f4\u7a33\u3002\u4f60\u4e5f\u53ef\u4ee5\u5148\u8d70\u4e0b\u9762\u8fd9\u4e9b\u7a33\u5b9a\u8d77\u70b9\u3002"}
+              </p>
+            )}
             <div className="v6-failure-card__actions">
-              <button type="button" onClick={() => void startGeneratedFlow(topic)}>
-                {"\u6362\u4e00\u79cd\u62c6\u6cd5\u518d\u8bd5"}
-              </button>
+              {failureState.retryable !== false && !shouldPreferShowcase && (
+                <button type="button" onClick={() => void startGeneratedFlow(topic)}>
+                  {"\u6362\u4e00\u79cd\u62c6\u6cd5\u518d\u8bd5"}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
                   setTopic("");
                   setFailureState(null);
+                  setFailureAttempts(0);
+                  setLastFailedTopic(null);
                   setErrorMessage(null);
                   window.setTimeout(() => inputRef.current?.focus(), 0);
                 }}
@@ -197,7 +242,7 @@ export default function ExplorePage() {
               </button>
             </div>
             <div className="v6-failure-card__examples" aria-label={"\u7a33\u5b9a\u793a\u4f8b"}>
-              {SHOWCASE_FLOWS.slice(0, 3).map((flow) => (
+              {SHOWCASE_FLOWS.slice(0, shouldPreferShowcase ? 5 : 3).map((flow) => (
                 <Link key={flow.id} href={`/flow/${flow.id}`}>
                   {flow.title}
                 </Link>
