@@ -11,6 +11,10 @@
 - 新增“期权选择”精选 Flow，覆盖 `probability`、`simulation_play`、`narrative_branch`。
 - 重写 DNS 精选 Flow 的本地兜底，覆盖 `system_builder` 和 `classification_sort`。
 - 新增 `npm run eval:showcase`，回归检查公开精选集至少 5 条 Flow，并覆盖全部 10 类 Pattern。
+### 动态 Flow Pattern 选择与概率文案修正
+- 动态 Flow 新增 Pattern 适配护栏：优化、规划、约束、目标函数、可行域、系统结构类主题不再接受 `probability` 抽卡模板，会自动 repair 到更合适的互动模式。
+- 动态 Flow 的 `concept` 保留用户输入原词，避免把完整定义塞进页面标题或组件标题。
+- `probability` payload 和抽卡组件统一归一化 20/50/30 这类百分数输入，避免显示成 2000% / 5000%。抽卡卡片主标题优先显示真实条目名，不再强行覆盖为“5 星结果”。
 ### 动态 Flow 贴题校验与通用 repair
 - 移除 `Agent` 专用预制兜底，改为通用 `grounding_terms` 质量闸门：LLM 必须提炼 3-5 个专业锚点，并把锚点实际写入三关内容。
 - 动态 Flow 首次输出不贴题时，会带失败原因自动 repair 一次；修复仍失败才回退到按用户 topic 包装的通用三关骨架。

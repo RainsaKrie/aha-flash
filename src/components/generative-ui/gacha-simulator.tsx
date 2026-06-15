@@ -15,21 +15,24 @@ const depthGoals: Record<LearningDepth, string> = {
   mapping: "目标：把抽卡动作逐项对应到期权原理。",
 };
 
+function probabilityValue(item: GachaPoolItem) {
+  return item.probability > 1 ? item.probability / 100 : item.probability;
+}
+
 function draw(pool: GachaPoolItem[]) {
-  const roll = Math.random();
+  const normalizedPool = pool.map((item) => ({ item, probability: Math.max(0, probabilityValue(item)) }));
+  const total = normalizedPool.reduce((sum, entry) => sum + entry.probability, 0) || 1;
+  const roll = Math.random() * total;
   let cursor = 0;
-  for (const item of pool) {
-    cursor += item.probability;
-    if (roll <= cursor) return item;
+  for (const entry of normalizedPool) {
+    cursor += entry.probability;
+    if (roll <= cursor) return entry.item;
   }
   return pool[pool.length - 1];
 }
 
 function tierLabel(item: GachaPoolItem) {
-  if (item.rarity === "5") return "5 星结果";
-  if (item.rarity === "4") return "4 星结果";
-  if (item.rarity === "3") return "3 星结果";
-  return item.name;
+  return item.name || `${item.rarity} 星结果`;
 }
 
 function flavorLabel(item: GachaPoolItem) {
@@ -172,7 +175,7 @@ export function GachaSimulator({
               >
                 <span>
                   <span className="block text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
-                    {phase === "pulling" ? "rolling" : `${Math.round(item.probability * 100)}%`}
+                    {phase === "pulling" ? "rolling" : `${Math.round(probabilityValue(item) * 100)}%`}
                   </span>
                   <strong className="mt-2 block text-base">{phase === "pulling" ? "..." : tierLabel(item)}</strong>
                   {phase !== "pulling" && flavorLabel(item) && (
@@ -196,7 +199,7 @@ export function GachaSimulator({
                       {tierLabel(item)}
                       {flavorLabel(item) ? ` · ${flavorLabel(item)}` : ""}
                     </span>
-                    <strong key={item.probability} className="animate-value-pop text-3xl font-bold">{Math.round(item.probability * 100)}%</strong>
+                    <strong key={probabilityValue(item)} className="animate-value-pop text-3xl font-bold">{Math.round(item.probability * 100)}%</strong>
                   </div>
                 </div>
               ))}

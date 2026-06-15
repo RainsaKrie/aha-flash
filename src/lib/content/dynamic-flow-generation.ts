@@ -358,6 +358,50 @@ const PLACEHOLDER_PHRASES = [
   "越复杂越准确",
 ];
 
+const PROBABILITY_HINTS = [
+  "概率",
+  "随机",
+  "不确定",
+  "风险",
+  "保险",
+  "期权",
+  "贝叶斯",
+  "预测",
+  "抽样",
+  "分布",
+  "置信",
+  "彩票",
+  "抽卡",
+  "波动",
+  "可能性",
+  "probability",
+  "random",
+  "uncertain",
+  "risk",
+  "option",
+  "bayes",
+];
+
+const DETERMINISTIC_MODELING_HINTS = [
+  "线性规划",
+  "规划",
+  "最优化",
+  "优化",
+  "目标函数",
+  "约束",
+  "可行域",
+  "最优解",
+  "单纯形",
+  "运筹",
+  "资源分配",
+  "算法",
+  "模型",
+  "linearprogramming",
+  "optimization",
+  "constraint",
+  "objectivefunction",
+];
+
 function normalizeGroundingText(value: string) {
   return value.toLowerCase().replace(/[\s\-_，。,.。:：;；、/()（）\[\]【】]+/g, "");
 }
@@ -401,7 +445,23 @@ function countIncludes(text: string, term: string) {
   return normalizedText.includes(normalizedTerm) ? 1 : 0;
 }
 
-function evaluateFlowGrounding(flow: KnowledgeFlow, topic: string, groundingTerms: string[]) {
+function hasAnyHint(text: string, hints: string[]) {
+  const normalizedText = normalizeGroundingText(text);
+  return hints.some((hint) => normalizedText.includes(normalizeGroundingText(hint)));
+}
+
+function usesPattern(flow: KnowledgeFlow, pattern: PatternType) {
+  return flow.plays.some((play) => play.schema.pattern === pattern);
+}
+
+function probabilityPatternLooksMisapplied(flow: KnowledgeFlow, topic: string, groundingTerms: string[]) {
+  if (!usesPattern(flow, "probability")) return false;
+  const evidence = [topic, ...groundingTerms, flow.title, flow.hook, flow.description, ...flow.concepts].join(" ");
+  if (hasAnyHint(evidence, PROBABILITY_HINTS)) return false;
+  return hasAnyHint(evidence, DETERMINISTIC_MODELING_HINTS);
+}
+
+function evaluateFlowGrounding(flow: KnowledgeFlow, topic: string, groundingTerms: string[], preferredPattern: FlowPatternPreference = "auto") {
   const text = JSON.stringify(flow);
   const failures: string[] = [];
   const cleanTerms = normalizeGroundingTerms(groundingTerms, topic, []);
@@ -425,6 +485,10 @@ function evaluateFlowGrounding(flow: KnowledgeFlow, topic: string, groundingTerm
     failures.push(`出现占位式泛化文案: ${placeholderHits.join("、")}`);
   }
 
+  if (preferredPattern === "auto" && probabilityPatternLooksMisapplied(flow, topic, cleanTerms)) {
+    failures.push("Pattern 选择不合适：确定性建模/系统结构类主题不应使用 probability 抽卡模板");
+  }
+
   return {
     ok: failures.length === 0,
     reason: failures.join("；"),
@@ -444,6 +508,7 @@ Pattern 要求：${preferred}
 修复要求：
 - 先提炼 3-5 个 grounding_terms，它们必须是这个主题的专业锚点，不要写“概念/机制/变量/结果/关键”这类空词。
 - 三关的题目、选项、模块、滑块、解析都要围绕这些专业锚点展开。
+- 如果失败原因提到 Pattern 选择不合适，必须换成更贴合主题结构的 Pattern，不要继续使用 probability 抽卡模板。
 - 不要出现“相近概念”“这个概念”“关键变量”这类占位文案。
 - 如果主题是英文或缩写，保留原词，同时给出对应的专业语义。
 
@@ -568,6 +633,39 @@ function templateOwner(template: string) {
   return null;
 }
 
+function normalizePayloadTitle(payload: unknown, topic: string) {
+  const record = asRecord(payload);
+  if (!record) return payload;
+  const current = cleanText(record.title, "", 42);
+  const looksLikeDefinition = current.length > 24 || current.includes(`${topic}是`) || current.includes(`${topic}是在`);
+  return {
+    ...record,
+    title: current && !looksLikeDefinition ? current : `把${topic}玩明白`,
+  };
+}
+
+function normalizeProbabilityPayload(payload: unknown, topic: string) {
+  const record = asRecord(normalizePayloadTitle(payload, topic));
+  if (!record || !Array.isArray(record.pool)) return record || payload;
+  const pool = record.pool.map((item) => {
+    const itemRecord = asRecord(item) || {};
+    return {
+      ...itemRecord,
+      probability: typeof itemRecord.probability === "number" && Number.isFinite(itemRecord.probability) ? itemRecord.probability : 0,
+    };
+  });
+  const total = pool.reduce((sum, item) => sum + Math.max(0, item.probability), 0);
+  const normalizedPool = total > 1.5
+    ? pool.map((item) => ({ ...item, probability: total > 0 ? Math.max(0, item.probability) / total : 0 }))
+    : pool;
+  return { ...record, pool: normalizedPool };
+}
+
+function normalizeSchemaPayload(pattern: PatternType, payload: unknown, topic: string) {
+  if (pattern === "probability") return normalizeProbabilityPayload(payload, topic);
+  return normalizePayloadTitle(payload, topic);
+}
+
 function repairSchema(rawSchema: unknown, fallbackPattern: PatternType, topic: string, groundingTerms: string[] = []): UISchema {
   const record = asRecord(rawSchema);
   if (!record) return baseSchema(fallbackPattern, topic, groundingTerms);
@@ -591,7 +689,11 @@ function repairSchema(rawSchema: unknown, fallbackPattern: PatternType, topic: s
     template,
     version: typeof record.version === "string" ? record.version : "2.0",
     depth: record.depth === "scenario" || record.depth === "mapping" ? record.depth : "rapid",
-    payload: record.payload || record.config || baseSchema(pattern as PatternType, topic, groundingTerms).payload,
+    payload: normalizeSchemaPayload(
+      pattern as PatternType,
+      record.payload || record.config || baseSchema(pattern as PatternType, topic, groundingTerms).payload,
+      topic,
+    ),
   } as UISchema;
 
   return validateSchema(candidate) || baseSchema(pattern as PatternType, topic, groundingTerms);
@@ -623,7 +725,7 @@ function normalizeGeneratedFlow(raw: unknown, topicInput: string, preferredPatte
   const candidate = asRecord(root?.flow) || root;
   if (!candidate) return { flow: fallback, error: "LLM 输出不是对象", groundingTerms: [] };
 
-  const topic = cleanTopic(typeof candidate.concept === "string" ? candidate.concept : topicInput);
+  const topic = cleanTopic(topicInput);
   const concepts = Array.isArray(candidate.concepts)
     ? candidate.concepts.filter((item): item is string => typeof item === "string" && item.trim().length > 0).slice(0, 5)
     : fallback.concepts;
@@ -738,6 +840,8 @@ ${patternDirectory}
 - 每个 schema 必须能通过对应 Pattern 的 payload 校验。
 - 所有文本必须是纯文本，禁止 HTML、Markdown、花括号占位符。
 - 每一关都要让用户做动作，不要只输出定义。
+- concept 必须保留用户输入的原词或极短同义名；不要把完整定义塞进 concept 或 payload.title。
+- Pattern 选择要匹配知识结构：probability 只用于概率/随机/风险/期权/保险/贝叶斯/预测/分布；优化、规划、约束、目标函数、可行域、算法、系统流程类主题优先用 system_builder、parameter_explore、simulation_play、knowledge_check，禁止套抽卡/期权隐喻。
 - grounding_terms 必须是 3-5 个专业锚点，禁止写“概念/机制/变量/结果/关键”这类空词。
 - 三关内容必须实际使用 grounding_terms，不能只在数组里列出来。
 - follow_ups 必须给 2-3 个 AI 延伸方向，suggestedPattern 必须是允许的 Pattern 之一。
@@ -770,7 +874,7 @@ export async function generateDynamicFlow(
     });
     const parsed = parseJson(result.text);
     const normalized = normalizeGeneratedFlow(parsed, topic, preferredPattern);
-    const grounding = evaluateFlowGrounding(normalized.flow, topic, normalized.groundingTerms);
+    const grounding = evaluateFlowGrounding(normalized.flow, topic, normalized.groundingTerms, preferredPattern);
 
     if (grounding.ok) {
       return {
@@ -787,7 +891,7 @@ export async function generateDynamicFlow(
       messages: [{ role: "user", content: buildRepairUserPrompt(topic, preferredPattern, grounding.reason, result.text) }],
     });
     const repaired = normalizeGeneratedFlow(parseJson(repair.text), topic, preferredPattern);
-    const repairedGrounding = evaluateFlowGrounding(repaired.flow, topic, repaired.groundingTerms);
+    const repairedGrounding = evaluateFlowGrounding(repaired.flow, topic, repaired.groundingTerms, preferredPattern);
 
     if (repairedGrounding.ok) {
       return {

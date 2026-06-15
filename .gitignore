@@ -13,3 +13,4 @@ yarn-error.log*
 .next-dev-*.log
 output/
 .next-dev*.log
+.local-logs/
