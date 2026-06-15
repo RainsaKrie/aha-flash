@@ -53,6 +53,10 @@ async function scoreCase(testCase: DynamicFlowEvalCase): Promise<CaseResult> {
   const expectedConcept = testCase.expectedConceptIncludes || testCase.topic;
 
   if (result.source !== "mock") failures.push(`expected mock fallback, got ${result.source}`);
+  if (result.failure) failures.push(`unexpected failure state: ${result.failure.code}`);
+  if (result.quality_gate && !result.quality_gate.ok) {
+    failures.push(`quality gate failed: ${result.quality_gate.reason || result.quality_gate.failures.join("; ")}`);
+  }
   if (!flow.id.startsWith("custom-")) failures.push(`id ${flow.id} does not start with custom-`);
   if (flow.source !== "generated") failures.push(`flow source is ${flow.source || "missing"}`);
   if (flow.plays.length !== 3) failures.push(`plays ${flow.plays.length}/3`);

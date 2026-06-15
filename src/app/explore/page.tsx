@@ -1,34 +1,46 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, BrainCircuit, Gauge, Home, LibraryBig, Loader2, Shuffle, Sparkles, Timer } from "lucide-react";
+import { ArrowRight, BrainCircuit, Gauge, Home, LibraryBig, Loader2, Sparkles, Timer } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { FLOW_PATTERN_OPTIONS, type FlowPatternPreference } from "@/lib/content/flow-pattern-options";
+import { useRef, useState } from "react";
 import { getShowcaseFlows, type KnowledgeFlow } from "@/lib/content/mock-flows";
 import { writeFlowDraft } from "@/lib/utils/storage";
 
 const SHOWCASE_FLOWS = getShowcaseFlows();
 
+interface FlowFailureResponse {
+  message: string;
+  title?: string;
+  code?: string;
+  actions?: string[];
+  curated_flow_ids?: string[];
+}
+
 interface FlowApiResponse {
   flow: KnowledgeFlow;
   source: "llm" | "mock";
   validation_error?: string;
+  failure?: FlowFailureResponse;
 }
+
+const INPUT_EXAMPLES = ["\u7ebf\u6027\u89c4\u5212", "DNS \u89e3\u6790", "\u8d1d\u53f6\u65af\u5b9a\u7406", "\u590d\u5229\u6548\u5e94"];
+const GENERATION_STEPS = [
+  "\u8bc6\u522b\u77e5\u8bc6\u7ed3\u6784",
+  "\u751f\u6210\u6559\u5b66\u84dd\u56fe",
+  "\u9009\u62e9\u4e92\u52a8\u65b9\u5f0f",
+  "\u68c0\u67e5\u662f\u5426\u771f\u7684\u6559\u6e05\u695a",
+];
 
 export default function ExplorePage() {
   const router = useRouter();
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const [topic, setTopic] = useState("贝叶斯定理");
-  const [preferredPattern, setPreferredPattern] = useState<FlowPatternPreference>("auto");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationStep, setGenerationStep] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  function startRandomFlow() {
-    const pool = SHOWCASE_FLOWS.length > 0 ? SHOWCASE_FLOWS : getShowcaseFlows();
-    const next = pool[Math.floor(Math.random() * pool.length)];
-    if (next) router.push(`/flow/${next.id}`);
-  }
+  const [failureState, setFailureState] = useState<FlowFailureResponse | null>(null);
 
   async function startGeneratedFlow(nextTopic = topic) {
     const trimmed = nextTopic.trim();
@@ -38,16 +50,25 @@ export default function ExplorePage() {
     }
 
     setIsGenerating(true);
+    setGenerationStep(0);
     setErrorMessage(null);
+    setFailureState(null);
+    const timers = GENERATION_STEPS.slice(1).map((_, index) =>
+      window.setTimeout(() => setGenerationStep(index + 1), 680 * (index + 1)),
+    );
 
     try {
       const response = await fetch("/api/flow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: trimmed, preferredPattern }),
+        body: JSON.stringify({ topic: trimmed, preferredPattern: "auto" }),
       });
       if (!response.ok) throw new Error(`flow request failed: ${response.status}`);
       const payload = (await response.json()) as FlowApiResponse;
+      if (payload.failure) {
+        setFailureState(payload.failure);
+        return;
+      }
       const flow = payload.flow;
       const draftId = flow.id || crypto.randomUUID();
       writeFlowDraft(draftId, flow);
@@ -55,6 +76,7 @@ export default function ExplorePage() {
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : String(error));
     } finally {
+      timers.forEach((timer) => window.clearTimeout(timer));
       setIsGenerating(false);
     }
   }
@@ -93,8 +115,13 @@ export default function ExplorePage() {
           <label className="v5-flow-generator__input">
             <span>我想理解</span>
             <input
+              ref={inputRef}
               value={topic}
-              onChange={(event) => setTopic(event.target.value)}
+              onChange={(event) => {
+                setTopic(event.target.value);
+                setErrorMessage(null);
+                setFailureState(null);
+              }}
               placeholder="比如：光合作用、DNS 解析、沉没成本"
               disabled={isGenerating}
             />
@@ -105,29 +132,65 @@ export default function ExplorePage() {
           </button>
         </form>
 
-        <div className="v5-pattern-picker" aria-label="选择互动 Pattern">
-          {FLOW_PATTERN_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              className={option.value === preferredPattern ? "is-active" : undefined}
-              aria-pressed={option.value === preferredPattern}
-              disabled={isGenerating}
-              onClick={() => setPreferredPattern(option.value)}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+        <div className="v5-flow-controls" aria-label={"\u8f85\u52a9\u8bbe\u7f6e"}>
+          <div className="v5-flow-examples" aria-label={"\u8f93\u5165\u793a\u4f8b"}>
+            <span>{"\u8bd5\u8bd5"}</span>
+            {INPUT_EXAMPLES.map((example) => (
+              <button
+                key={example}
+                type="button"
+                disabled={isGenerating}
+                onClick={() => {
+                  setTopic(example);
+                  setErrorMessage(null);
+                  setFailureState(null);
+                }}
+              >
+                {example}
+              </button>
+            ))}
+          </div>
 
-        <div className="v5-showcase-actions v5-ai-hero__secondary">
-          <button type="button" className="v5-secondary-action-button" onClick={startRandomFlow} disabled={isGenerating}>
-            <Shuffle size={17} /> 随机试一个示例
-          </button>
-          <Link href="/hub" className="v5-secondary-link">
-            查看完成记录 <ArrowRight size={16} />
-          </Link>
         </div>
+        {isGenerating && (
+          <div className="v6-generation-status" aria-live="polite">
+            {GENERATION_STEPS.map((step, index) => (
+              <span key={step} className={index <= generationStep ? "is-active" : undefined}>
+                {index + 1}. {step}
+              </span>
+            ))}
+          </div>
+        )}
+        {failureState && (
+          <div className="v6-failure-card" role="status">
+            <span>{"\u8fd9\u6b21\u6ca1\u6709\u786c\u4e0a"}</span>
+            <h2>{failureState.title || "\u8fd9\u6761\u8def\u5f84\u8fd8\u4e0d\u591f\u53ef\u9760"}</h2>
+            <p>{failureState.message}</p>
+            <div className="v6-failure-card__actions">
+              <button type="button" onClick={() => void startGeneratedFlow(topic)}>
+                {"\u6362\u4e00\u79cd\u62c6\u6cd5\u518d\u8bd5"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setTopic("");
+                  setFailureState(null);
+                  setErrorMessage(null);
+                  window.setTimeout(() => inputRef.current?.focus(), 0);
+                }}
+              >
+                {"\u6362\u4e2a\u6982\u5ff5"}
+              </button>
+            </div>
+            <div className="v6-failure-card__examples" aria-label={"\u7a33\u5b9a\u793a\u4f8b"}>
+              {SHOWCASE_FLOWS.slice(0, 3).map((flow) => (
+                <Link key={flow.id} href={`/flow/${flow.id}`}>
+                  {flow.title}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
         {errorMessage && <p className="v5-flow-generator__error">{errorMessage}</p>}
       </section>
 

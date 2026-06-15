@@ -10,6 +10,16 @@ import {
   type TopicDifficulty,
 } from "./mock-flows.ts";
 import { SCHEMA_CATALOG, type PatternType, type TemplateId, type UISchema } from "../../types/schema.ts";
+import {
+  buildKnowledgeBlueprint,
+  evaluateFlowAgainstBlueprint,
+  makeFlowFailure,
+  selectBlueprintPatternStrategy,
+  type BlueprintStep,
+  type FlowFailureState,
+  type KnowledgeBlueprint,
+  type QualityGateResult,
+} from "./knowledge-blueprint.ts";
 
 export interface DynamicFlowInput {
   topic: string;
@@ -37,6 +47,9 @@ export interface DynamicFlowGenerationResult {
   raw_output?: string;
   raw_plan_output?: string;
   concept_plan?: ConceptPlan;
+  blueprint?: KnowledgeBlueprint;
+  quality_gate?: QualityGateResult;
+  failure?: FlowFailureState;
 }
 
 const VISUAL_TAGS: Record<PatternType, string> = {
@@ -742,6 +755,11 @@ function evaluateConceptPlan(plan: ConceptPlan, preferredPattern: FlowPatternPre
 }
 
 function patternChainFromPlan(plan: ConceptPlan, preferredPattern: FlowPatternPreference): PatternType[] {
+  const blueprint = buildKnowledgeBlueprint(plan, preferredPattern);
+  if (blueprint.structure_type !== "unclassified") {
+    return selectBlueprintPatternStrategy(blueprint, preferredPattern);
+  }
+
   const optimizationEvidence = [plan.topic, plan.knowledge_structure, ...plan.grounding_terms].join(" ");
   if (plan.knowledge_structure === "optimization_model" || hasAnyHint(optimizationEvidence, DETERMINISTIC_MODELING_HINTS)) {
     const chain: PatternType[] = ["system_builder", "parameter_explore", "simulation_play"];
@@ -768,8 +786,27 @@ function patternChainFromPlan(plan: ConceptPlan, preferredPattern: FlowPatternPr
   return result.slice(0, 3);
 }
 
+
+function pickReadableStepTerms(step?: BlueprintStep) {
+  if (!step) return [];
+  const chineseTerms = step.must_explain.filter((term) => /[\u4e00-\u9fff]/.test(term));
+  const source = chineseTerms.length > 0 ? chineseTerms : step.must_explain;
+  return source.slice(0, 3);
+}
+
+function attachBlueprintStepCue(play: KnowledgePlay, step?: BlueprintStep): KnowledgePlay {
+  const terms = pickReadableStepTerms(step);
+  if (!step || terms.length === 0) return play;
+  const keywordCue = "???" + terms.join("?");
+  return {
+    ...play,
+    reward_copy: [play.reward_copy, keywordCue].filter(Boolean).join(" "),
+  };
+}
+
 function makeFallbackFlowFromPlan(plan: ConceptPlan, preferredPattern: FlowPatternPreference): KnowledgeFlow {
   const patterns = patternChainFromPlan(plan, preferredPattern);
+  const blueprint = buildKnowledgeBlueprint(plan, preferredPattern);
   return {
     id: makeDynamicId(plan.topic),
     title: `${plan.topic}入门`,
@@ -782,7 +819,7 @@ function makeFallbackFlowFromPlan(plan: ConceptPlan, preferredPattern: FlowPatte
     estimated_minutes: 4,
     summary: `你已经把${plan.topic}拆成了可以继续探索的理解路径。`,
     concepts: plan.grounding_terms.slice(0, 5),
-    plays: patterns.map((pattern, index) => makeFallbackPlay(plan.topic, pattern, index, plan.grounding_terms)),
+    plays: patterns.map((pattern, index) => attachBlueprintStepCue(makeFallbackPlay(plan.topic, pattern, index, plan.grounding_terms), blueprint.teaching_sequence[index])),
     follow_ups: makeFallbackFollowUps(plan.topic),
     source: "generated",
   };
@@ -933,6 +970,8 @@ function buildRepairUserPrompt(
     "- Keep flow.concept equal to the user topic.",
     "- Generate exactly 3 plays.",
     "- Every play must use concrete terms from grounding_terms.",
+    "- Every play must satisfy the matching KnowledgeBlueprint teaching_sequence goal.",
+    "- The visible copy must teach the KnowledgeBlueprint core_terms, not merely mention the topic.",
     "- Do not use patterns listed in ConceptPlan.avoid_patterns.",
     "- If the user selected a pattern, at least one play.schema.pattern must equal it.",
     "- Do not use placeholder copy such as similar concept, key variable, mechanism, result, output1, result, or {value}.",
@@ -1231,7 +1270,12 @@ async function retryGenerateText(options: Parameters<typeof generateText>[0], ma
   throw new Error("unreachable");
 }
 
-function buildDynamicSystemPrompt(topic: string, preferredPattern: FlowPatternPreference, plan?: ConceptPlan) {
+function buildDynamicSystemPrompt(
+  topic: string,
+  preferredPattern: FlowPatternPreference,
+  plan?: ConceptPlan,
+  blueprint?: KnowledgeBlueprint,
+) {
   const patternDirectory = Object.entries(SCHEMA_CATALOG)
     .map(([pattern, item]) => "- " + pattern + ": " + PATTERN_LABELS[pattern as PatternType] + "; templates: " + item.templates.join(" | "))
     .join("\n");
@@ -1239,12 +1283,14 @@ function buildDynamicSystemPrompt(topic: string, preferredPattern: FlowPatternPr
     ? "Choose patterns from the ConceptPlan recommended_patterns."
     : "The user selected core pattern " + preferredPattern + "; at least one play.schema.pattern must equal " + preferredPattern + ".";
   const planBlock = plan ? "\nConceptPlan, mandatory source of truth:\n" + JSON.stringify(plan, null, 2) + "\n" : "";
+  const blueprintBlock = blueprint ? "\nKnowledgeBlueprint, mandatory teaching contract:\n" + JSON.stringify(blueprint, null, 2) + "\n" : "";
 
   return [
     "You are the Flow designer for aha-flash. Generate a 3-step interactive learning Flow from the ConceptPlan. Output valid JSON only, no Markdown.",
     "Topic: " + topic,
     preferenceRule,
     planBlock,
+    blueprintBlock,
     "Allowed patterns and templates:",
     patternDirectory,
     "",
@@ -1283,7 +1329,9 @@ export async function generateDynamicFlow(
   const topic = cleanTopic(input.topic);
   const preferredPattern = normalizePreference(input.preferredPattern || "auto");
   const fallbackPlan = makeFallbackConceptPlan(topic, preferredPattern);
+  const fallbackBlueprint = buildKnowledgeBlueprint(fallbackPlan, preferredPattern);
   const fallback = makeFallbackFlowFromPlan(fallbackPlan, preferredPattern);
+  const fallbackQuality = evaluateFlowAgainstBlueprint(fallback, fallbackBlueprint, preferredPattern);
   const model = getLLMProvider();
 
   if (!model) {
@@ -1292,13 +1340,30 @@ export async function generateDynamicFlow(
       source: "mock",
       validation_error: "DEEPSEEK_API_KEY is not configured; using a topic-aware fallback Flow.",
       concept_plan: fallbackPlan,
+      blueprint: fallbackBlueprint,
+      quality_gate: fallbackQuality,
     };
   }
 
   try {
     const planResult = await generateConceptPlan(model, topic, preferredPattern, includeRaw);
     const plan = planResult.plan;
+    const blueprint = buildKnowledgeBlueprint(plan, preferredPattern);
     const plannedFallback = makeFallbackFlowFromPlan(plan, preferredPattern);
+    const plannedFallbackQuality = evaluateFlowAgainstBlueprint(plannedFallback, blueprint, preferredPattern);
+
+    if (blueprint.structure_type === "unclassified") {
+      return {
+        flow: plannedFallback,
+        source: "mock",
+        validation_error: [planResult.error, "KnowledgeBlueprint is unclassified"].filter(Boolean).join(" | "),
+        raw_plan_output: planResult.raw_output,
+        concept_plan: plan,
+        blueprint,
+        quality_gate: plannedFallbackQuality,
+        failure: makeFlowFailure("unclassified", topic, plannedFallbackQuality),
+      };
+    }
 
     if (planResult.source === "mock") {
       return {
@@ -1307,10 +1372,12 @@ export async function generateDynamicFlow(
         validation_error: planResult.error,
         raw_plan_output: planResult.raw_output,
         concept_plan: plan,
+        blueprint,
+        quality_gate: plannedFallbackQuality,
       };
     }
 
-    const system = buildDynamicSystemPrompt(topic, preferredPattern, plan);
+    const system = buildDynamicSystemPrompt(topic, preferredPattern, plan, blueprint);
     const result = await retryGenerateText({
       model,
       system,
@@ -1320,8 +1387,9 @@ export async function generateDynamicFlow(
     const normalized = normalizeGeneratedFlow(parsed, topic, preferredPattern, plan);
     const grounding = evaluateFlowGrounding(normalized.flow, topic, normalized.groundingTerms, preferredPattern);
     const planFit = evaluateFlowAgainstPlan(normalized.flow, plan, preferredPattern);
+    const quality = evaluateFlowAgainstBlueprint(normalized.flow, blueprint, preferredPattern);
 
-    if (grounding.ok && planFit.ok) {
+    if (grounding.ok && planFit.ok && quality.ok) {
       return {
         flow: normalized.flow,
         source: "llm",
@@ -1329,10 +1397,12 @@ export async function generateDynamicFlow(
         raw_output: includeRaw ? result.text : undefined,
         raw_plan_output: planResult.raw_output,
         concept_plan: plan,
+        blueprint,
+        quality_gate: quality,
       };
     }
 
-    const repairReason = [grounding.reason, planFit.reason].filter(Boolean).join("; ");
+    const repairReason = [grounding.reason, planFit.reason, quality.reason].filter(Boolean).join("; ");
     const repair = await retryGenerateText({
       model,
       system,
@@ -1341,8 +1411,9 @@ export async function generateDynamicFlow(
     const repaired = normalizeGeneratedFlow(parseJson(repair.text), topic, preferredPattern, plan);
     const repairedGrounding = evaluateFlowGrounding(repaired.flow, topic, repaired.groundingTerms, preferredPattern);
     const repairedPlanFit = evaluateFlowAgainstPlan(repaired.flow, plan, preferredPattern);
+    const repairedQuality = evaluateFlowAgainstBlueprint(repaired.flow, blueprint, preferredPattern);
 
-    if (repairedGrounding.ok && repairedPlanFit.ok) {
+    if (repairedGrounding.ok && repairedPlanFit.ok && repairedQuality.ok) {
       return {
         flow: repaired.flow,
         source: "llm",
@@ -1354,6 +1425,8 @@ export async function generateDynamicFlow(
         raw_output: includeRaw ? repair.text : undefined,
         raw_plan_output: planResult.raw_output,
         concept_plan: plan,
+        blueprint,
+        quality_gate: repairedQuality,
       };
     }
 
@@ -1363,11 +1436,14 @@ export async function generateDynamicFlow(
       validation_error: [
         planResult.error,
         "Flow validation failed: " + repairReason,
-        "Repair failed: " + [repairedGrounding.reason, repairedPlanFit.reason].filter(Boolean).join("; "),
+        "Repair failed: " + [repairedGrounding.reason, repairedPlanFit.reason, repairedQuality.reason].filter(Boolean).join("; "),
       ].filter(Boolean).join(" | "),
       raw_output: includeRaw ? repair.text : undefined,
       raw_plan_output: planResult.raw_output,
       concept_plan: plan,
+      blueprint,
+      quality_gate: repairedQuality,
+      failure: makeFlowFailure("quality_gate_failed", topic, repairedQuality),
     };
   } catch (error) {
     return {
@@ -1375,6 +1451,8 @@ export async function generateDynamicFlow(
       source: "mock",
       validation_error: "Dynamic Flow generation exception: " + (error instanceof Error ? error.message : String(error)),
       concept_plan: fallbackPlan,
+      blueprint: fallbackBlueprint,
+      quality_gate: fallbackQuality,
     };
   }
 }

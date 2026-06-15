@@ -68,6 +68,9 @@ export async function POST(req: Request) {
         raw_output: exposeDebug ? result.raw_output : undefined,
         raw_plan_output: exposeDebug ? result.raw_plan_output : undefined,
         concept_plan: exposeDebug ? result.concept_plan : undefined,
+        blueprint: exposeDebug ? result.blueprint : undefined,
+        quality_gate: exposeDebug ? result.quality_gate : undefined,
+        failure: result.failure,
       },
       { headers: { "Cache-Control": "no-store" } },
     );

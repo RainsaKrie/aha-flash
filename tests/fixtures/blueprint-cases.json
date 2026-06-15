@@ -1,0 +1,50 @@
+﻿[
+  {
+    "id": "blueprint-optimization-linear-programming",
+    "topic": "linear programming",
+    "expectedStructure": "optimization_model",
+    "expectedPatterns": ["system_builder", "parameter_explore", "simulation_play"]
+  },
+  {
+    "id": "blueprint-system-dns",
+    "topic": "DNS resolution",
+    "expectedStructure": "system_process",
+    "expectedPatterns": ["system_builder", "process_timeline", "knowledge_check"]
+  },
+  {
+    "id": "blueprint-probability-bayes",
+    "topic": "Bayes theorem",
+    "expectedStructure": "probabilistic_reasoning",
+    "expectedPatterns": ["probability", "parameter_explore", "knowledge_check"]
+  },
+  {
+    "id": "blueprint-history-industrial-revolution",
+    "topic": "industrial revolution",
+    "expectedStructure": "historical_change",
+    "expectedPatterns": ["process_timeline", "classification_sort", "narrative_branch"]
+  },
+  {
+    "id": "blueprint-comparison-inflation-deflation",
+    "topic": "inflation vs deflation",
+    "expectedStructure": "comparison_frame",
+    "expectedPatterns": ["comparison", "classification_sort", "knowledge_check"]
+  },
+  {
+    "id": "blueprint-classification-waste-sorting",
+    "topic": "waste classification",
+    "expectedStructure": "classification_rule",
+    "expectedPatterns": ["classification_sort", "knowledge_check", "concept_memory"]
+  },
+  {
+    "id": "blueprint-causal-compound-interest",
+    "topic": "compound interest",
+    "expectedStructure": "causal_mechanism",
+    "expectedPatterns": ["system_builder", "parameter_explore", "simulation_play"]
+  },
+  {
+    "id": "blueprint-procedure-binary-search",
+    "topic": "binary search algorithm",
+    "expectedStructure": "procedure_algorithm",
+    "expectedPatterns": ["process_timeline", "simulation_play", "knowledge_check"]
+  }
+]

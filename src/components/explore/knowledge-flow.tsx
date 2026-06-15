@@ -16,6 +16,7 @@ interface FlowApiResponse {
   flow: KnowledgeFlow;
   source: "llm" | "mock";
   validation_error?: string;
+  failure?: { message: string; title?: string; code?: string };
 }
 
 export function KnowledgeFlowPlayer({ flow }: { flow: KnowledgeFlow }) {
@@ -91,6 +92,7 @@ export function KnowledgeFlowPlayer({ flow }: { flow: KnowledgeFlow }) {
       });
       if (!response.ok) throw new Error(`flow request failed: ${response.status}`);
       const payload = (await response.json()) as FlowApiResponse;
+      if (payload.failure) throw new Error(payload.failure.message);
       const nextFlow = payload.flow;
       const draftId = nextFlow.id || crypto.randomUUID();
       writeFlowDraft(draftId, nextFlow);
