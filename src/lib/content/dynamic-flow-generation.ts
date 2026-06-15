@@ -103,6 +103,11 @@ function baseSchema(pattern: PatternType, topic: string, groundingTerms: string[
     next_concepts: [],
   };
 
+  if (isOptimizationTeachingTopic(topic, groundingTerms)) {
+    const optimizationSchema = baseOptimizationSchema(pattern, topic, common);
+    if (optimizationSchema) return optimizationSchema;
+  }
+
   if (pattern === "probability") {
     return {
       ...common,
@@ -308,6 +313,133 @@ function baseSchema(pattern: PatternType, topic: string, groundingTerms: string[
       steps: 5,
     },
   };
+}
+
+function isOptimizationTeachingTopic(topic: string, groundingTerms: string[]) {
+  const evidence = [topic, ...groundingTerms].join(" ");
+  const anchors = ["目标函数", "约束条件", "可行域", "最优解", "资源分配"];
+  return hasAnyHint(evidence, DETERMINISTIC_MODELING_HINTS) || groundingTerms.some((term) => anchors.some((anchor) => term.includes(anchor)));
+}
+
+function baseOptimizationSchema(
+  pattern: PatternType,
+  topic: string,
+  common: Pick<UISchema, "version" | "depth" | "visual_asset" | "next_concepts">,
+): UISchema | null {
+  const title = "用工厂例子理解" + topic;
+
+  if (pattern === "system_builder") {
+    return {
+      ...common,
+      pattern,
+      template: "module_sandbox",
+      payload: {
+        title,
+        target: "把线性规划拼成一个模型",
+        modules: [
+          { id: "variables", label: "决策变量 x,y", description: "先定义要决定的量：桌子数 x，椅子数 y。", role: "start" },
+          { id: "objective", label: "目标函数", description: "要最大化的利润：40x + 30y。", role: "core" },
+          { id: "labor", label: "工时约束", description: "桌子需 2 小时，椅子需 1 小时，总工时不能超过 100。", role: "constraint" },
+          { id: "wood", label: "木材约束", description: "桌子用 1 份木材，椅子用 2 份木材，总木材不能超过 80。", role: "constraint" },
+          { id: "feasible", label: "可行域", description: "同时满足所有约束的 x,y 组合。最优解通常出现在可行域的顶点。", role: "result" },
+          { id: "unit", label: "单件利润", description: "单件利润高不一定总利润最高，还要看约束卡在哪里。", role: "distractor" },
+        ],
+        required_module_ids: ["variables", "objective", "labor", "wood", "feasible"],
+        expected_sequence: ["variables", "objective", "labor", "wood", "feasible"],
+        connections: [
+          { from: "variables", to: "objective", label: "用 x,y 写出目标" },
+          { from: "objective", to: "labor", label: "再加工时限制" },
+          { from: "labor", to: "wood", label: "继续加木材限制" },
+          { from: "wood", to: "feasible", label: "约束围出可行域" },
+        ],
+        success_summary: "先定 x,y，再写目标函数，最后用约束切出可行域。",
+      },
+    };
+  }
+
+  if (pattern === "parameter_explore") {
+    return {
+      ...common,
+      pattern,
+      template: "single_slider",
+      payload: {
+        title: "调整约束条件",
+        variable_label: "工时上限",
+        min: 60,
+        max: 140,
+        default_value: 100,
+        unit: "小时",
+        explanation_template: "约束放宽时，可行域变大，最优解可能移到新的顶点。",
+        scenarios: [
+          { label: "紧约束", value: 70 },
+          { label: "基准", value: 100 },
+          { label: "宽约束", value: 130 },
+        ],
+        outputs: [
+          { label: "可行域大小", model: "linear", min: 20, max: 100, default: 60, unit: "%", description: "能选的 x,y 组合变多了。" },
+          { label: "估计最大利润", model: "linear", min: 1600, max: 4200, default: 3000, unit: "元", description: "可行域扩大后，有机会找到更高利润的顶点。" },
+        ],
+        insight_rules: [
+          { when: "low", text: "工时很紧时，约束会把可行域压得很小。" },
+          { when: "mid", text: "约束放宽后，最优点可能从一个顶点跳到另一个顶点。" },
+          { when: "high", text: "继续放宽未必一直提升，因为另一条约束可能成为新的瓶颈。" },
+        ],
+      },
+    };
+  }
+
+  if (pattern === "simulation_play") {
+    return {
+      ...common,
+      pattern,
+      template: "parameter_simulation",
+      payload: {
+        title: "试着推一次最优解",
+        params: [
+          { label: "工时上限", min: 60, max: 140, default: 100, unit: "小时" },
+          { label: "木材上限", min: 50, max: 120, default: 80, unit: "份" },
+          { label: "桌子利润", min: 20, max: 80, default: 40, unit: "元" },
+        ],
+        compute_formula_description: "先排除不满足约束的方案，再在可行域顶点中找目标函数最大的一个。",
+        steps: 5,
+      },
+    };
+  }
+
+  if (pattern === "concept_memory") {
+    return {
+      ...common,
+      pattern,
+      template: "term_cards",
+      payload: {
+        title: "记住三个骨架词",
+        cards: [
+          { front: "决策变量", back: "要决定的量，例如桌子数 x 和椅子数 y。" },
+          { front: "目标函数", back: "想最大化或最小化的式子，例如利润 40x+30y。" },
+          { front: "可行域", back: "所有同时满足约束的方案集合，最优解常在顶点。" },
+        ],
+      },
+    };
+  }
+
+  if (pattern === "knowledge_check") {
+    return {
+      ...common,
+      pattern,
+      template: "single_question",
+      payload: {
+        title: "先抓住建模顺序",
+        question: "做线性规划时，最先应该明确什么？",
+        options: [
+          { label: "先定义决策变量 x,y", correct: true, explanation: "没有 x,y，目标函数和约束都写不出来。" },
+          { label: "先找结果是多少", correct: false, explanation: "结果要通过目标函数和约束推出来。" },
+          { label: "先记住单纯形法名字", correct: false, explanation: "算法名字不等于理解建模问题。" },
+        ],
+      },
+    };
+  }
+
+  return null;
 }
 
 function makeFallbackPlay(topic: string, pattern: PatternType, index: number, groundingTerms: string[] = []): KnowledgePlay {
@@ -610,6 +742,13 @@ function evaluateConceptPlan(plan: ConceptPlan, preferredPattern: FlowPatternPre
 }
 
 function patternChainFromPlan(plan: ConceptPlan, preferredPattern: FlowPatternPreference): PatternType[] {
+  const optimizationEvidence = [plan.topic, plan.knowledge_structure, ...plan.grounding_terms].join(" ");
+  if (plan.knowledge_structure === "optimization_model" || hasAnyHint(optimizationEvidence, DETERMINISTIC_MODELING_HINTS)) {
+    const chain: PatternType[] = ["system_builder", "parameter_explore", "simulation_play"];
+    if (preferredPattern !== "auto" && !chain.includes(preferredPattern)) chain[1] = preferredPattern;
+    return chain;
+  }
+
   const avoid = new Set(preferredPattern === "auto" ? plan.avoid_patterns : plan.avoid_patterns.filter((pattern) => pattern !== preferredPattern));
   const candidates = [
     ...plan.recommended_patterns,
@@ -1028,12 +1167,13 @@ function normalizeGeneratedFlow(
   );
   const patternChain = plan ? patternChainFromPlan(plan, preferredPattern) : fallbackPatternChain(preferredPattern);
   const avoid = new Set(plan ? (preferredPattern === "auto" ? plan.avoid_patterns : plan.avoid_patterns.filter((pattern) => pattern !== preferredPattern)) : []);
+  const allowedPatterns = new Set(patternChain);
   const rawPlays = Array.isArray(candidate.plays) ? candidate.plays.slice(0, 3) : [];
   const plays = rawPlays.map((rawPlay, index) => {
     const record = asRecord(rawPlay) || {};
     const fallbackPattern = patternChain[index] || "knowledge_check";
     let schema = repairSchema(record.schema, fallbackPattern, topic, groundingTerms);
-    if (isPattern(schema.pattern) && avoid.has(schema.pattern)) {
+    if (!isPattern(schema.pattern) || avoid.has(schema.pattern) || (plan && !allowedPatterns.has(schema.pattern))) {
       schema = baseSchema(fallbackPattern, topic, groundingTerms);
     }
     return {

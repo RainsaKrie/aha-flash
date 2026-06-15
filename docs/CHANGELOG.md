@@ -888,3 +888,9 @@ th-child 顺序轮换改为按知识语义映射。
 - 明确 mock/静态边界：Explore 起点、follow-up 分支、非 showcase Flow、视觉资源和 Hub 本地记录。
 - 修正 Hub 技术描述：当前是知识路径足迹，不再是概念卡片墙。
 - 保留 `docs/input-docs/input.md` 与 `SKILL.md`，删除已整合的历史规划输入。
+
+### Optimization-topic teaching fallback
+- Added an optimization/planning teaching fallback for dynamic Flow generation. When ConceptPlan identifies optimization_model or deterministic planning terms, repair fallback now teaches with decision variables, objective function, constraints, feasible region, and optimum instead of generic slider/card copy.
+- Optimization topics now use a fixed pedagogical Pattern chain: system_builder -> parameter_explore -> simulation_play.
+- Verified linear programming locally: first step builds a factory model with x/y, objective 40x+30y, labor/material constraints, and feasible region; later steps explore constraints and simulate optimum movement.
+
