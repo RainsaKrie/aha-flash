@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { getShowcaseFlows, type KnowledgeFlow } from "@/lib/content/mock-flows";
-import { writeFlowDraft } from "@/lib/utils/storage";
+import { writeFlowDraft, type FlowDraftDebug } from "@/lib/utils/storage";
 
 const SHOWCASE_FLOWS = getShowcaseFlows();
 
@@ -22,6 +22,11 @@ interface FlowApiResponse {
   flow: KnowledgeFlow;
   source: "llm" | "mock";
   validation_error?: string;
+  raw_output?: string;
+  raw_plan_output?: string;
+  concept_plan?: unknown;
+  blueprint?: unknown;
+  quality_gate?: unknown;
   failure?: FlowFailureResponse;
 }
 
@@ -71,7 +76,16 @@ export default function ExplorePage() {
       }
       const flow = payload.flow;
       const draftId = flow.id || crypto.randomUUID();
-      writeFlowDraft(draftId, flow);
+      const debug: FlowDraftDebug = {
+        source: payload.source,
+        validation_error: payload.validation_error,
+        raw_output: payload.raw_output,
+        raw_plan_output: payload.raw_plan_output,
+        concept_plan: payload.concept_plan,
+        blueprint: payload.blueprint,
+        quality_gate: payload.quality_gate,
+      };
+      writeFlowDraft(draftId, flow, debug);
       router.push(`/flow/custom?draftId=${encodeURIComponent(draftId)}`);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : String(error));

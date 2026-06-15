@@ -6,8 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { KnowledgeFlowPlayer } from "@/components/explore/knowledge-flow";
 import { SpiritHint } from "@/components/spirit-hint";
-import { readFlowDraft } from "@/lib/utils/storage";
-import type { KnowledgeFlow } from "@/lib/content/mock-flows";
+import { readFlowDraftRecord, type FlowDraftRecord } from "@/lib/utils/storage";
 
 function CustomFlowFallback({ hasLoaded = false }: { hasLoaded?: boolean }) {
   return (
@@ -30,15 +29,15 @@ function CustomFlowFallback({ hasLoaded = false }: { hasLoaded?: boolean }) {
 function CustomFlowContent() {
   const searchParams = useSearchParams();
   const draftId = searchParams.get("draftId");
-  const [flow, setFlow] = useState<KnowledgeFlow | null>(null);
+  const [draft, setDraft] = useState<FlowDraftRecord | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
-    setFlow(readFlowDraft(draftId));
+    setDraft(readFlowDraftRecord(draftId));
     setHasLoaded(true);
   }, [draftId]);
 
-  if (flow) return <KnowledgeFlowPlayer key={flow.id} flow={flow} />;
+  if (draft) return <KnowledgeFlowPlayer key={draft.flow.id} flow={draft.flow} debug={draft.debug} />;
   return <CustomFlowFallback hasLoaded={hasLoaded} />;
 }
 

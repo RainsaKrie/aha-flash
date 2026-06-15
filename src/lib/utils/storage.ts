@@ -16,6 +16,21 @@ export interface CompletedFlowRecord {
   source?: "curated" | "generated";
 }
 
+export interface FlowDraftDebug {
+  source?: "llm" | "mock";
+  validation_error?: string;
+  raw_output?: string;
+  raw_plan_output?: string;
+  concept_plan?: unknown;
+  blueprint?: unknown;
+  quality_gate?: unknown;
+}
+
+export interface FlowDraftRecord {
+  flow: KnowledgeFlow;
+  debug?: FlowDraftDebug;
+}
+
 export function readUserId() {
   if (typeof window === "undefined") return null;
   return window.localStorage.getItem(USER_ID_KEY);
@@ -59,19 +74,38 @@ export function recordCompletedFlow(record: Omit<CompletedFlowRecord, "completed
   window.localStorage.setItem(COMPLETED_FLOWS_KEY, JSON.stringify(next));
 }
 
-export function writeFlowDraft(draftId: string, flow: KnowledgeFlow) {
-  if (typeof window === "undefined") return;
-  window.sessionStorage.setItem(`${FLOW_DRAFT_PREFIX}${draftId}`, JSON.stringify(flow));
+function isKnowledgeFlow(value: unknown): value is KnowledgeFlow {
+  return Boolean(
+    value &&
+      typeof value === "object" &&
+      typeof (value as KnowledgeFlow).id === "string" &&
+      Array.isArray((value as KnowledgeFlow).plays),
+  );
 }
 
-export function readFlowDraft(draftId: string | null) {
+export function writeFlowDraft(draftId: string, flow: KnowledgeFlow, debug?: FlowDraftDebug) {
+  if (typeof window === "undefined") return;
+  const value = debug ? ({ flow, debug } satisfies FlowDraftRecord) : flow;
+  window.sessionStorage.setItem(`${FLOW_DRAFT_PREFIX}${draftId}`, JSON.stringify(value));
+}
+
+export function readFlowDraftRecord(draftId: string | null): FlowDraftRecord | null {
   if (typeof window === "undefined" || !draftId) return null;
   const raw = window.sessionStorage.getItem(`${FLOW_DRAFT_PREFIX}${draftId}`);
   if (!raw) return null;
   try {
-    const flow = JSON.parse(raw) as KnowledgeFlow;
-    return flow && typeof flow.id === "string" && Array.isArray(flow.plays) ? flow : null;
+    const parsed = JSON.parse(raw) as unknown;
+    if (isKnowledgeFlow(parsed)) return { flow: parsed };
+    if (parsed && typeof parsed === "object" && isKnowledgeFlow((parsed as FlowDraftRecord).flow)) {
+      const record = parsed as FlowDraftRecord;
+      return { flow: record.flow, debug: record.debug };
+    }
+    return null;
   } catch {
     return null;
   }
+}
+
+export function readFlowDraft(draftId: string | null) {
+  return readFlowDraftRecord(draftId)?.flow || null;
 }

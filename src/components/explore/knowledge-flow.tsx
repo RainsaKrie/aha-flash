@@ -9,17 +9,22 @@ import { renderBySchema } from "@/components/generative-ui/registry";
 import { SpiritHint } from "@/components/spirit-hint";
 import { getFlowFollowUps, type FollowUpTopic, type KnowledgeFlow } from "@/lib/content/mock-flows";
 import { getVisualAsset } from "@/lib/content/visual-assets";
-import { recordCompletedFlow, writeFlowDraft } from "@/lib/utils/storage";
+import { recordCompletedFlow, writeFlowDraft, type FlowDraftDebug } from "@/lib/utils/storage";
 import { normalizeUISchema, type InteractionEvent } from "@/types/schema";
 
 interface FlowApiResponse {
   flow: KnowledgeFlow;
   source: "llm" | "mock";
   validation_error?: string;
+  raw_output?: string;
+  raw_plan_output?: string;
+  concept_plan?: unknown;
+  blueprint?: unknown;
+  quality_gate?: unknown;
   failure?: { message: string; title?: string; code?: string };
 }
 
-export function KnowledgeFlowPlayer({ flow }: { flow: KnowledgeFlow }) {
+export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debug?: FlowDraftDebug }) {
   const router = useRouter();
   const [activeIndex, setActiveIndex] = useState(0);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
@@ -36,6 +41,10 @@ export function KnowledgeFlowPlayer({ flow }: { flow: KnowledgeFlow }) {
   const hasNext = activeIndex < flow.plays.length - 1;
   const progress = Math.round(((activeIndex + (isCompleted ? 1 : 0)) / flow.plays.length) * 100);
   const showBranches = isCompleted && !hasNext;
+  const debugGate =
+    debug?.quality_gate && typeof debug.quality_gate === "object"
+      ? (debug.quality_gate as { ok?: boolean; score?: number })
+      : null;
 
   function persistCompletion() {
     recordCompletedFlow({
@@ -95,7 +104,16 @@ export function KnowledgeFlowPlayer({ flow }: { flow: KnowledgeFlow }) {
       if (payload.failure) throw new Error(payload.failure.message);
       const nextFlow = payload.flow;
       const draftId = nextFlow.id || crypto.randomUUID();
-      writeFlowDraft(draftId, nextFlow);
+      const debug: FlowDraftDebug = {
+        source: payload.source,
+        validation_error: payload.validation_error,
+        raw_output: payload.raw_output,
+        raw_plan_output: payload.raw_plan_output,
+        concept_plan: payload.concept_plan,
+        blueprint: payload.blueprint,
+        quality_gate: payload.quality_gate,
+      };
+      writeFlowDraft(draftId, nextFlow, debug);
       router.push(`/flow/custom?draftId=${encodeURIComponent(draftId)}`);
     } catch (error) {
       setBranchError(error instanceof Error ? error.message : String(error));
@@ -240,6 +258,33 @@ export function KnowledgeFlowPlayer({ flow }: { flow: KnowledgeFlow }) {
           )}
         </div>
       </footer>
+
+      {process.env.NODE_ENV !== "production" && debug && (
+        <details className="v6-flow-inspector">
+          <summary>
+            <span>V6 Inspector</span>
+            <strong data-state={debugGate?.ok === false ? "fail" : "pass"}>
+              {debug.source || "unknown"}
+              {typeof debugGate?.score === "number" ? ` score ${debugGate.score}` : ""}
+            </strong>
+          </summary>
+          <pre>
+            {JSON.stringify(
+              {
+                source: debug.source,
+                validation_error: debug.validation_error,
+                concept_plan: debug.concept_plan,
+                blueprint: debug.blueprint,
+                quality_gate: debug.quality_gate,
+                raw_plan_output: debug.raw_plan_output,
+                raw_output: debug.raw_output,
+              },
+              null,
+              2,
+            )}
+          </pre>
+        </details>
+      )}
     </main>
   );
 }
