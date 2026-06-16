@@ -1342,6 +1342,7 @@ export async function generateDynamicFlow(
       concept_plan: fallbackPlan,
       blueprint: fallbackBlueprint,
       quality_gate: fallbackQuality,
+      failure: makeFlowFailure("generation_unavailable", topic, fallbackQuality),
     };
   }
 
@@ -1374,6 +1375,7 @@ export async function generateDynamicFlow(
         concept_plan: plan,
         blueprint,
         quality_gate: plannedFallbackQuality,
+        failure: makeFlowFailure("quality_gate_failed", topic, plannedFallbackQuality),
       };
     }
 
@@ -1453,6 +1455,7 @@ export async function generateDynamicFlow(
       concept_plan: fallbackPlan,
       blueprint: fallbackBlueprint,
       quality_gate: fallbackQuality,
+      failure: makeFlowFailure("generation_unavailable", topic, fallbackQuality),
     };
   }
 }

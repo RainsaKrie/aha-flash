@@ -48,7 +48,7 @@ export interface QualityGateResult {
 }
 
 export interface FlowFailureState {
-  code: "quality_gate_failed" | "unclassified";
+  code: "quality_gate_failed" | "unclassified" | "generation_unavailable";
   title: string;
   message: string;
   retryable: boolean;
@@ -344,6 +344,18 @@ export function evaluateFlowAgainstBlueprint(flow: KnowledgeFlow, blueprint: Kno
 }
 
 export function makeFlowFailure(code: FlowFailureState["code"], topic: string, qualityGate?: QualityGateResult): FlowFailureState {
+  if (code === "generation_unavailable") {
+    return {
+      code,
+      title: "\u73b0\u5728\u8fd8\u4e0d\u80fd\u73b0\u573a\u751f\u6210",
+      message: `\u6211\u6682\u65f6\u8fde\u4e0d\u4e0a\u751f\u6210\u5f15\u64ce\uff0c\u4e0d\u80fd\u53ef\u9760\u5730\u4e3a ${topic} \u73b0\u62c6\u4e09\u5173\u3002\u53ef\u4ee5\u7a0d\u540e\u518d\u8bd5\uff0c\u6216\u5148\u4ece\u4e0b\u9762\u8fd9\u4e9b\u7a33\u5b9a\u8d77\u70b9\u5f00\u59cb\u3002`,
+      retryable: true,
+      actions: ["retry", "change_topic", "try_showcase"],
+      curated_flow_ids: CURATED_FLOW_IDS,
+      quality_gate: qualityGate,
+    };
+  }
+
   return code === "unclassified"
     ? {
       code,

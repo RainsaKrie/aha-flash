@@ -53,7 +53,8 @@ async function scoreCase(testCase: DynamicFlowEvalCase): Promise<CaseResult> {
   const expectedConcept = testCase.expectedConceptIncludes || testCase.topic;
 
   if (result.source !== "mock") failures.push(`expected mock fallback, got ${result.source}`);
-  if (result.failure) failures.push(`unexpected failure state: ${result.failure.code}`);
+  if (!result.failure) failures.push("expected honest generation_unavailable failure in no-key mode");
+  if (result.failure && result.failure.code !== "generation_unavailable") failures.push(`unexpected failure state: ${result.failure.code}`);
   if (result.quality_gate && !result.quality_gate.ok) {
     failures.push(`quality gate failed: ${result.quality_gate.reason || result.quality_gate.failures.join("; ")}`);
   }
