@@ -60,7 +60,7 @@ async function scoreCase(testCase: DynamicFlowEvalCase): Promise<CaseResult> {
   if (result.source !== "mock") failures.push(`expected mock fallback, got ${result.source}`);
   if (!result.failure) failures.push("expected honest generation_unavailable failure in no-key mode");
   if (result.failure && result.failure.code !== "generation_unavailable") failures.push(`unexpected failure state: ${result.failure.code}`);
-  if (result.quality_gate && !result.quality_gate.ok) {
+  if (!result.failure && result.quality_gate && !result.quality_gate.ok) {
     failures.push(`quality gate failed: ${result.quality_gate.reason || result.quality_gate.failures.join("; ")}`);
   }
   if (testCase.expectedStructure && result.blueprint?.structure_type !== testCase.expectedStructure) {
@@ -69,6 +69,7 @@ async function scoreCase(testCase: DynamicFlowEvalCase): Promise<CaseResult> {
   if (!flow.id.startsWith("custom-")) failures.push(`id ${flow.id} does not start with custom-`);
   if (flow.source !== "generated") failures.push(`flow source is ${flow.source || "missing"}`);
   if (flow.plays.length !== 3) failures.push(`plays ${flow.plays.length}/3`);
+  if (!flow.plays.every((play) => play.teaching_trace)) failures.push("missing teaching_trace on generated plays");
   if (!flow.concept.toLowerCase().includes(expectedConcept.toLowerCase())) failures.push(`concept ${flow.concept} is not anchored to ${expectedConcept}`);
   if (!flow.title.toLowerCase().includes(expectedConcept.toLowerCase())) failures.push("title is not anchored to topic");
   if (!flow.follow_ups || flow.follow_ups.length < 2) failures.push("missing follow_ups");

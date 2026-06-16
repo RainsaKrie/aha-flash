@@ -1,4 +1,4 @@
-﻿import { validateSchema } from "../llm/schema-validator.ts";
+import { validateSchema } from "../llm/schema-validator.ts";
 import type { FlowPatternPreference } from "./flow-pattern-options.ts";
 import type { KnowledgeFlow } from "./mock-flows.ts";
 import type { PatternType } from "../../types/schema.ts";
@@ -291,6 +291,22 @@ function flowPlayText(play: KnowledgeFlow["plays"][number]) {
   });
 }
 
+function visibleFlowText(flow: KnowledgeFlow) {
+  return JSON.stringify({
+    title: flow.title,
+    concept: flow.concept,
+    hook: flow.hook,
+    description: flow.description,
+    summary: flow.summary,
+    concepts: flow.concepts,
+    plays: flow.plays.map((play) => ({
+      title: play.title,
+      concept: play.concept,
+      reward_copy: play.reward_copy,
+      schema: play.schema,
+    })),
+  });
+}
 function expectedBlueprintPattern(blueprint: KnowledgeBlueprint, preferredPattern: FlowPatternPreference, index: number) {
   return selectBlueprintPatternStrategy(blueprint, preferredPattern)[index] || blueprint.teaching_sequence[index]?.recommended_pattern;
 }
@@ -298,7 +314,7 @@ function expectedBlueprintPattern(blueprint: KnowledgeBlueprint, preferredPatter
 export function evaluateFlowAgainstBlueprint(flow: KnowledgeFlow, blueprint: KnowledgeBlueprint, preferredPattern: FlowPatternPreference = "auto"): QualityGateResult {
   const failures: string[] = [];
   const warnings: string[] = [];
-  const text = JSON.stringify(flow);
+  const text = visibleFlowText(flow);
   const patterns = flow.plays.map((play) => play.schema.pattern).filter((pattern): pattern is PatternType => typeof pattern === "string");
   const allowed = new Set(selectBlueprintPatternStrategy(blueprint, preferredPattern));
   const avoid = new Set(preferredPattern === "auto" ? blueprint.avoid_patterns : blueprint.avoid_patterns.filter((pattern) => pattern !== preferredPattern));
@@ -331,9 +347,24 @@ export function evaluateFlowAgainstBlueprint(flow: KnowledgeFlow, blueprint: Kno
     if (expectedPattern && play.schema.pattern !== expectedPattern) {
       stepFailures.push(`Step ${index + 1} pattern ${play.schema.pattern} != Blueprint pattern ${expectedPattern}`);
     }
+    const trace = play.teaching_trace;
+    if (!trace) {
+      stepFailures.push(`Step ${index + 1} missing teaching_trace for Blueprint goal "${step.goal}"`);
+    } else {
+      if (trace.blueprint_step_goal !== step.goal) {
+        stepFailures.push(`Step ${index + 1} trace goal "${trace.blueprint_step_goal}" != Blueprint goal "${step.goal}"`);
+      }
+      if (trace.intended_user_action !== step.user_action) {
+        stepFailures.push(`Step ${index + 1} trace action "${trace.intended_user_action}" != Blueprint action "${step.user_action}"`);
+      }
+      const traceHits = termHits(JSON.stringify(trace.covered_terms), step.must_explain);
+      if (trace.covered_terms.length === 0 || traceHits.length === 0) {
+        stepFailures.push(`Step ${index + 1} trace does not cover Blueprint terms for goal "${step.goal}"`);
+      }
+    }
     const stepHits = termHits(flowPlayText(play), step.must_explain);
     if (step.must_explain.length > 0 && stepHits.length === 0) {
-      stepFailures.push(`Step ${index + 1} does not cover Blueprint terms for goal "${step.goal}": ${step.must_explain.slice(0, 5).join(", ")}`);
+      stepFailures.push(`Step ${index + 1} does not cover visible Blueprint terms for goal "${step.goal}": ${step.must_explain.slice(0, 5).join(", ")}`);
     }
   });
 

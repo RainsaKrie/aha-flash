@@ -1,5 +1,6 @@
 import { createMockSchema } from "../llm/mock-schema.ts";
 import type { PatternType, UISchema, VisualAssetHint } from "../../types/schema.ts";
+import type { BlueprintUserAction } from "./knowledge-blueprint.ts";
 
 export type TopicCategory = "科技" | "经济" | "哲学" | "心理" | "历史" | "数理";
 export type TopicDifficulty = "轻松" | "进阶" | "烧脑一点";
@@ -11,6 +12,15 @@ export interface KnowledgePlay {
   schema: UISchema;
   estimated_minutes: number;
   reward_copy: string;
+  teaching_trace?: TeachingTrace;
+}
+
+export interface TeachingTrace {
+  blueprint_step_goal: string;
+  covered_terms: string[];
+  intended_user_action: BlueprintUserAction;
+  success_criteria: string;
+  recommended_pattern: PatternType;
 }
 
 export interface KnowledgeFlow {

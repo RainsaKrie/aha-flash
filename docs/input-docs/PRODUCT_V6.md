@@ -711,3 +711,22 @@ First V6 slice should include:
 6. Integration path that reuses existing Flow Steps and Schema validation.
 
 Do not begin with broad UI expansion or 80 eval cases.
+
+## 13. Implementation Status - 2026-06-16
+
+Implemented V6 reliability slices:
+
+- `KnowledgeBlueprint` and the 8+1 structure taxonomy are implemented in `src/lib/content/knowledge-blueprint.ts`.
+- Deterministic `QualityGate` validates structure, pattern fit, schema validity, placeholder absence, visible term coverage, and per-step Blueprint alignment.
+- Honest failure states are returned instead of silently showing shallow mock content when generation is unavailable, unclassified, or below gate quality.
+- Explore failure UI offers retry, topic change, curated examples, and structure-choice retry paths.
+- `preferredStructure` now flows from `/explore` to `/api/flow` to ConceptPlan, Blueprint, fallback generation, and dynamic Flow normalization.
+- `TeachingTrace` is attached to generated plays for dev/eval audit: Blueprint goal, covered terms, intended user action, success criteria, and recommended Pattern.
+- Eval coverage currently includes `eval:blueprint` with 8 handcrafted structure cases and `eval:flow-dynamic` with 9 no-key dynamic fallback / honest-failure cases.
+
+Remaining V6 work:
+
+- Expand Blueprint eval from 8 to 40 cases, then 80 cases.
+- Add a live/manual eval mode that samples real LLM generation quality when an API key is present.
+- Improve generated follow-up branches so they use Blueprint relations instead of generic fallback relations.
+- Add a compact pre-flow decomposition preview once reliability is stable enough to expose it as product UX.

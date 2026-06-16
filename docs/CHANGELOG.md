@@ -4,6 +4,15 @@
 
 ---
 
+## 2026-06-16
+
+### V6 TeachingTrace and honest failure audit
+- Added `teaching_trace` to generated `KnowledgePlay` records so every dynamic step can be traced back to its Blueprint goal, required terms, intended user action, success criteria, and recommended Pattern.
+- Dynamic Flow normalization now attaches trace data deterministically from `KnowledgeBlueprint`; model output does not need to invent audit fields.
+- QualityGate now checks both visible step content and `teaching_trace`: trace improves debugging, but it does not replace visible teaching coverage.
+- `eval:flow-dynamic` now treats no-key fallback as an honest failure path: failed generated drafts can remain diagnosable without being scored as user-facing success.
+
+
 ## 2026-06-14
 
 ### Dynamic Flow ConceptPlan pipeline

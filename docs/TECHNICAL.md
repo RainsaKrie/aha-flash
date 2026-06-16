@@ -593,3 +593,19 @@ V5 当前已经具备：`Explore 任意输入 -> AI 生成三关 Flow -> /flow/c
 - Debug mode (?debug=1 in dev/local) exposes concept_plan and raw_plan_output alongside raw_output and validation_error.
 - If ConceptPlan fails validation after repair, fallback uses makeFallbackFlowFromPlan(plan) instead of a fixed showcase topic.
 - Dynamic fallback regression covers Agent, Kubernetes operator, and linear programming; the latter must not include probability in the generated pattern chain.
+
+## V6 Dynamic Flow Reliability Notes
+
+The dynamic free-generation path is now structured as:
+
+```text
+Topic -> ConceptPlan -> KnowledgeBlueprint -> KnowledgeFlow -> QualityGate -> Flow or honest failure
+```
+
+Key implementation points:
+
+- `KnowledgeBlueprint` is the teaching contract and contains `structure_type`, `core_terms`, `teaching_sequence`, `pattern_strategy`, `avoid_patterns`, and confidence.
+- `TeachingTrace` is attached to each generated `KnowledgePlay` after normalization. It is derived from the Blueprint, not trusted from model output.
+- `QualityGate` remains deterministic-first. It checks visible step content, schema validity, pattern fit, avoided patterns, placeholder terms, Blueprint step coverage, and trace alignment.
+- Trace fields are for debugging and eval audit. They must not be used as a substitute for visible user-facing teaching copy.
+- No-key or low-quality dynamic generation returns an honest failure state while still carrying enough draft/debug information for diagnosis.

@@ -804,23 +804,26 @@ function patternChainFromPlan(
 }
 
 
-function pickReadableStepTerms(step?: BlueprintStep) {
+function pickTraceTerms(step?: BlueprintStep) {
   if (!step) return [];
-  const chineseTerms = step.must_explain.filter((term) => /[\u4e00-\u9fff]/.test(term));
-  const source = chineseTerms.length > 0 ? chineseTerms : step.must_explain;
-  return source.slice(0, 3);
+  return Array.from(new Set(step.must_explain.map((term) => String(term || "").trim()).filter(Boolean))).slice(0, 8);
 }
 
-function attachBlueprintStepCue(play: KnowledgePlay, step?: BlueprintStep): KnowledgePlay {
-  const terms = pickReadableStepTerms(step);
-  if (!step || terms.length === 0) return play;
-  const keywordCue = "???" + terms.join("?");
+function makeTeachingTrace(step?: BlueprintStep): KnowledgePlay["teaching_trace"] | undefined {
+  if (!step) return undefined;
   return {
-    ...play,
-    reward_copy: [play.reward_copy, keywordCue].filter(Boolean).join(" "),
+    blueprint_step_goal: step.goal,
+    covered_terms: pickTraceTerms(step),
+    intended_user_action: step.user_action,
+    success_criteria: step.success_criteria,
+    recommended_pattern: step.recommended_pattern,
   };
 }
 
+function attachBlueprintStepCue(play: KnowledgePlay, step?: BlueprintStep): KnowledgePlay {
+  const teaching_trace = makeTeachingTrace(step);
+  return teaching_trace ? { ...play, teaching_trace } : play;
+}
 function makeFallbackFlowFromPlan(
   plan: ConceptPlan,
   preferredPattern: FlowPatternPreference,
@@ -1246,6 +1249,7 @@ function normalizeGeneratedFlow(
     plan?.grounding_terms || concepts,
   );
   const patternChain = plan ? patternChainFromPlan(plan, preferredPattern, preferredStructure) : fallbackPatternChain(preferredPattern);
+  const blueprint = plan ? buildKnowledgeBlueprint(plan, preferredPattern, preferredStructure) : null;
   const avoid = new Set(plan ? (preferredPattern === "auto" ? plan.avoid_patterns : plan.avoid_patterns.filter((pattern) => pattern !== preferredPattern)) : []);
   const allowedPatterns = new Set(patternChain);
   const rawPlays = Array.isArray(candidate.plays) ? candidate.plays.slice(0, 3) : [];
@@ -1256,7 +1260,7 @@ function normalizeGeneratedFlow(
     if (!isPattern(schema.pattern) || avoid.has(schema.pattern) || (plan && !allowedPatterns.has(schema.pattern))) {
       schema = baseSchema(fallbackPattern, topic, groundingTerms);
     }
-    return {
+    const play = {
       id: cleanText(record.id, "dynamic-" + (index + 1), 48),
       title: cleanText(record.title, fallback.plays[index]?.title || "Step " + (index + 1), 18),
       concept: cleanText(record.concept, topic, 28),
@@ -1264,16 +1268,17 @@ function normalizeGeneratedFlow(
       estimated_minutes: typeof record.estimated_minutes === "number" ? Math.max(1, Math.min(3, Math.round(record.estimated_minutes))) : 1,
       reward_copy: cleanText(record.reward_copy, fallback.plays[index]?.reward_copy || "Nice, this step is clearer.", 48),
     } satisfies KnowledgePlay;
+    return attachBlueprintStepCue(play, blueprint?.teaching_sequence[index]);
   });
 
   while (plays.length < 3) {
     const fallbackPattern: PatternType = patternChain[plays.length] ?? "knowledge_check";
-    plays.push(makeFallbackPlay(topic, fallbackPattern, plays.length, groundingTerms));
+    plays.push(attachBlueprintStepCue(makeFallbackPlay(topic, fallbackPattern, plays.length, groundingTerms), blueprint?.teaching_sequence[plays.length]));
   }
 
   const selectedPattern: PatternType | null = preferredPattern === "auto" ? null : preferredPattern;
   if (selectedPattern && !plays.some((play) => play.schema.pattern === selectedPattern)) {
-    plays[1] = makeFallbackPlay(topic, selectedPattern, 1, groundingTerms);
+    plays[1] = attachBlueprintStepCue(makeFallbackPlay(topic, selectedPattern, 1, groundingTerms), blueprint?.teaching_sequence[1]);
   }
 
   return {
