@@ -106,17 +106,27 @@ const ALIASES: Record<string, KnowledgeStructureType> = {
 };
 
 const HINTS: Record<KnowledgeStructureType, string[]> = {
-  optimization_model: ["linear programming", "integer programming", "optimization", "constraint", "objective function", "feasible region", "simplex", "resource allocation", "\u7ebf\u6027\u89c4\u5212", "\u6574\u6570\u89c4\u5212", "\u6700\u4f18\u5316", "\u4f18\u5316", "\u76ee\u6807\u51fd\u6570", "\u7ea6\u675f", "\u53ef\u884c\u57df", "\u6700\u4f18\u89e3", "\u5355\u7eaf\u5f62", "\u8d44\u6e90\u5206\u914d"],
+  optimization_model: ["linear programming", "integer programming", "optimization", "constraint", "objective function", "feasible region", "simplex", "resource allocation", "production planning", "portfolio optimization", "transportation problem", "\u7ebf\u6027\u89c4\u5212", "\u6574\u6570\u89c4\u5212", "\u6700\u4f18\u5316", "\u4f18\u5316", "\u76ee\u6807\u51fd\u6570", "\u7ea6\u675f", "\u53ef\u884c\u57df", "\u6700\u4f18\u89e3", "\u5355\u7eaf\u5f62", "\u8d44\u6e90\u5206\u914d"],
   system_process: ["dns", "http", "kubernetes", "operator", "agent", "compiler", "oauth", "message queue", "workflow", "\u89e3\u6790", "\u8c03\u5ea6", "\u7f16\u8bd1\u5668", "\u6d41\u7a0b", "\u7cfb\u7edf"],
-  probabilistic_reasoning: ["bayes", "probability", "distribution", "expected value", "risk", "sampling", "monte carlo", "\u8d1d\u53f6\u65af", "\u6982\u7387", "\u671f\u671b\u503c", "\u5206\u5e03", "\u98ce\u9669", "\u62bd\u6837"],
+  probabilistic_reasoning: ["bayes", "probability", "distribution", "expected value", "risk", "sampling", "monte carlo", "a/b testing", "ab testing", "\u8d1d\u53f6\u65af", "\u6982\u7387", "\u671f\u671b\u503c", "\u5206\u5e03", "\u98ce\u9669", "\u62bd\u6837"],
   historical_change: ["industrial revolution", "cold war", "urbanization", "history", "revolution", "\u5de5\u4e1a\u9769\u547d", "\u519c\u4e1a\u9769\u547d", "\u51b7\u6218", "\u57ce\u5e02\u5316", "\u53d8\u8fc1", "\u5386\u53f2"],
   comparison_frame: [" vs ", " versus ", "difference", "compare", "tcp udp", "inflation deflation", "\u533a\u522b", "\u5bf9\u6bd4", "\u76f8\u6bd4", "\u901a\u80c0", "\u901a\u7f29", "\u80a1\u7968", "\u671f\u6743"],
-  classification_rule: ["classification", "taxonomy", "category", "sort", "\u5206\u7c7b", "\u5783\u573e\u5206\u7c7b", "\u7c7b\u578b", "\u5f52\u7c7b"],
-  causal_mechanism: ["compound interest", "network effect", "supply demand", "incentive", "dopamine", "\u590d\u5229", "\u4f9b\u9700", "\u56e0\u679c", "\u673a\u5236", "\u7f51\u7edc\u6548\u5e94", "\u6fc0\u52b1"],
-  procedure_algorithm: ["binary search", "gradient descent", "a*", "sorting algorithm", "algorithm", "\u4e8c\u5206\u67e5\u627e", "\u68af\u5ea6\u4e0b\u964d", "\u5355\u7eaf\u5f62\u6cd5", "\u6392\u5e8f\u7b97\u6cd5", "\u7b97\u6cd5"],
+  classification_rule: ["classification", "taxonomy", "category", "legal liability", "biological taxonomy", "email sorting", "sort", "\u5206\u7c7b", "\u5783\u573e\u5206\u7c7b", "\u7c7b\u578b", "\u5f52\u7c7b"],
+  causal_mechanism: ["compound interest", "network effect", "supply demand", "supply and demand", "incentive", "dopamine", "\u590d\u5229", "\u4f9b\u9700", "\u56e0\u679c", "\u673a\u5236", "\u7f51\u7edc\u6548\u5e94", "\u6fc0\u52b1"],
+  procedure_algorithm: ["binary search", "gradient descent", "a star", "astar", "dijkstra", "merge sort", "breadth first search", "sorting algorithm", "algorithm", "\u4e8c\u5206\u67e5\u627e", "\u68af\u5ea6\u4e0b\u964d", "\u5355\u7eaf\u5f62\u6cd5", "\u6392\u5e8f\u7b97\u6cd5", "\u7b97\u6cd5"],
   unclassified: [],
 };
 
+const STRUCTURE_PRIORITY: Exclude<KnowledgeStructureType, "unclassified">[] = [
+  "optimization_model",
+  "system_process",
+  "probabilistic_reasoning",
+  "historical_change",
+  "comparison_frame",
+  "procedure_algorithm",
+  "classification_rule",
+  "causal_mechanism",
+];
 const STRATEGY: Record<KnowledgeStructureType, PatternType[]> = {
   optimization_model: ["system_builder", "parameter_explore", "simulation_play"],
   system_process: ["system_builder", "process_timeline", "knowledge_check"],
@@ -212,8 +222,8 @@ export function inferKnowledgeStructure(plan: BlueprintPlanInput): KnowledgeStru
   const explicit = normalizeKnowledgeStructure(plan.knowledge_structure);
   if (explicit !== "unclassified") return explicit;
   const evidence = [plan.topic, plan.domain, plan.core_question, ...(plan.grounding_terms || []), ...(plan.learning_path || [])].filter(Boolean).join(" ");
-  for (const structure of Object.keys(HINTS) as KnowledgeStructureType[]) {
-    if (structure !== "unclassified" && containsAny(evidence, HINTS[structure])) return structure;
+  for (const structure of STRUCTURE_PRIORITY) {
+    if (containsAny(evidence, HINTS[structure])) return structure;
   }
   return "unclassified";
 }

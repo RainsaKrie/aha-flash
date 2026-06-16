@@ -1,7 +1,31 @@
-﻿[
+[
   {
     "id": "blueprint-optimization-linear-programming",
     "topic": "linear programming",
+    "expectedStructure": "optimization_model",
+    "expectedPatterns": ["system_builder", "parameter_explore", "simulation_play"]
+  },
+  {
+    "id": "blueprint-optimization-integer-programming",
+    "topic": "integer programming",
+    "expectedStructure": "optimization_model",
+    "expectedPatterns": ["system_builder", "parameter_explore", "simulation_play"]
+  },
+  {
+    "id": "blueprint-optimization-portfolio-optimization",
+    "topic": "portfolio optimization",
+    "expectedStructure": "optimization_model",
+    "expectedPatterns": ["system_builder", "parameter_explore", "simulation_play"]
+  },
+  {
+    "id": "blueprint-optimization-resource-allocation",
+    "topic": "resource allocation",
+    "expectedStructure": "optimization_model",
+    "expectedPatterns": ["system_builder", "parameter_explore", "simulation_play"]
+  },
+  {
+    "id": "blueprint-optimization-production-planning",
+    "topic": "production planning",
     "expectedStructure": "optimization_model",
     "expectedPatterns": ["system_builder", "parameter_explore", "simulation_play"]
   },
@@ -12,8 +36,56 @@
     "expectedPatterns": ["system_builder", "process_timeline", "knowledge_check"]
   },
   {
+    "id": "blueprint-system-http-request",
+    "topic": "HTTP request",
+    "expectedStructure": "system_process",
+    "expectedPatterns": ["system_builder", "process_timeline", "knowledge_check"]
+  },
+  {
+    "id": "blueprint-system-kubernetes-scheduling",
+    "topic": "Kubernetes scheduling",
+    "expectedStructure": "system_process",
+    "expectedPatterns": ["system_builder", "process_timeline", "knowledge_check"]
+  },
+  {
+    "id": "blueprint-system-compiler-pipeline",
+    "topic": "compiler pipeline",
+    "expectedStructure": "system_process",
+    "expectedPatterns": ["system_builder", "process_timeline", "knowledge_check"]
+  },
+  {
+    "id": "blueprint-system-oauth-login",
+    "topic": "OAuth login flow",
+    "expectedStructure": "system_process",
+    "expectedPatterns": ["system_builder", "process_timeline", "knowledge_check"]
+  },
+  {
     "id": "blueprint-probability-bayes",
     "topic": "Bayes theorem",
+    "expectedStructure": "probabilistic_reasoning",
+    "expectedPatterns": ["probability", "parameter_explore", "knowledge_check"]
+  },
+  {
+    "id": "blueprint-probability-normal-distribution",
+    "topic": "normal distribution",
+    "expectedStructure": "probabilistic_reasoning",
+    "expectedPatterns": ["probability", "parameter_explore", "knowledge_check"]
+  },
+  {
+    "id": "blueprint-probability-expected-value",
+    "topic": "expected value",
+    "expectedStructure": "probabilistic_reasoning",
+    "expectedPatterns": ["probability", "parameter_explore", "knowledge_check"]
+  },
+  {
+    "id": "blueprint-probability-monte-carlo",
+    "topic": "Monte Carlo method",
+    "expectedStructure": "probabilistic_reasoning",
+    "expectedPatterns": ["probability", "parameter_explore", "knowledge_check"]
+  },
+  {
+    "id": "blueprint-probability-ab-testing",
+    "topic": "A/B testing",
     "expectedStructure": "probabilistic_reasoning",
     "expectedPatterns": ["probability", "parameter_explore", "knowledge_check"]
   },
@@ -24,8 +96,56 @@
     "expectedPatterns": ["process_timeline", "classification_sort", "narrative_branch"]
   },
   {
+    "id": "blueprint-history-cold-war",
+    "topic": "Cold War",
+    "expectedStructure": "historical_change",
+    "expectedPatterns": ["process_timeline", "classification_sort", "narrative_branch"]
+  },
+  {
+    "id": "blueprint-history-urbanization",
+    "topic": "urbanization",
+    "expectedStructure": "historical_change",
+    "expectedPatterns": ["process_timeline", "classification_sort", "narrative_branch"]
+  },
+  {
+    "id": "blueprint-history-agricultural-revolution",
+    "topic": "agricultural revolution",
+    "expectedStructure": "historical_change",
+    "expectedPatterns": ["process_timeline", "classification_sort", "narrative_branch"]
+  },
+  {
+    "id": "blueprint-history-company-history",
+    "topic": "company history",
+    "expectedStructure": "historical_change",
+    "expectedPatterns": ["process_timeline", "classification_sort", "narrative_branch"]
+  },
+  {
     "id": "blueprint-comparison-inflation-deflation",
     "topic": "inflation vs deflation",
+    "expectedStructure": "comparison_frame",
+    "expectedPatterns": ["comparison", "classification_sort", "knowledge_check"]
+  },
+  {
+    "id": "blueprint-comparison-tcp-udp",
+    "topic": "TCP vs UDP",
+    "expectedStructure": "comparison_frame",
+    "expectedPatterns": ["comparison", "classification_sort", "knowledge_check"]
+  },
+  {
+    "id": "blueprint-comparison-stocks-options",
+    "topic": "stocks vs options",
+    "expectedStructure": "comparison_frame",
+    "expectedPatterns": ["comparison", "classification_sort", "knowledge_check"]
+  },
+  {
+    "id": "blueprint-comparison-capitalism-socialism",
+    "topic": "capitalism vs socialism",
+    "expectedStructure": "comparison_frame",
+    "expectedPatterns": ["comparison", "classification_sort", "knowledge_check"]
+  },
+  {
+    "id": "blueprint-comparison-rest-graphql",
+    "topic": "REST vs GraphQL",
     "expectedStructure": "comparison_frame",
     "expectedPatterns": ["comparison", "classification_sort", "knowledge_check"]
   },
@@ -36,14 +156,86 @@
     "expectedPatterns": ["classification_sort", "knowledge_check", "concept_memory"]
   },
   {
+    "id": "blueprint-classification-ml-task-types",
+    "topic": "machine learning task classification",
+    "expectedStructure": "classification_rule",
+    "expectedPatterns": ["classification_sort", "knowledge_check", "concept_memory"]
+  },
+  {
+    "id": "blueprint-classification-legal-liability",
+    "topic": "legal liability categories",
+    "expectedStructure": "classification_rule",
+    "expectedPatterns": ["classification_sort", "knowledge_check", "concept_memory"]
+  },
+  {
+    "id": "blueprint-classification-biological-taxonomy",
+    "topic": "biological taxonomy",
+    "expectedStructure": "classification_rule",
+    "expectedPatterns": ["classification_sort", "knowledge_check", "concept_memory"]
+  },
+  {
+    "id": "blueprint-classification-email-sorting",
+    "topic": "email sorting rules",
+    "expectedStructure": "classification_rule",
+    "expectedPatterns": ["classification_sort", "knowledge_check", "concept_memory"]
+  },
+  {
     "id": "blueprint-causal-compound-interest",
     "topic": "compound interest",
     "expectedStructure": "causal_mechanism",
     "expectedPatterns": ["system_builder", "parameter_explore", "simulation_play"]
   },
   {
+    "id": "blueprint-causal-supply-demand",
+    "topic": "supply and demand",
+    "expectedStructure": "causal_mechanism",
+    "expectedPatterns": ["system_builder", "parameter_explore", "simulation_play"]
+  },
+  {
+    "id": "blueprint-causal-network-effects",
+    "topic": "network effects",
+    "expectedStructure": "causal_mechanism",
+    "expectedPatterns": ["system_builder", "parameter_explore", "simulation_play"]
+  },
+  {
+    "id": "blueprint-causal-incentive-mechanism",
+    "topic": "incentive mechanism",
+    "expectedStructure": "causal_mechanism",
+    "expectedPatterns": ["system_builder", "parameter_explore", "simulation_play"]
+  },
+  {
+    "id": "blueprint-causal-dopamine-reward-loop",
+    "topic": "dopamine reward loop",
+    "expectedStructure": "causal_mechanism",
+    "expectedPatterns": ["system_builder", "parameter_explore", "simulation_play"]
+  },
+  {
     "id": "blueprint-procedure-binary-search",
     "topic": "binary search algorithm",
+    "expectedStructure": "procedure_algorithm",
+    "expectedPatterns": ["process_timeline", "simulation_play", "knowledge_check"]
+  },
+  {
+    "id": "blueprint-procedure-gradient-descent",
+    "topic": "gradient descent",
+    "expectedStructure": "procedure_algorithm",
+    "expectedPatterns": ["process_timeline", "simulation_play", "knowledge_check"]
+  },
+  {
+    "id": "blueprint-procedure-dijkstra",
+    "topic": "Dijkstra algorithm",
+    "expectedStructure": "procedure_algorithm",
+    "expectedPatterns": ["process_timeline", "simulation_play", "knowledge_check"]
+  },
+  {
+    "id": "blueprint-procedure-merge-sort",
+    "topic": "merge sort algorithm",
+    "expectedStructure": "procedure_algorithm",
+    "expectedPatterns": ["process_timeline", "simulation_play", "knowledge_check"]
+  },
+  {
+    "id": "blueprint-procedure-breadth-first-search",
+    "topic": "breadth first search algorithm",
     "expectedStructure": "procedure_algorithm",
     "expectedPatterns": ["process_timeline", "simulation_play", "knowledge_check"]
   }

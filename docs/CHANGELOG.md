@@ -6,6 +6,12 @@
 
 ## 2026-06-16
 
+
+### V6 Blueprint Stage B eval expansion
+- Expanded `tests/fixtures/blueprint-cases.json` from 8 seed cases to 40 Stage B cases: 5 topics for each supported knowledge structure.
+- Added deterministic hints for production planning, A/B testing, legal liability categories, supply and demand, and common algorithm topics.
+- Added explicit structure inference priority so algorithm topics such as merge sort are not misclassified as generic classification tasks.
+- `npm run eval:blueprint` now reports 40 cases with `overall: 1`.
 ### V6 TeachingTrace and honest failure audit
 - Added `teaching_trace` to generated `KnowledgePlay` records so every dynamic step can be traced back to its Blueprint goal, required terms, intended user action, success criteria, and recommended Pattern.
 - Dynamic Flow normalization now attaches trace data deterministically from `KnowledgeBlueprint`; model output does not need to invent audit fields.

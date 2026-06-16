@@ -1,4 +1,4 @@
-﻿# V6 Iteration Plan - Reliable AI-native Learning Engine
+# V6 Iteration Plan - Reliable AI-native Learning Engine
 
 ## 0. Why V6 Exists
 
@@ -722,11 +722,11 @@ Implemented V6 reliability slices:
 - Explore failure UI offers retry, topic change, curated examples, and structure-choice retry paths.
 - `preferredStructure` now flows from `/explore` to `/api/flow` to ConceptPlan, Blueprint, fallback generation, and dynamic Flow normalization.
 - `TeachingTrace` is attached to generated plays for dev/eval audit: Blueprint goal, covered terms, intended user action, success criteria, and recommended Pattern.
-- Eval coverage currently includes `eval:blueprint` with 8 handcrafted structure cases and `eval:flow-dynamic` with 9 no-key dynamic fallback / honest-failure cases.
+- Eval coverage now includes `eval:blueprint` with 40 Stage B structure cases: 5 topics for each of the 8 supported knowledge structures. It also includes `eval:flow-dynamic` with 9 no-key dynamic fallback / honest-failure cases.
 
 Remaining V6 work:
 
-- Expand Blueprint eval from 8 to 40 cases, then 80 cases.
+- Expand Blueprint eval from 40 to 80 cases before calling V6 stable.
 - Add a live/manual eval mode that samples real LLM generation quality when an API key is present.
 - Improve generated follow-up branches so they use Blueprint relations instead of generic fallback relations.
 - Add a compact pre-flow decomposition preview once reliability is stable enough to expose it as product UX.
