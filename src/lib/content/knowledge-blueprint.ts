@@ -14,6 +14,8 @@ export type KnowledgeStructureType =
   | "procedure_algorithm"
   | "unclassified";
 
+export type KnowledgeStructurePreference = Exclude<KnowledgeStructureType, "unclassified"> | "auto";
+
 export type BlueprintUserAction = "choose" | "sort" | "connect" | "adjust" | "simulate" | "compare" | "recall";
 
 export interface BlueprintStep {
@@ -70,27 +72,35 @@ export interface BlueprintPlanInput {
 
 const ALIASES: Record<string, KnowledgeStructureType> = {
   optimization_model: "optimization_model",
+  optimizationmodel: "optimization_model",
   deterministic_model: "optimization_model",
   optimization: "optimization_model",
   planning_model: "optimization_model",
   system_process: "system_process",
+  systemprocess: "system_process",
   process_system: "system_process",
   system_flow: "system_process",
   probabilistic_reasoning: "probabilistic_reasoning",
+  probabilisticreasoning: "probabilistic_reasoning",
   probability_reasoning: "probabilistic_reasoning",
   probability: "probabilistic_reasoning",
   historical_change: "historical_change",
+  historicalchange: "historical_change",
   timeline_change: "historical_change",
   history_change: "historical_change",
   comparison_frame: "comparison_frame",
+  comparisonframe: "comparison_frame",
   comparison: "comparison_frame",
   classification_rule: "classification_rule",
+  classificationrule: "classification_rule",
   classification: "classification_rule",
   causal_mechanism: "causal_mechanism",
+  causalmechanism: "causal_mechanism",
   concept_mechanism: "causal_mechanism",
   mechanism: "causal_mechanism",
   simulation_model: "causal_mechanism",
   procedure_algorithm: "procedure_algorithm",
+  procedurealgorithm: "procedure_algorithm",
   algorithm: "procedure_algorithm",
   unclassified: "unclassified",
 };
@@ -189,6 +199,11 @@ function containsAny(text: string, hints: string[]) {
 
 export function normalizeKnowledgeStructure(value: unknown): KnowledgeStructureType {
   if (typeof value !== "string") return "unclassified";
+  const raw = value.toLowerCase().trim();
+  const snake = raw.replace(/[\s-]+/g, "_").replace(/[^a-z_]/g, "");
+  if (ALIASES[snake]) return ALIASES[snake];
+  const compact = raw.replace(/[^a-z]/g, "");
+  if (ALIASES[compact]) return ALIASES[compact];
   const key = norm(value).replace(/[^a-z_]/g, "");
   return ALIASES[key] || "unclassified";
 }
@@ -219,8 +234,12 @@ export function selectBlueprintPatternStrategy(blueprint: KnowledgeBlueprint, pr
   return result.slice(0, 3);
 }
 
-export function buildKnowledgeBlueprint(plan: BlueprintPlanInput, preferredPattern: FlowPatternPreference = "auto"): KnowledgeBlueprint {
-  const structure = inferKnowledgeStructure(plan);
+export function buildKnowledgeBlueprint(
+  plan: BlueprintPlanInput,
+  preferredPattern: FlowPatternPreference = "auto",
+  preferredStructure: KnowledgeStructurePreference = "auto",
+): KnowledgeBlueprint {
+  const structure = preferredStructure === "auto" ? inferKnowledgeStructure(plan) : preferredStructure;
   const grounding = unique(plan.grounding_terms || []);
   if (structure === "unclassified") {
     return {

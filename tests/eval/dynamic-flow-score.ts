@@ -1,11 +1,14 @@
 import { generateDynamicFlow } from "../../src/lib/content/dynamic-flow-generation.ts";
 import type { FlowPatternPreference } from "../../src/lib/content/flow-pattern-options.ts";
+import type { KnowledgeStructurePreference } from "../../src/lib/content/knowledge-blueprint.ts";
 import { normalizeUISchema, type PatternType } from "../../src/types/schema.ts";
 
 interface DynamicFlowEvalCase {
   id: string;
   topic: string;
   preferredPattern: FlowPatternPreference;
+  preferredStructure?: KnowledgeStructurePreference;
+  expectedStructure?: KnowledgeStructurePreference;
   expectedPattern?: PatternType;
   expectedConceptIncludes?: string;
   requiredTerms?: string[];
@@ -30,6 +33,7 @@ const cases: DynamicFlowEvalCase[] = [
   { id: "dynamic-agent-grounding", topic: "Agent", preferredPattern: "auto", expectedConceptIncludes: "Agent", bannedTerms: ["相近概念", "专用兜底"] },
   { id: "dynamic-kubernetes-operator", topic: "Kubernetes operator", preferredPattern: "auto", expectedConceptIncludes: "Kubernetes operator", bannedTerms: ["相近概念"] },
   { id: "dynamic-linear-programming-grounding", topic: "linear programming", preferredPattern: "auto", expectedConceptIncludes: "linear programming", bannedPatterns: ["probability"] },
+  { id: "dynamic-structure-override-comparison", topic: "Agent", preferredPattern: "auto", preferredStructure: "comparison_frame", expectedStructure: "comparison_frame", expectedPattern: "comparison", expectedConceptIncludes: "Agent" },
 
 ];
 
@@ -46,6 +50,7 @@ async function scoreCase(testCase: DynamicFlowEvalCase): Promise<CaseResult> {
   const result = await generateDynamicFlow({
     topic: testCase.topic,
     preferredPattern: testCase.preferredPattern,
+    preferredStructure: testCase.preferredStructure,
   });
   const flow = result.flow;
   const patterns = getPatterns(flow);
@@ -57,6 +62,9 @@ async function scoreCase(testCase: DynamicFlowEvalCase): Promise<CaseResult> {
   if (result.failure && result.failure.code !== "generation_unavailable") failures.push(`unexpected failure state: ${result.failure.code}`);
   if (result.quality_gate && !result.quality_gate.ok) {
     failures.push(`quality gate failed: ${result.quality_gate.reason || result.quality_gate.failures.join("; ")}`);
+  }
+  if (testCase.expectedStructure && result.blueprint?.structure_type !== testCase.expectedStructure) {
+    failures.push(`expected structure ${testCase.expectedStructure}, got ${result.blueprint?.structure_type || "missing"}`);
   }
   if (!flow.id.startsWith("custom-")) failures.push(`id ${flow.id} does not start with custom-`);
   if (flow.source !== "generated") failures.push(`flow source is ${flow.source || "missing"}`);

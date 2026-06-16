@@ -13,17 +13,20 @@ import { SCHEMA_CATALOG, type PatternType, type TemplateId, type UISchema } from
 import {
   buildKnowledgeBlueprint,
   evaluateFlowAgainstBlueprint,
+  normalizeKnowledgeStructure,
   makeFlowFailure,
   selectBlueprintPatternStrategy,
   type BlueprintStep,
   type FlowFailureState,
   type KnowledgeBlueprint,
+  type KnowledgeStructurePreference,
   type QualityGateResult,
 } from "./knowledge-blueprint.ts";
 
 export interface DynamicFlowInput {
   topic: string;
   preferredPattern?: FlowPatternPreference;
+  preferredStructure?: KnowledgeStructurePreference;
 }
 
 export interface ConceptPlan {
@@ -92,6 +95,12 @@ function isPattern(value: unknown): value is PatternType {
 
 function normalizePreference(value: unknown): FlowPatternPreference {
   return value === "auto" || isPattern(value) ? value : "auto";
+}
+
+function normalizeStructurePreference(value: unknown): KnowledgeStructurePreference {
+  if (value === "auto") return "auto";
+  const structure = normalizeKnowledgeStructure(value);
+  return structure === "unclassified" ? "auto" : structure;
 }
 
 function makeDynamicId(topic: string) {
@@ -686,7 +695,11 @@ function normalizePatternList(value: unknown, fallback: PatternType[]) {
   return result;
 }
 
-function makeFallbackConceptPlan(topicInput: string, preferredPattern: FlowPatternPreference): ConceptPlan {
+function makeFallbackConceptPlan(
+  topicInput: string,
+  preferredPattern: FlowPatternPreference,
+  preferredStructure: KnowledgeStructurePreference = "auto",
+): ConceptPlan {
   const topic = cleanTopic(topicInput);
   const recommended = heuristicPatternChain(topic, preferredPattern);
   return {
@@ -694,7 +707,7 @@ function makeFallbackConceptPlan(topicInput: string, preferredPattern: FlowPatte
     domain: hasAnyHint(topic, DETERMINISTIC_MODELING_HINTS) ? "建模与优化" : "通用知识",
     core_question: `怎样真正理解${topic}，并把它用在判断里？`,
     grounding_terms: fallbackGroundingTerms(topic),
-    knowledge_structure: hasAnyHint(topic, DETERMINISTIC_MODELING_HINTS) ? "optimization_model" : "concept_mechanism",
+    knowledge_structure: preferredStructure !== "auto" ? preferredStructure : hasAnyHint(topic, DETERMINISTIC_MODELING_HINTS) ? "optimization_model" : "concept_mechanism",
     recommended_patterns: recommended,
     avoid_patterns: hasAnyHint(topic, DETERMINISTIC_MODELING_HINTS) ? ["probability"] : [],
     learning_path: ["先判断入口", "再看关键机制", "最后动手验证"],
@@ -754,8 +767,12 @@ function evaluateConceptPlan(plan: ConceptPlan, preferredPattern: FlowPatternPre
   };
 }
 
-function patternChainFromPlan(plan: ConceptPlan, preferredPattern: FlowPatternPreference): PatternType[] {
-  const blueprint = buildKnowledgeBlueprint(plan, preferredPattern);
+function patternChainFromPlan(
+  plan: ConceptPlan,
+  preferredPattern: FlowPatternPreference,
+  preferredStructure: KnowledgeStructurePreference = "auto",
+): PatternType[] {
+  const blueprint = buildKnowledgeBlueprint(plan, preferredPattern, preferredStructure);
   if (blueprint.structure_type !== "unclassified") {
     return selectBlueprintPatternStrategy(blueprint, preferredPattern);
   }
@@ -804,9 +821,13 @@ function attachBlueprintStepCue(play: KnowledgePlay, step?: BlueprintStep): Know
   };
 }
 
-function makeFallbackFlowFromPlan(plan: ConceptPlan, preferredPattern: FlowPatternPreference): KnowledgeFlow {
-  const patterns = patternChainFromPlan(plan, preferredPattern);
-  const blueprint = buildKnowledgeBlueprint(plan, preferredPattern);
+function makeFallbackFlowFromPlan(
+  plan: ConceptPlan,
+  preferredPattern: FlowPatternPreference,
+  preferredStructure: KnowledgeStructurePreference = "auto",
+): KnowledgeFlow {
+  const patterns = patternChainFromPlan(plan, preferredPattern, preferredStructure);
+  const blueprint = buildKnowledgeBlueprint(plan, preferredPattern, preferredStructure);
   return {
     id: makeDynamicId(plan.topic),
     title: `${plan.topic}入门`,
@@ -825,7 +846,12 @@ function makeFallbackFlowFromPlan(plan: ConceptPlan, preferredPattern: FlowPatte
   };
 }
 
-function evaluateFlowAgainstPlan(flow: KnowledgeFlow, plan: ConceptPlan, preferredPattern: FlowPatternPreference) {
+function evaluateFlowAgainstPlan(
+  flow: KnowledgeFlow,
+  plan: ConceptPlan,
+  preferredPattern: FlowPatternPreference,
+  preferredStructure: KnowledgeStructurePreference = "auto",
+) {
   const failures: string[] = [];
   const flowText = JSON.stringify(flow);
   const patterns = flow.plays.map((play) => play.schema.pattern).filter((pattern): pattern is PatternType => isPattern(pattern));
@@ -845,11 +871,17 @@ function evaluateFlowAgainstPlan(flow: KnowledgeFlow, plan: ConceptPlan, preferr
   };
 }
 
-function buildConceptPlanSystemPrompt(topic: string, preferredPattern: FlowPatternPreference) {
+function buildConceptPlanSystemPrompt(
+  topic: string,
+  preferredPattern: FlowPatternPreference,
+  preferredStructure: KnowledgeStructurePreference,
+) {
   const patternList = Object.entries(PATTERN_LABELS)
     .map(([pattern, label]) => `- ${pattern}: ${label}`)
     .join("\n");
-  const preferred = preferredPattern === "auto" ? "AI 推荐" : `用户指定核心 Pattern: ${preferredPattern}`;
+  const patternPreference = preferredPattern === "auto" ? "AI recommended" : `User selected core Pattern: ${preferredPattern}`;
+  const structurePreference = preferredStructure === "auto" ? "auto" : `User selected knowledge_structure: ${preferredStructure}; use this exact value.`;
+  const preferred = `${patternPreference}; Knowledge structure preference: ${structurePreference}`;
   return `你是趣灵的知识结构规划器。先不要生成 UI，也不要生成三关 payload。
 你的任务是把用户输入的概念转成一个可校验的 ConceptPlan，后续 UI 只能根据这个计划生成。
 只输出合法 JSON，不要 Markdown。
@@ -883,10 +915,17 @@ ${patternList}
 - learning_path 必须形成递进：先判断入口，再建立结构，最后动手验证。`;
 }
 
-function buildConceptPlanRepairPrompt(topic: string, preferredPattern: FlowPatternPreference, reason: string, previousOutput: string) {
+function buildConceptPlanRepairPrompt(
+  topic: string,
+  preferredPattern: FlowPatternPreference,
+  preferredStructure: KnowledgeStructurePreference,
+  reason: string,
+  previousOutput: string,
+) {
   return `上一次 ConceptPlan 没有通过校验。
 主题：${topic}
 Pattern 偏好：${preferredPattern}
+Knowledge structure preference: ${preferredStructure}
 失败原因：${reason}
 
 请重新输出完整 ConceptPlan JSON。不要生成 UI。不要解释。
@@ -912,10 +951,11 @@ async function generateConceptPlan(
   model: NonNullable<ReturnType<typeof getLLMProvider>>,
   topic: string,
   preferredPattern: FlowPatternPreference,
+  preferredStructure: KnowledgeStructurePreference,
   includeRaw: boolean,
 ) {
-  const fallback = makeFallbackConceptPlan(topic, preferredPattern);
-  const system = buildConceptPlanSystemPrompt(topic, preferredPattern);
+  const fallback = makeFallbackConceptPlan(topic, preferredPattern, preferredStructure);
+  const system = buildConceptPlanSystemPrompt(topic, preferredPattern, preferredStructure);
   const result = await retryGenerateText({
     model,
     system,
@@ -930,7 +970,7 @@ async function generateConceptPlan(
   const repair = await retryGenerateText({
     model,
     system,
-    messages: [{ role: "user", content: buildConceptPlanRepairPrompt(topic, preferredPattern, evaluation.reason, result.text) }],
+    messages: [{ role: "user", content: buildConceptPlanRepairPrompt(topic, preferredPattern, preferredStructure, evaluation.reason, result.text) }],
   });
   const repairedPlan = normalizeConceptPlan(parseJson(repair.text), topic, preferredPattern);
   const repairedEvaluation = evaluateConceptPlan(repairedPlan, preferredPattern);
@@ -1189,8 +1229,9 @@ function normalizeGeneratedFlow(
   topicInput: string,
   preferredPattern: FlowPatternPreference,
   plan?: ConceptPlan,
+  preferredStructure: KnowledgeStructurePreference = "auto",
 ) {
-  const fallback = plan ? makeFallbackFlowFromPlan(plan, preferredPattern) : makeFallbackFlow(topicInput, preferredPattern);
+  const fallback = plan ? makeFallbackFlowFromPlan(plan, preferredPattern, preferredStructure) : makeFallbackFlow(topicInput, preferredPattern);
   const root = asRecord(raw);
   const candidate = asRecord(root?.flow) || root;
   if (!candidate) return { flow: fallback, error: "LLM output is not an object", groundingTerms: plan?.grounding_terms || [] };
@@ -1204,7 +1245,7 @@ function normalizeGeneratedFlow(
     topic,
     plan?.grounding_terms || concepts,
   );
-  const patternChain = plan ? patternChainFromPlan(plan, preferredPattern) : fallbackPatternChain(preferredPattern);
+  const patternChain = plan ? patternChainFromPlan(plan, preferredPattern, preferredStructure) : fallbackPatternChain(preferredPattern);
   const avoid = new Set(plan ? (preferredPattern === "auto" ? plan.avoid_patterns : plan.avoid_patterns.filter((pattern) => pattern !== preferredPattern)) : []);
   const allowedPatterns = new Set(patternChain);
   const rawPlays = Array.isArray(candidate.plays) ? candidate.plays.slice(0, 3) : [];
@@ -1328,9 +1369,10 @@ export async function generateDynamicFlow(
 ): Promise<DynamicFlowGenerationResult> {
   const topic = cleanTopic(input.topic);
   const preferredPattern = normalizePreference(input.preferredPattern || "auto");
-  const fallbackPlan = makeFallbackConceptPlan(topic, preferredPattern);
-  const fallbackBlueprint = buildKnowledgeBlueprint(fallbackPlan, preferredPattern);
-  const fallback = makeFallbackFlowFromPlan(fallbackPlan, preferredPattern);
+  const preferredStructure = normalizeStructurePreference(input.preferredStructure || "auto");
+  const fallbackPlan = makeFallbackConceptPlan(topic, preferredPattern, preferredStructure);
+  const fallbackBlueprint = buildKnowledgeBlueprint(fallbackPlan, preferredPattern, preferredStructure);
+  const fallback = makeFallbackFlowFromPlan(fallbackPlan, preferredPattern, preferredStructure);
   const fallbackQuality = evaluateFlowAgainstBlueprint(fallback, fallbackBlueprint, preferredPattern);
   const model = getLLMProvider();
 
@@ -1347,10 +1389,10 @@ export async function generateDynamicFlow(
   }
 
   try {
-    const planResult = await generateConceptPlan(model, topic, preferredPattern, includeRaw);
+    const planResult = await generateConceptPlan(model, topic, preferredPattern, preferredStructure, includeRaw);
     const plan = planResult.plan;
-    const blueprint = buildKnowledgeBlueprint(plan, preferredPattern);
-    const plannedFallback = makeFallbackFlowFromPlan(plan, preferredPattern);
+    const blueprint = buildKnowledgeBlueprint(plan, preferredPattern, preferredStructure);
+    const plannedFallback = makeFallbackFlowFromPlan(plan, preferredPattern, preferredStructure);
     const plannedFallbackQuality = evaluateFlowAgainstBlueprint(plannedFallback, blueprint, preferredPattern);
 
     if (blueprint.structure_type === "unclassified") {
@@ -1386,9 +1428,9 @@ export async function generateDynamicFlow(
       messages: [{ role: "user", content: buildFlowUserPrompt(topic, plan) }],
     });
     const parsed = parseJson(result.text);
-    const normalized = normalizeGeneratedFlow(parsed, topic, preferredPattern, plan);
+    const normalized = normalizeGeneratedFlow(parsed, topic, preferredPattern, plan, preferredStructure);
     const grounding = evaluateFlowGrounding(normalized.flow, topic, normalized.groundingTerms, preferredPattern);
-    const planFit = evaluateFlowAgainstPlan(normalized.flow, plan, preferredPattern);
+    const planFit = evaluateFlowAgainstPlan(normalized.flow, plan, preferredPattern, preferredStructure);
     const quality = evaluateFlowAgainstBlueprint(normalized.flow, blueprint, preferredPattern);
 
     if (grounding.ok && planFit.ok && quality.ok) {
@@ -1410,9 +1452,9 @@ export async function generateDynamicFlow(
       system,
       messages: [{ role: "user", content: buildRepairUserPrompt(topic, preferredPattern, repairReason, result.text, plan) }],
     });
-    const repaired = normalizeGeneratedFlow(parseJson(repair.text), topic, preferredPattern, plan);
+    const repaired = normalizeGeneratedFlow(parseJson(repair.text), topic, preferredPattern, plan, preferredStructure);
     const repairedGrounding = evaluateFlowGrounding(repaired.flow, topic, repaired.groundingTerms, preferredPattern);
-    const repairedPlanFit = evaluateFlowAgainstPlan(repaired.flow, plan, preferredPattern);
+    const repairedPlanFit = evaluateFlowAgainstPlan(repaired.flow, plan, preferredPattern, preferredStructure);
     const repairedQuality = evaluateFlowAgainstBlueprint(repaired.flow, blueprint, preferredPattern);
 
     if (repairedGrounding.ok && repairedPlanFit.ok && repairedQuality.ok) {

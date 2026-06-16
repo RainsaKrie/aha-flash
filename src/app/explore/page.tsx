@@ -47,6 +47,14 @@ const GENERATION_STEPS = [
   "\u68c0\u67e5\u662f\u5426\u771f\u7684\u6559\u6e05\u695a",
 ];
 
+const STRUCTURE_CHOICES = [
+  { id: "system_process", label: "\u770b\u6d41\u7a0b", hint: "DNS / Agent / \u7cfb\u7edf\u6d41\u8f6c" },
+  { id: "comparison_frame", label: "\u770b\u5bf9\u6bd4", hint: "A vs B / \u533a\u522b" },
+  { id: "causal_mechanism", label: "\u770b\u56e0\u679c", hint: "\u539f\u56e0 / \u673a\u5236 / \u7ed3\u679c" },
+  { id: "procedure_algorithm", label: "\u770b\u6b65\u9aa4", hint: "\u7b97\u6cd5 / \u64cd\u4f5c\u6d41\u7a0b" },
+  { id: "optimization_model", label: "\u770b\u5efa\u6a21", hint: "\u76ee\u6807 / \u7ea6\u675f / \u6700\u4f18" },
+] as const;
+
 export default function ExplorePage() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -58,7 +66,7 @@ export default function ExplorePage() {
   const [failureAttempts, setFailureAttempts] = useState(0);
   const [lastFailedTopic, setLastFailedTopic] = useState<string | null>(null);
 
-  async function startGeneratedFlow(nextTopic = topic) {
+  async function startGeneratedFlow(nextTopic = topic, preferredStructure = "auto") {
     const trimmed = nextTopic.trim();
     if (trimmed.length < 2) {
       setErrorMessage("先输入一个你想理解的知识点。");
@@ -77,7 +85,7 @@ export default function ExplorePage() {
       const response = await fetch("/api/flow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: trimmed, preferredPattern: "auto" }),
+        body: JSON.stringify({ topic: trimmed, preferredPattern: "auto", preferredStructure }),
       });
       if (!response.ok) throw new Error(`flow request failed: ${response.status}`);
       const payload = (await response.json()) as FlowApiResponse;
@@ -214,6 +222,19 @@ export default function ExplorePage() {
                     <li key={reason}>{reason}</li>
                   ))}
                 </ul>
+              </div>
+            )}
+            {failureState.actions?.includes("choose_structure") && !shouldPreferShowcase && (
+              <div className="v6-failure-card__structures" aria-label={"\u9009\u62e9\u62c6\u89e3\u65b9\u5f0f"}>
+                <strong>{"\u6362\u4e2a\u62c6\u6cd5"}</strong>
+                <div>
+                  {STRUCTURE_CHOICES.map((choice) => (
+                    <button key={choice.id} type="button" onClick={() => void startGeneratedFlow(topic, choice.id)}>
+                      <span>{choice.label}</span>
+                      <small>{choice.hint}</small>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             {shouldPreferShowcase && (

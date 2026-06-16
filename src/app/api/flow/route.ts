@@ -2,6 +2,7 @@
 import { generateDynamicFlow } from "@/lib/content/dynamic-flow-generation";
 import { getFlowById } from "@/lib/content/mock-flows";
 import { generateFlowSteps, isLLMFlowSupported } from "@/lib/content/flow-generation";
+import { normalizeKnowledgeStructure, type KnowledgeStructurePreference } from "@/lib/content/knowledge-blueprint";
 import { SCHEMA_CATALOG, type PatternType } from "@/types/schema";
 
 function canExposeDebug(req: Request) {
@@ -14,6 +15,12 @@ function normalizePreferredPattern(value: unknown): PatternType | "auto" {
   if (value === "auto") return "auto";
   if (typeof value === "string" && value in SCHEMA_CATALOG) return value as PatternType;
   return "auto";
+}
+
+function normalizePreferredStructure(value: unknown): KnowledgeStructurePreference {
+  if (value === "auto") return "auto";
+  const structure = normalizeKnowledgeStructure(value);
+  return structure === "unclassified" ? "auto" : structure;
 }
 
 export async function GET(req: Request) {
@@ -56,6 +63,7 @@ export async function POST(req: Request) {
       {
         topic: topic.slice(0, 80),
         preferredPattern: normalizePreferredPattern(body.preferredPattern),
+        preferredStructure: normalizePreferredStructure(body.preferredStructure),
       },
       { includeRaw: exposeDebug },
     );
