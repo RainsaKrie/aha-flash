@@ -611,6 +611,8 @@ Key implementation points:
 - No-key or low-quality dynamic generation returns an honest failure state while still carrying enough draft/debug information for diagnosis.
 - Knowledge structure inference uses deterministic topic hints before trusting LLM-provided `knowledge_structure`; broad terms in LLM explanations should not override the user's original topic.
 - Dynamic Flow normalization enforces the exact Blueprint Pattern per step and sanitizes unreplaced placeholders such as `{value}`, `{result}`, `{output1}`, and generic placeholder phrases before QualityGate evaluation.
+- Dynamic Flow schema repair now normalizes optional `visual_asset` and `next_concepts` before validation, so an invalid mood or advisory field cannot force a good payload into fallback.
+- Dynamic Flow LLM calls use a 45s timeout and one retry for transient provider failures.
 - `npm run eval:flow-live` samples the real LLM path and separates schema repair from flow/quality repair, so V6 can track both structural validity and teaching reliability.
 ### V6 Skill Pack Direction
 
@@ -627,7 +629,7 @@ Implementation principles:
 - Load only the relevant knowledge-structure recipe and Pattern recipes for the current topic.
 - Keep Skill Packs upstream of generation; keep deterministic QualityGate downstream of generation.
 - `generateDynamicFlow` returns structured `repair_actions` (`field_fix`, `pattern_normalize`, `placeholder_clean`, `schema_repair`, `schema_fallback`, `flow_repair`) so live eval can identify which prompt or Skill Pack needs work.
-- The repair layer should remain a safety net. The target is lowering repair reliance to about 0.2, not deleting repair entirely.
+- The repair layer should remain a safety net. The target is lowering repair reliance to about 0.2, not deleting repair entirely. Latest 4-case smoke sample reached `schema_repair_rate: 0`, `schema_fallback: 0`, and `repair_reliance_rate: 0.25`.
 ### V6 Accuracy Grounding Scope
 
 V6 should solve factual reliability with compact Skill Pack knowledge skeletons, not with a full Wiki or always-on web search.

@@ -17,6 +17,8 @@
 - Documented the next V6 direction: internal Aha Skill Packs plus repair action tagging, with a practical repair reliance target of `<= 0.2` rather than zero repair.
 - Scoped factual accuracy for V6 to Skill Pack knowledge skeletons and deterministic QualityGate checks; full Wiki, citation-grade verification, and always-on web search remain future layers.
 - Implemented structured `repair_actions` in dynamic Flow generation and live eval, so repair dependence can now be broken down by `field_fix`, `pattern_normalize`, `placeholder_clean`, `schema_repair`, `schema_fallback`, and `flow_repair`.
+- Added a 45s timeout to dynamic Flow LLM calls so live eval and user generation do not hang indefinitely on provider stalls.
+- Reduced the latest 4-case live smoke sample from prior `schema_repair=6/schema_fallback=6` to `schema_repair=0/schema_fallback=0/placeholder_clean=0`; remaining repair was one `pattern_normalize` in Bayes.
 ## 2026-06-16
 
 

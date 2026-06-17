@@ -123,7 +123,8 @@ Current V6 reliability work is partially implemented and verified:
 - Flow payload prompts include a compact field contract for all 10 Pattern defaults, reducing malformed schema output.
 - Normalization removes unreplaced placeholders such as `{value}`, `{result}`, `{output1}`, `{topic}`, and generic English placeholders before QualityGate scoring.
 - `repair_actions` now tags normalization and repair events as `field_fix`, `pattern_normalize`, `placeholder_clean`, `schema_repair`, `schema_fallback`, or `flow_repair`; `eval:flow-live` reports per-tag counts and rates.
-- Latest 8-structure live baseline: `overall: 1`, `llm_success_rate: 1`, `clean_schema_rate: 0.5`, `schema_repair_rate: 0.5`, `flow_repair_rate: 0`, `repair_reliance_rate: 0.5`.
+- Dynamic Flow generation has a 45s LLM timeout, deterministic `visual_asset` / `next_concepts` normalization, exact Blueprint Pattern-order instructions, and a no-brace natural-language contract for slider explanations.
+- Latest 4-case live smoke sample: `overall: 1`, `llm_success_rate: 1`, `clean_schema_rate: 1`, `schema_repair_rate: 0`, `schema_fallback=0`, `placeholder_clean=0`, `repair_reliance_rate: 0.25`; remaining repair was one `pattern_normalize` in Bayes.
 
 Remaining V6 work:
 
@@ -914,6 +915,6 @@ Implemented V6 reliability slices:
 Remaining V6 work:
 
 - Expand Blueprint eval from 40 to 80 cases before calling V6 stable.
-- Add a live/manual eval mode that samples real LLM generation quality when an API key is present.
+- Repeat `eval:flow-live` with `--runs=3` across the full 8-structure set before calling V6 stable.
 - Improve generated follow-up branches so they use Blueprint relations instead of generic fallback relations.
 - Add a compact pre-flow decomposition preview once reliability is stable enough to expose it as product UX.

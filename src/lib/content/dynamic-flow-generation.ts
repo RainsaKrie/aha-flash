@@ -9,7 +9,7 @@ import {
   type TopicCategory,
   type TopicDifficulty,
 } from "./mock-flows.ts";
-import { SCHEMA_CATALOG, type PatternType, type TemplateId, type UISchema } from "../../types/schema.ts";
+import { SCHEMA_CATALOG, type NextConcept, type PatternType, type TemplateId, type UISchema, type VisualAssetHint, type VisualAssetMood } from "../../types/schema.ts";
 import {
   buildKnowledgeBlueprint,
   evaluateFlowAgainstBlueprint,
@@ -87,7 +87,7 @@ const VISUAL_TAGS: Record<PatternType, string> = {
 const FLOW_SCHEMA_PAYLOAD_GUIDE = [
   "Payload required fields. Use the template after each slash as the default. Do not choose alternate templates unless all fields still match this contract:",
   "- probability/card_flip_reveal: payload.title; payload.pool [{name, rarity, probability, value}]; option_cost number; strike_price number; pulls_per_try number; explanation_map {win, lose}",
-  "- parameter_explore/single_slider: payload.title; variable_label; min number; max number; default_value number; explanation_template; optional scenarios [{label,value}], outputs [{label, model one of linear/quadratic/exponential/inverse/logarithmic, multiplier number, offset number}]",
+  "- parameter_explore/single_slider: payload.title; variable_label; min number; max number; default_value number; explanation_template as one complete natural sentence with no braces or variables; optional scenarios [{label,value}], outputs [{label, model one of linear/quadratic/exponential/inverse/logarithmic, multiplier number, offset number}]",
   "- concept_memory/term_cards: payload.title; cards [{front, back}]",
   "- process_timeline/horizontal_timeline: payload.title; events [{label, description}]",
   "- comparison/split_panel: payload.title; left {label, content}; right {label, content}; optional dimensions [{label,a,b,insight}]",
@@ -1254,6 +1254,54 @@ function normalizeSchemaPayload(
   return sanitized;
 }
 
+const VISUAL_ASSET_MOODS = new Set<VisualAssetMood>(["idle", "loading", "success", "error", "reward"]);
+
+function normalizeVisualAsset(
+  pattern: PatternType,
+  raw: unknown,
+  repairActions?: RepairAction[],
+  step?: number,
+): VisualAssetHint {
+  const record = asRecord(raw);
+  const rawMood = record?.mood;
+  const mood = typeof rawMood === "string" && VISUAL_ASSET_MOODS.has(rawMood as VisualAssetMood)
+    ? rawMood as VisualAssetMood
+    : "idle";
+  if (record && rawMood !== undefined && mood === "idle" && rawMood !== "idle") {
+    addRepairAction(repairActions, "field_fix", "Normalized invalid visual_asset.mood to idle", { step, pattern });
+  }
+  const tag = cleanText(record?.tag, VISUAL_TAGS[pattern], 32) || VISUAL_TAGS[pattern];
+  const emoji = typeof record?.emoji === "string" ? cleanText(record.emoji, "", 8) : "";
+  return emoji ? { tag, mood, emoji } : { tag, mood };
+}
+
+function normalizeSchemaNextConcepts(
+  raw: unknown,
+  pattern: PatternType,
+  repairActions?: RepairAction[],
+  step?: number,
+): NextConcept[] | undefined {
+  if (raw === undefined) return undefined;
+  if (!Array.isArray(raw)) {
+    addRepairAction(repairActions, "field_fix", "Dropped invalid next_concepts field", { step, pattern });
+    return undefined;
+  }
+  const concepts = raw
+    .map((item) => {
+      const record = asRecord(item);
+      if (!record) return null;
+      const label = cleanText(record.label, "", 24);
+      const relation = cleanText(record.relation, "", 24);
+      return label && relation ? { label, relation } : null;
+    })
+    .filter((item): item is NextConcept => Boolean(item))
+    .slice(0, 3);
+  if (concepts.length !== raw.length) {
+    addRepairAction(repairActions, "field_fix", "Normalized next_concepts to valid label/relation pairs", { step, pattern });
+  }
+  return concepts.length > 0 ? concepts : undefined;
+}
+
 function repairSchema(
   rawSchema: unknown,
   fallbackPattern: PatternType,
@@ -1296,15 +1344,18 @@ function repairSchema(
   if (record.depth !== "scenario" && record.depth !== "mapping" && record.depth !== "rapid") addRepairAction(repairActions, "field_fix", "Normalized missing or invalid depth", { step, pattern: pattern as PatternType });
   if (!Object.hasOwn(record, "payload")) addRepairAction(repairActions, "field_fix", Object.hasOwn(record, "config") ? "Moved config into payload" : "Filled missing payload from base schema", { step, pattern: pattern as PatternType });
 
+  const normalizedPattern = pattern as PatternType;
   const candidate = {
     ...record,
     pattern,
     template,
     version: typeof record.version === "string" ? record.version : "2.0",
     depth: record.depth === "scenario" || record.depth === "mapping" ? record.depth : "rapid",
+    visual_asset: normalizeVisualAsset(normalizedPattern, record.visual_asset, repairActions, step),
+    next_concepts: normalizeSchemaNextConcepts(record.next_concepts, normalizedPattern, repairActions, step),
     payload: normalizeSchemaPayload(
-      pattern as PatternType,
-      record.payload || record.config || baseSchema(pattern as PatternType, topic, groundingTerms).payload,
+      normalizedPattern,
+      record.payload || record.config || baseSchema(normalizedPattern, topic, groundingTerms).payload,
       topic,
       repairActions,
       step,
@@ -1438,19 +1489,19 @@ function normalizeGeneratedFlow(
   };
 }
 async function retryGenerateText(options: Parameters<typeof generateText>[0], maxRetries = 1) {
+  const timeout = options.timeout ?? 45_000;
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
     try {
-      return await generateText(options);
+      return await generateText({ ...options, timeout });
     } catch (error) {
       if (attempt === maxRetries) throw error;
       const message = error instanceof Error ? error.message : String(error);
-      if (!/(500|502|503|timeout|ECONNRESET|ETIMEDOUT|fetch failed)/i.test(message)) throw error;
+      if (!/(500|502|503|timeout|timed out|aborted|ECONNRESET|ETIMEDOUT|fetch failed)/i.test(message)) throw error;
       await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
     }
   }
   throw new Error("unreachable");
 }
-
 function buildDynamicSystemPrompt(
   topic: string,
   preferredPattern: FlowPatternPreference,
@@ -1465,6 +1516,10 @@ function buildDynamicSystemPrompt(
     : "The user selected core pattern " + preferredPattern + "; at least one play.schema.pattern must equal " + preferredPattern + ".";
   const planBlock = plan ? "\nConceptPlan, mandatory source of truth:\n" + JSON.stringify(plan, null, 2) + "\n" : "";
   const blueprintBlock = blueprint ? "\nKnowledgeBlueprint, mandatory teaching contract:\n" + JSON.stringify(blueprint, null, 2) + "\n" : "";
+  const requiredPatternSequence = blueprint ? selectBlueprintPatternStrategy(blueprint, preferredPattern).slice(0, 3) : [];
+  const requiredPatternRule = requiredPatternSequence.length === 3
+    ? "Required play pattern order: step-1 must use " + requiredPatternSequence[0] + ", step-2 must use " + requiredPatternSequence[1] + ", step-3 must use " + requiredPatternSequence[2] + ". Do not substitute another pattern."
+    : "";
 
   return [
     "You are the Flow designer for aha-flash. Generate a 3-step interactive learning Flow from the ConceptPlan. Output valid JSON only, no Markdown.",
@@ -1495,15 +1550,17 @@ function buildDynamicSystemPrompt(
     "",
     "Hard rules:",
     "- plays must contain exactly 3 items.",
+    requiredPatternRule,
     "- flow.concept must equal ConceptPlan.topic.",
     "- Use ConceptPlan.grounding_terms in visible titles, questions, options, labels, modules, slider outputs, or explanations. Listing terms only in arrays is not enough.",
     "- Do not use ConceptPlan.avoid_patterns.",
     "- Keep UI text concise Simplified Chinese.",
-    "- Never use raw placeholders, HTML, Markdown, {result}, {output1}, or generic labels like key variable / similar concept / mechanism / result as the actual educational content.",
+    "- Never use raw placeholders, HTML, Markdown, template variables, {value}, {result}, {output1}, or generic labels like key variable / similar concept / mechanism / result as the actual educational content.",
     "- Pattern choice must match knowledge structure: deterministic optimization/planning/constraints should avoid probability unless the topic itself is about uncertainty.",
     "- Each step should ask the user to do something: guess, choose, sort, connect, slide, compare, or simulate.",
     "- Do not invent payload field names. Use only the required fields listed above for the selected pattern/template.",
     "- Prefer default templates from FLOW_SCHEMA_PAYLOAD_GUIDE: parameter_explore uses single_slider; knowledge_check uses single_question; system_builder uses module_sandbox.",
+    "- visual_asset.mood must be one of: idle, loading, success, error, reward. Use idle for generated steps unless the step is explicitly a result or reward state.",
     "- simulation_play.params must contain at least 2 parameter objects. outputs[].model must be one of linear, quadratic, exponential, inverse, logarithmic.",
   ].filter(Boolean).join("\n");
 }
