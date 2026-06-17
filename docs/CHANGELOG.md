@@ -4,6 +4,16 @@
 
 ---
 
+
+## 2026-06-17
+
+### V6 live generation reliability pass
+- Added `npm run eval:flow-live` for real LLM sampling across 8 knowledge structures, with `--raw`, `--strict`, `--runs`, and `--limit` options.
+- Split live eval repair metrics into `schema_repair_rate`, `flow_repair_rate`, and overall `repair_reliance_rate`.
+- Made `KnowledgeBlueprint.pattern_strategy` authoritative: LLM `avoid_patterns` can no longer delete Blueprint core patterns, and each generated step is normalized to the exact Blueprint Pattern.
+- Changed knowledge-structure inference to prefer deterministic topic hints before LLM-provided structure labels, fixing drift for classification, causal, and procedure topics.
+- Added compact payload field guidance for all 10 Pattern defaults and recursive placeholder cleanup for `{value}`, `{result}`, `{output1}`, `{topic}`, and generic placeholder phrases.
+- Latest live baseline: 8/8 real LLM cases passed with `overall: 1`, `llm_success_rate: 1`, `clean_schema_rate: 0.5`, `schema_repair_rate: 0.5`, `flow_repair_rate: 0`, and `repair_reliance_rate: 0.5`; the next reliability target is reducing repair reliance, not merely passing after repair.
 ## 2026-06-16
 
 

@@ -111,6 +111,25 @@ interface TeachingTrace {
 }
 ```
 
+
+## 2.4 Implementation Status - 2026-06-17
+
+Current V6 reliability work is partially implemented and verified:
+
+- Added `npm run eval:flow-live` for real LLM sampling. It reports `llm_success_rate`, `clean_schema_rate`, `schema_repair_rate`, `flow_repair_rate`, and `repair_reliance_rate`, with optional `--raw` reports for diagnosis.
+- Knowledge structure inference now uses deterministic topic hints before trusting LLM-provided `knowledge_structure`, reducing misclassification for topics such as compound interest, waste classification, and binary search.
+- `KnowledgeBlueprint.pattern_strategy` is authoritative. LLM-provided `avoid_patterns` can no longer remove core Blueprint patterns such as `parameter_explore` from probabilistic reasoning.
+- Dynamic Flow normalization now enforces the exact Blueprint Pattern for each step instead of accepting any Pattern from the allowed set.
+- Flow payload prompts include a compact field contract for all 10 Pattern defaults, reducing malformed schema output.
+- Normalization removes unreplaced placeholders such as `{value}`, `{result}`, `{output1}`, `{topic}`, and generic English placeholders before QualityGate scoring.
+- Latest 8-structure live baseline: `overall: 1`, `llm_success_rate: 1`, `clean_schema_rate: 0.5`, `schema_repair_rate: 0.5`, `flow_repair_rate: 0`, `repair_reliance_rate: 0.5`.
+
+Remaining V6 work:
+
+- Repeat live baseline with `--runs=3` to measure stability rather than a single lucky sample.
+- Lower repair reliance further, especially for schema payload drift in classification and timeline-like outputs.
+- Surface the generation/quality-check stages in the user experience without exposing technical logs.
+- Improve honest failure UX with retry/change-topic/showcase escape paths.
 ## 3. Knowledge Structure Taxonomy
 
 V6 should first cover 6-8 high-frequency structure types, not hundreds of prebuilt concepts.

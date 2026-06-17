@@ -220,6 +220,10 @@ export function normalizeKnowledgeStructure(value: unknown): KnowledgeStructureT
 
 export function inferKnowledgeStructure(plan: BlueprintPlanInput): KnowledgeStructureType {
   const explicit = normalizeKnowledgeStructure(plan.knowledge_structure);
+  const topicEvidence = [plan.topic].filter(Boolean).join(" ");
+  for (const structure of STRUCTURE_PRIORITY) {
+    if (containsAny(topicEvidence, HINTS[structure])) return structure;
+  }
   if (explicit !== "unclassified") return explicit;
   const evidence = [plan.topic, plan.domain, plan.core_question, ...(plan.grounding_terms || []), ...(plan.learning_path || [])].filter(Boolean).join(" ");
   for (const structure of STRUCTURE_PRIORITY) {
@@ -232,8 +236,15 @@ function makeSteps(structure: Exclude<KnowledgeStructureType, "unclassified">): 
   return DEFAULT_STEPS[structure].map(([goal, must_explain, user_action, recommended_pattern, success_criteria]) => ({ goal, must_explain, user_action, recommended_pattern, success_criteria }));
 }
 
+function protectBlueprintAvoidPatterns(structure: KnowledgeStructureType, patterns: PatternType[] = []) {
+  if (structure === "unclassified") return patterns;
+  const protectedPatterns = new Set(STRATEGY[structure]);
+  return patterns.filter((pattern) => !protectedPatterns.has(pattern));
+}
+
 export function selectBlueprintPatternStrategy(blueprint: KnowledgeBlueprint, preferredPattern: FlowPatternPreference): PatternType[] {
-  const avoid = new Set(preferredPattern === "auto" ? blueprint.avoid_patterns : blueprint.avoid_patterns.filter((pattern) => pattern !== preferredPattern));
+  const blueprintAvoidPatterns = protectBlueprintAvoidPatterns(blueprint.structure_type, blueprint.avoid_patterns);
+  const avoid = new Set(preferredPattern === "auto" ? blueprintAvoidPatterns : blueprintAvoidPatterns.filter((pattern) => pattern !== preferredPattern));
   const result: PatternType[] = [];
   for (const pattern of blueprint.pattern_strategy) {
     if (!avoid.has(pattern) && !result.includes(pattern)) result.push(pattern);
@@ -277,7 +288,7 @@ export function buildKnowledgeBlueprint(
     misconceptions: [],
     teaching_sequence: steps,
     pattern_strategy: STRATEGY[structure],
-    avoid_patterns: plan.avoid_patterns || [],
+    avoid_patterns: protectBlueprintAvoidPatterns(structure, plan.avoid_patterns),
     failure_risks: [],
     confidence: Math.min(0.96, 0.72 + Math.min(grounding.length, 5) * 0.04 + (plan.recommended_patterns?.length ? 0.04 : 0)),
   };
@@ -327,7 +338,8 @@ export function evaluateFlowAgainstBlueprint(flow: KnowledgeFlow, blueprint: Kno
   const text = visibleFlowText(flow);
   const patterns = flow.plays.map((play) => play.schema.pattern).filter((pattern): pattern is PatternType => typeof pattern === "string");
   const allowed = new Set(selectBlueprintPatternStrategy(blueprint, preferredPattern));
-  const avoid = new Set(preferredPattern === "auto" ? blueprint.avoid_patterns : blueprint.avoid_patterns.filter((pattern) => pattern !== preferredPattern));
+  const blueprintAvoidPatterns = protectBlueprintAvoidPatterns(blueprint.structure_type, blueprint.avoid_patterns);
+  const avoid = new Set(preferredPattern === "auto" ? blueprintAvoidPatterns : blueprintAvoidPatterns.filter((pattern) => pattern !== preferredPattern));
   const coveredTerms = termHits(text, blueprint.core_terms);
   const disallowed = patterns.filter((pattern) => !allowed.has(pattern));
   const avoided = patterns.filter((pattern) => avoid.has(pattern));
@@ -372,9 +384,10 @@ export function evaluateFlowAgainstBlueprint(flow: KnowledgeFlow, blueprint: Kno
         stepFailures.push(`Step ${index + 1} trace does not cover Blueprint terms for goal "${step.goal}"`);
       }
     }
-    const stepHits = termHits(flowPlayText(play), step.must_explain);
-    if (step.must_explain.length > 0 && stepHits.length === 0) {
-      stepFailures.push(`Step ${index + 1} does not cover visible Blueprint terms for goal "${step.goal}": ${step.must_explain.slice(0, 5).join(", ")}`);
+    const visibleTerms = unique([...step.must_explain, ...blueprint.core_terms]);
+    const stepHits = termHits(flowPlayText(play), visibleTerms);
+    if (visibleTerms.length > 0 && stepHits.length === 0) {
+      stepFailures.push(`Step ${index + 1} does not cover visible Blueprint or core terms for goal "${step.goal}": ${visibleTerms.slice(0, 5).join(", ")}`);
     }
   });
 

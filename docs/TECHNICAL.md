@@ -589,7 +589,7 @@ V5 当前已经具备：`Explore 任意输入 -> AI 生成三关 Flow -> /flow/c
 
 - POST /api/flow uses a two-stage chain: ConceptPlan -> KnowledgeFlow -> UISchema validation/repair.
 - ConceptPlan is the grounding contract. It preserves the user topic, extracts concrete grounding_terms, chooses recommended_patterns, and lists avoid_patterns before any UI payload is generated.
-- Flow generation must follow ConceptPlan.recommended_patterns and reject ConceptPlan.avoid_patterns. This prevents deterministic topics such as linear programming from being rendered as probability/gacha content.
+- `KnowledgeBlueprint.pattern_strategy` is authoritative after ConceptPlan. ConceptPlan `recommended_patterns` and `avoid_patterns` are planning hints, but they cannot remove core Blueprint patterns or reorder the three-step teaching contract.
 - Debug mode (?debug=1 in dev/local) exposes concept_plan and raw_plan_output alongside raw_output and validation_error.
 - If ConceptPlan fails validation after repair, fallback uses makeFallbackFlowFromPlan(plan) instead of a fixed showcase topic.
 - Dynamic fallback regression covers Agent, Kubernetes operator, and linear programming; the latter must not include probability in the generated pattern chain.
@@ -609,3 +609,6 @@ Key implementation points:
 - `QualityGate` remains deterministic-first. It checks visible step content, schema validity, pattern fit, avoided patterns, placeholder terms, Blueprint step coverage, and trace alignment.
 - Trace fields are for debugging and eval audit. They must not be used as a substitute for visible user-facing teaching copy.
 - No-key or low-quality dynamic generation returns an honest failure state while still carrying enough draft/debug information for diagnosis.
+- Knowledge structure inference uses deterministic topic hints before trusting LLM-provided `knowledge_structure`; broad terms in LLM explanations should not override the user's original topic.
+- Dynamic Flow normalization enforces the exact Blueprint Pattern per step and sanitizes unreplaced placeholders such as `{value}`, `{result}`, `{output1}`, and generic placeholder phrases before QualityGate evaluation.
+- `npm run eval:flow-live` samples the real LLM path and separates schema repair from flow/quality repair, so V6 can track both structural validity and teaching reliability.

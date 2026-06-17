@@ -68,13 +68,52 @@ const VISUAL_TAGS: Record<PatternType, string> = {
   simulation_play: "simulation-loop",
 };
 
+const FLOW_SCHEMA_PAYLOAD_GUIDE = [
+  "Payload required fields. Use the template after each slash as the default. Do not choose alternate templates unless all fields still match this contract:",
+  "- probability/card_flip_reveal: payload.title; payload.pool [{name, rarity, probability, value}]; option_cost number; strike_price number; pulls_per_try number; explanation_map {win, lose}",
+  "- parameter_explore/single_slider: payload.title; variable_label; min number; max number; default_value number; explanation_template; optional scenarios [{label,value}], outputs [{label, model one of linear/quadratic/exponential/inverse/logarithmic, multiplier number, offset number}]",
+  "- concept_memory/term_cards: payload.title; cards [{front, back}]",
+  "- process_timeline/horizontal_timeline: payload.title; events [{label, description}]",
+  "- comparison/split_panel: payload.title; left {label, content}; right {label, content}; optional dimensions [{label,a,b,insight}]",
+  "- knowledge_check/single_question: payload.title; question; options [{label, correct boolean, explanation}]",
+  "- system_builder/module_sandbox: payload.title; target; modules [{id,label,description,role}]; optional required_module_ids, connections [{from,to,label}]",
+  "- narrative_branch/branch_story: payload.title; opening; branches [{choice_label,outcome_description,insight}]",
+  "- classification_sort/category_buckets: payload.title; categories [{id,name}]; items [{label,correct_category,explanation}]",
+  "- simulation_play/parameter_simulation: payload.title; params at least 2 items [{label,min,max,default,unit}]; compute_formula_description; steps number",
+].join("\n");
 const CATEGORIES: TopicCategory[] = ["科技", "经济", "哲学", "心理", "历史", "数理"];
 const DIFFICULTIES: TopicDifficulty[] = ["轻松", "进阶", "烧脑一点"];
 
 function cleanText(value: unknown, fallback: string, maxLength = 80) {
   if (typeof value !== "string") return fallback;
-  const text = value.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+  const text = replaceGeneratedPlaceholders(value, fallback).replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
   return text ? text.slice(0, maxLength) : fallback;
+}
+
+function replaceGeneratedPlaceholders(text: string, topic: string) {
+  return text
+    .replace(/\{\s*value\s*\}/gi, "当前值")
+    .replace(/\{\s*result\s*\}/gi, "结果")
+    .replace(/\{\s*output\d*\s*\}/gi, "输出")
+    .replace(/\{\s*variable\s*\}/gi, "变量")
+    .replace(/\{\s*term\s*\}/gi, "术语")
+    .replace(/\{\s*concept\s*\}/gi, topic)
+    .replace(/\{\s*topic\s*\}/gi, topic)
+    .replace(/\{\s*anchorA\s*\}/gi, "第一个关键点")
+    .replace(/\{\s*anchorB\s*\}/gi, "第二个关键点")
+    .replace(/\{\s*anchorC\s*\}/gi, "第三个关键点")
+    .replace(/similar concept/gi, `${topic} 的相近概念`)
+    .replace(/key variable/gi, "关键变量")
+    .replace(/generic mechanism/gi, `${topic} 的具体机制`);
+}
+
+function sanitizeGeneratedValue(value: unknown, topic: string): unknown {
+  if (typeof value === "string") return replaceGeneratedPlaceholders(value, topic);
+  if (Array.isArray(value)) return value.map((item) => sanitizeGeneratedValue(item, topic));
+  if (!value || typeof value !== "object") return value;
+  const result: Record<string, unknown> = {};
+  for (const [key, item] of Object.entries(value)) result[key] = sanitizeGeneratedValue(item, topic);
+  return result;
 }
 
 function cleanTopic(topic: string) {
@@ -858,7 +897,9 @@ function evaluateFlowAgainstPlan(
   const failures: string[] = [];
   const flowText = JSON.stringify(flow);
   const patterns = flow.plays.map((play) => play.schema.pattern).filter((pattern): pattern is PatternType => isPattern(pattern));
-  const avoid = preferredPattern === "auto" ? plan.avoid_patterns : plan.avoid_patterns.filter((pattern) => pattern !== preferredPattern);
+  const blueprint = buildKnowledgeBlueprint(plan, preferredPattern, preferredStructure);
+  const strategy = selectBlueprintPatternStrategy(blueprint, preferredPattern);
+  const avoid = preferredPattern === "auto" ? blueprint.avoid_patterns : blueprint.avoid_patterns.filter((pattern) => pattern !== preferredPattern);
   const avoidedUsed = avoid.filter((pattern) => patterns.includes(pattern));
   const anchorHits = plan.grounding_terms.filter((term) => countIncludes(flowText, term) > 0);
 
@@ -866,7 +907,7 @@ function evaluateFlowAgainstPlan(
   if (anchorHits.length < Math.min(3, plan.grounding_terms.length)) failures.push(`Flow 未覆盖足够 ConceptPlan 锚点: ${plan.grounding_terms.join("、")}`);
   if (avoidedUsed.length) failures.push(`Flow 使用了 ConceptPlan 禁用 Pattern: ${avoidedUsed.join("、")}`);
   if (preferredPattern !== "auto" && !patterns.includes(preferredPattern)) failures.push(`Flow 未包含用户指定 Pattern: ${preferredPattern}`);
-  if (preferredPattern === "auto" && !patterns.some((pattern) => plan.recommended_patterns.includes(pattern))) failures.push("Flow 没有使用 ConceptPlan 推荐 Pattern");
+  if (preferredPattern === "auto" && !patterns.some((pattern) => strategy.includes(pattern))) failures.push("Flow does not use the Blueprint pattern strategy");
 
   return {
     ok: failures.length === 0,
@@ -1014,6 +1055,9 @@ function buildRepairUserPrompt(
     "- Generate exactly 3 plays.",
     "- Every play must use concrete terms from grounding_terms.",
     "- Every play must satisfy the matching KnowledgeBlueprint teaching_sequence goal.",
+    "- Use the exact payload fields required by the selected pattern/template; do not place payload under config, data, fields, steps_data, nodes, or questions.",
+    "- Prefer default templates: parameter_explore/single_slider, knowledge_check/single_question, system_builder/module_sandbox.",
+    "- simulation_play.params must contain at least 2 parameter objects. outputs[].model must use linear/quadratic/exponential/inverse/logarithmic.",
     "- The visible copy must teach the KnowledgeBlueprint core_terms, not merely mention the topic.",
     "- Do not use patterns listed in ConceptPlan.avoid_patterns.",
     "- If the user selected a pattern, at least one play.schema.pattern must equal it.",
@@ -1170,8 +1214,8 @@ function normalizeProbabilityPayload(payload: unknown, topic: string) {
 }
 
 function normalizeSchemaPayload(pattern: PatternType, payload: unknown, topic: string) {
-  if (pattern === "probability") return normalizeProbabilityPayload(payload, topic);
-  return normalizePayloadTitle(payload, topic);
+  const normalized = pattern === "probability" ? normalizeProbabilityPayload(payload, topic) : normalizePayloadTitle(payload, topic);
+  return sanitizeGeneratedValue(normalized, topic);
 }
 
 function repairSchema(rawSchema: unknown, fallbackPattern: PatternType, topic: string, groundingTerms: string[] = []): UISchema {
@@ -1208,25 +1252,34 @@ function repairSchema(rawSchema: unknown, fallbackPattern: PatternType, topic: s
 }
 
 function normalizeFollowUps(value: unknown, topic: string): FollowUpTopic[] {
-  if (!Array.isArray(value)) return makeFallbackFollowUps(topic);
+  const fallback = makeFallbackFollowUps(topic);
+  if (!Array.isArray(value)) return fallback;
   const followUps = value.slice(0, 3).map((item, index) => {
     const record = asRecord(item) || {};
-    const concept = cleanText(record.concept, `${topic}的延伸方向`, 36);
+    const concept = cleanText(record.concept, `${topic} next branch`, 36);
     const suggestedPattern = normalizePreference(record.suggestedPattern ?? record.suggested_pattern);
     return {
       id: cleanText(record.id, `dynamic-follow-up-${index + 1}`, 48),
       title: cleanText(record.title, concept, 18),
       concept,
-      hook: cleanText(record.hook, `继续探索${concept}。`, 42),
-      relation: cleanText(record.relation, "从当前理解继续向外走。", 42),
+      hook: cleanText(record.hook, `Continue exploring ${concept}.`, 42),
+      relation: cleanText(record.relation, "A next step from the current concept.", 42),
       kind: record.kind === "curated" ? "curated" : "ai_seed",
       suggestedPattern,
       target_flow_id: typeof record.target_flow_id === "string" ? record.target_flow_id : undefined,
     } satisfies FollowUpTopic;
   });
-  return followUps.length > 0 ? followUps : makeFallbackFollowUps(topic);
+  const merged: FollowUpTopic[] = [];
+  const seen = new Set<string>();
+  for (const item of [...followUps, ...fallback]) {
+    const key = `${item.concept}-${item.suggestedPattern}`.toLowerCase().replace(/[^a-z0-9]+/g, "");
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    merged.push(item);
+    if (merged.length === 3) break;
+  }
+  return merged.length > 0 ? merged : fallback;
 }
-
 function normalizeGeneratedFlow(
   raw: unknown,
   topicInput: string,
@@ -1250,14 +1303,15 @@ function normalizeGeneratedFlow(
   );
   const patternChain = plan ? patternChainFromPlan(plan, preferredPattern, preferredStructure) : fallbackPatternChain(preferredPattern);
   const blueprint = plan ? buildKnowledgeBlueprint(plan, preferredPattern, preferredStructure) : null;
-  const avoid = new Set(plan ? (preferredPattern === "auto" ? plan.avoid_patterns : plan.avoid_patterns.filter((pattern) => pattern !== preferredPattern)) : []);
+  const avoidSource: PatternType[] = blueprint?.avoid_patterns ?? [];
+  const avoid = new Set(preferredPattern === "auto" ? avoidSource : avoidSource.filter((pattern) => pattern !== preferredPattern));
   const allowedPatterns = new Set(patternChain);
   const rawPlays = Array.isArray(candidate.plays) ? candidate.plays.slice(0, 3) : [];
   const plays = rawPlays.map((rawPlay, index) => {
     const record = asRecord(rawPlay) || {};
     const fallbackPattern = patternChain[index] || "knowledge_check";
     let schema = repairSchema(record.schema, fallbackPattern, topic, groundingTerms);
-    if (!isPattern(schema.pattern) || avoid.has(schema.pattern) || (plan && !allowedPatterns.has(schema.pattern))) {
+    if (!isPattern(schema.pattern) || schema.pattern !== fallbackPattern || avoid.has(schema.pattern) || (plan && !allowedPatterns.has(schema.pattern))) {
       schema = baseSchema(fallbackPattern, topic, groundingTerms);
     }
     const play = {
@@ -1340,6 +1394,8 @@ function buildDynamicSystemPrompt(
     "Allowed patterns and templates:",
     patternDirectory,
     "",
+    FLOW_SCHEMA_PAYLOAD_GUIDE,
+    "",
     "Return this JSON shape:",
     "{",
     "  \"title\": \"short title\",",
@@ -1365,6 +1421,9 @@ function buildDynamicSystemPrompt(
     "- Never use raw placeholders, HTML, Markdown, {result}, {output1}, or generic labels like key variable / similar concept / mechanism / result as the actual educational content.",
     "- Pattern choice must match knowledge structure: deterministic optimization/planning/constraints should avoid probability unless the topic itself is about uncertainty.",
     "- Each step should ask the user to do something: guess, choose, sort, connect, slide, compare, or simulate.",
+    "- Do not invent payload field names. Use only the required fields listed above for the selected pattern/template.",
+    "- Prefer default templates from FLOW_SCHEMA_PAYLOAD_GUIDE: parameter_explore uses single_slider; knowledge_check uses single_question; system_builder uses module_sandbox.",
+    "- simulation_play.params must contain at least 2 parameter objects. outputs[].model must be one of linear, quadratic, exponential, inverse, logarithmic.",
   ].filter(Boolean).join("\n");
 }
 
