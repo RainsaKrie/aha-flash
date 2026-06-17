@@ -43,6 +43,21 @@ export interface ConceptPlan {
   difficulty: TopicDifficulty;
 }
 
+export type RepairActionTag =
+  | "field_fix"
+  | "pattern_normalize"
+  | "placeholder_clean"
+  | "schema_repair"
+  | "schema_fallback"
+  | "flow_repair";
+
+export interface RepairAction {
+  tag: RepairActionTag;
+  message: string;
+  step?: number;
+  pattern?: PatternType;
+}
+
 export interface DynamicFlowGenerationResult {
   flow: KnowledgeFlow;
   source: "llm" | "mock";
@@ -53,6 +68,7 @@ export interface DynamicFlowGenerationResult {
   blueprint?: KnowledgeBlueprint;
   quality_gate?: QualityGateResult;
   failure?: FlowFailureState;
+  repair_actions?: RepairAction[];
 }
 
 const VISUAL_TAGS: Record<PatternType, string> = {
@@ -1213,27 +1229,72 @@ function normalizeProbabilityPayload(payload: unknown, topic: string) {
   return { ...record, pool: normalizedPool };
 }
 
-function normalizeSchemaPayload(pattern: PatternType, payload: unknown, topic: string) {
-  const normalized = pattern === "probability" ? normalizeProbabilityPayload(payload, topic) : normalizePayloadTitle(payload, topic);
-  return sanitizeGeneratedValue(normalized, topic);
+function addRepairAction(
+  actions: RepairAction[] | undefined,
+  tag: RepairActionTag,
+  message: string,
+  details: { step?: number; pattern?: PatternType } = {},
+) {
+  if (!actions) return;
+  actions.push({ tag, message, ...details });
 }
 
-function repairSchema(rawSchema: unknown, fallbackPattern: PatternType, topic: string, groundingTerms: string[] = []): UISchema {
+function normalizeSchemaPayload(
+  pattern: PatternType,
+  payload: unknown,
+  topic: string,
+  repairActions?: RepairAction[],
+  step?: number,
+) {
+  const normalized = pattern === "probability" ? normalizeProbabilityPayload(payload, topic) : normalizePayloadTitle(payload, topic);
+  const sanitized = sanitizeGeneratedValue(normalized, topic);
+  if (JSON.stringify(sanitized) !== JSON.stringify(normalized)) {
+    addRepairAction(repairActions, "placeholder_clean", "Removed unreplaced placeholder text from schema payload", { step, pattern });
+  }
+  return sanitized;
+}
+
+function repairSchema(
+  rawSchema: unknown,
+  fallbackPattern: PatternType,
+  topic: string,
+  groundingTerms: string[] = [],
+  repairActions?: RepairAction[],
+  step?: number,
+): UISchema {
   const record = asRecord(rawSchema);
-  if (!record) return baseSchema(fallbackPattern, topic, groundingTerms);
+  if (!record) {
+    addRepairAction(repairActions, "schema_repair", "Schema was not an object", { step, pattern: fallbackPattern });
+    addRepairAction(repairActions, "schema_fallback", "Used base schema because schema object was missing", { step, pattern: fallbackPattern });
+    return baseSchema(fallbackPattern, topic, groundingTerms);
+  }
 
   let pattern = typeof record.pattern === "string" ? record.pattern : "";
   let template = typeof record.template === "string" ? record.template : "";
-  if (template.startsWith("v2_")) template = template.slice(3);
+  if (template.startsWith("v2_")) {
+    addRepairAction(repairActions, "field_fix", "Removed v2_ prefix from template", { step, pattern: fallbackPattern });
+    template = template.slice(3);
+  }
 
   if (!isPattern(pattern)) {
     const owner = templateOwner(pattern) || templateOwner(template);
+    addRepairAction(repairActions, "pattern_normalize", `Normalized schema pattern from ${pattern || "missing"} to ${owner || fallbackPattern}`, { step, pattern: (owner || fallbackPattern) as PatternType });
     pattern = owner || fallbackPattern;
   }
 
   const catalog = SCHEMA_CATALOG[pattern as PatternType];
-  if (!catalog) return baseSchema(fallbackPattern, topic, groundingTerms);
-  if (!template || !(catalog.templates as readonly string[]).includes(template)) template = catalog.defaultTemplate;
+  if (!catalog) {
+    addRepairAction(repairActions, "schema_fallback", "Used base schema because pattern catalog was missing", { step, pattern: fallbackPattern });
+    return baseSchema(fallbackPattern, topic, groundingTerms);
+  }
+  if (!template || !(catalog.templates as readonly string[]).includes(template)) {
+    addRepairAction(repairActions, "field_fix", `Normalized template from ${template || "missing"} to ${catalog.defaultTemplate}`, { step, pattern: pattern as PatternType });
+    template = catalog.defaultTemplate;
+  }
+
+  if (typeof record.version !== "string") addRepairAction(repairActions, "field_fix", "Added missing schema version", { step, pattern: pattern as PatternType });
+  if (record.depth !== "scenario" && record.depth !== "mapping" && record.depth !== "rapid") addRepairAction(repairActions, "field_fix", "Normalized missing or invalid depth", { step, pattern: pattern as PatternType });
+  if (!Object.hasOwn(record, "payload")) addRepairAction(repairActions, "field_fix", Object.hasOwn(record, "config") ? "Moved config into payload" : "Filled missing payload from base schema", { step, pattern: pattern as PatternType });
 
   const candidate = {
     ...record,
@@ -1245,12 +1306,20 @@ function repairSchema(rawSchema: unknown, fallbackPattern: PatternType, topic: s
       pattern as PatternType,
       record.payload || record.config || baseSchema(pattern as PatternType, topic, groundingTerms).payload,
       topic,
+      repairActions,
+      step,
     ),
   } as UISchema;
 
-  return validateSchema(candidate) || baseSchema(pattern as PatternType, topic, groundingTerms);
-}
+  const validated = validateSchema(candidate);
+  if (!validated) {
+    addRepairAction(repairActions, "schema_repair", "Candidate schema failed validation after field normalization", { step, pattern: pattern as PatternType });
+    addRepairAction(repairActions, "schema_fallback", "Used base schema after schema validation failure", { step, pattern: pattern as PatternType });
+    return baseSchema(pattern as PatternType, topic, groundingTerms);
+  }
 
+  return validated;
+}
 function normalizeFollowUps(value: unknown, topic: string): FollowUpTopic[] {
   const fallback = makeFallbackFollowUps(topic);
   if (!Array.isArray(value)) return fallback;
@@ -1287,15 +1356,21 @@ function normalizeGeneratedFlow(
   plan?: ConceptPlan,
   preferredStructure: KnowledgeStructurePreference = "auto",
 ) {
+  const repairActions: RepairAction[] = [];
   const fallback = plan ? makeFallbackFlowFromPlan(plan, preferredPattern, preferredStructure) : makeFallbackFlow(topicInput, preferredPattern);
   const root = asRecord(raw);
   const candidate = asRecord(root?.flow) || root;
-  if (!candidate) return { flow: fallback, error: "LLM output is not an object", groundingTerms: plan?.grounding_terms || [] };
+  if (!candidate) {
+    addRepairAction(repairActions, "flow_repair", "LLM output was not a Flow object; used fallback Flow");
+    return { flow: fallback, error: "LLM output is not an object", groundingTerms: plan?.grounding_terms || [], repair_actions: repairActions };
+  }
 
   const topic = plan?.topic || cleanTopic(topicInput);
   const concepts = Array.isArray(candidate.concepts)
     ? candidate.concepts.filter((item): item is string => typeof item === "string" && item.trim().length > 0).slice(0, 5)
     : fallback.concepts;
+  if (!Array.isArray(candidate.concepts)) addRepairAction(repairActions, "field_fix", "Filled missing flow concepts from fallback");
+
   const groundingTerms = normalizeGroundingTerms(
     candidate.grounding_terms ?? candidate.groundingTerms,
     topic,
@@ -1307,11 +1382,15 @@ function normalizeGeneratedFlow(
   const avoid = new Set(preferredPattern === "auto" ? avoidSource : avoidSource.filter((pattern) => pattern !== preferredPattern));
   const allowedPatterns = new Set(patternChain);
   const rawPlays = Array.isArray(candidate.plays) ? candidate.plays.slice(0, 3) : [];
+  if (!Array.isArray(candidate.plays)) addRepairAction(repairActions, "flow_repair", "Filled missing plays from fallback chain");
+  if (Array.isArray(candidate.plays) && candidate.plays.length !== 3) addRepairAction(repairActions, "flow_repair", `Normalized play count from ${candidate.plays.length} to 3`);
+
   const plays = rawPlays.map((rawPlay, index) => {
     const record = asRecord(rawPlay) || {};
     const fallbackPattern = patternChain[index] || "knowledge_check";
-    let schema = repairSchema(record.schema, fallbackPattern, topic, groundingTerms);
+    let schema = repairSchema(record.schema, fallbackPattern, topic, groundingTerms, repairActions, index + 1);
     if (!isPattern(schema.pattern) || schema.pattern !== fallbackPattern || avoid.has(schema.pattern) || (plan && !allowedPatterns.has(schema.pattern))) {
+      addRepairAction(repairActions, "pattern_normalize", `Forced step ${index + 1} pattern to Blueprint pattern ${fallbackPattern}`, { step: index + 1, pattern: fallbackPattern });
       schema = baseSchema(fallbackPattern, topic, groundingTerms);
     }
     const play = {
@@ -1327,11 +1406,13 @@ function normalizeGeneratedFlow(
 
   while (plays.length < 3) {
     const fallbackPattern: PatternType = patternChain[plays.length] ?? "knowledge_check";
+    addRepairAction(repairActions, "flow_repair", `Added missing step ${plays.length + 1} from fallback chain`, { step: plays.length + 1, pattern: fallbackPattern });
     plays.push(attachBlueprintStepCue(makeFallbackPlay(topic, fallbackPattern, plays.length, groundingTerms), blueprint?.teaching_sequence[plays.length]));
   }
 
   const selectedPattern: PatternType | null = preferredPattern === "auto" ? null : preferredPattern;
   if (selectedPattern && !plays.some((play) => play.schema.pattern === selectedPattern)) {
+    addRepairAction(repairActions, "pattern_normalize", `Inserted user-selected pattern ${selectedPattern}`, { step: 2, pattern: selectedPattern });
     plays[1] = attachBlueprintStepCue(makeFallbackPlay(topic, selectedPattern, 1, groundingTerms), blueprint?.teaching_sequence[1]);
   }
 
@@ -1353,9 +1434,9 @@ function normalizeGeneratedFlow(
       source: "generated",
     } satisfies KnowledgeFlow,
     groundingTerms,
+    repair_actions: repairActions,
   };
 }
-
 async function retryGenerateText(options: Parameters<typeof generateText>[0], maxRetries = 1) {
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
     try {
@@ -1507,6 +1588,7 @@ export async function generateDynamicFlow(
         concept_plan: plan,
         blueprint,
         quality_gate: quality,
+        repair_actions: normalized.repair_actions,
       };
     }
 
@@ -1517,6 +1599,9 @@ export async function generateDynamicFlow(
       messages: [{ role: "user", content: buildRepairUserPrompt(topic, preferredPattern, repairReason, result.text, plan) }],
     });
     const repaired = normalizeGeneratedFlow(parseJson(repair.text), topic, preferredPattern, plan, preferredStructure);
+    const repairedActions = [...(normalized.repair_actions || [])];
+    addRepairAction(repairedActions, "flow_repair", "Initial Flow validation failed; requested LLM repair");
+    repairedActions.push(...(repaired.repair_actions || []));
     const repairedGrounding = evaluateFlowGrounding(repaired.flow, topic, repaired.groundingTerms, preferredPattern);
     const repairedPlanFit = evaluateFlowAgainstPlan(repaired.flow, plan, preferredPattern, preferredStructure);
     const repairedQuality = evaluateFlowAgainstBlueprint(repaired.flow, blueprint, preferredPattern);
@@ -1535,6 +1620,7 @@ export async function generateDynamicFlow(
         concept_plan: plan,
         blueprint,
         quality_gate: repairedQuality,
+        repair_actions: repairedActions,
       };
     }
 
@@ -1552,6 +1638,7 @@ export async function generateDynamicFlow(
       blueprint,
       quality_gate: repairedQuality,
       failure: makeFlowFailure("quality_gate_failed", topic, repairedQuality),
+      repair_actions: repairedActions,
     };
   } catch (error) {
     return {

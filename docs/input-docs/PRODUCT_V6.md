@@ -122,6 +122,7 @@ Current V6 reliability work is partially implemented and verified:
 - Dynamic Flow normalization now enforces the exact Blueprint Pattern for each step instead of accepting any Pattern from the allowed set.
 - Flow payload prompts include a compact field contract for all 10 Pattern defaults, reducing malformed schema output.
 - Normalization removes unreplaced placeholders such as `{value}`, `{result}`, `{output1}`, `{topic}`, and generic English placeholders before QualityGate scoring.
+- `repair_actions` now tags normalization and repair events as `field_fix`, `pattern_normalize`, `placeholder_clean`, `schema_repair`, `schema_fallback`, or `flow_repair`; `eval:flow-live` reports per-tag counts and rates.
 - Latest 8-structure live baseline: `overall: 1`, `llm_success_rate: 1`, `clean_schema_rate: 0.5`, `schema_repair_rate: 0.5`, `flow_repair_rate: 0`, `repair_reliance_rate: 0.5`.
 
 Remaining V6 work:
@@ -130,6 +131,173 @@ Remaining V6 work:
 - Lower repair reliance further, especially for schema payload drift in classification and timeline-like outputs.
 - Surface the generation/quality-check stages in the user experience without exposing technical logs.
 - Improve honest failure UX with retry/change-topic/showcase escape paths.
+## 2.5 Next Direction - Aha Skill Packs
+
+V6 should not rely on one large universal prompt to teach every concept. The next reliability direction is to split the generation brain into reusable Aha Skill Packs.
+
+A Skill Pack is not prebuilt content. It is a compact teaching capability for one knowledge structure or one interaction pattern.
+
+Suggested shape:
+
+```text
+skills/
+  optimization-model/
+    SKILL.md
+    examples.json
+    quality-rules.json
+    pattern-recipe.json
+
+  system-process/
+    SKILL.md
+    examples.json
+    quality-rules.json
+    pattern-recipe.json
+```
+
+Runtime chain:
+
+```text
+Topic
+  -> ConceptPlan
+  -> choose Knowledge Skill Pack
+  -> load only relevant teaching recipe and Pattern recipe
+  -> Flow generation
+  -> skill-specific deterministic QualityGate
+  -> Render or honest failure
+```
+
+Why this should improve success rate:
+
+1. It lowers task freedom. The model no longer decides everything from scratch; it works inside a known teaching frame.
+2. It reduces prompt noise. Linear programming should load the optimization skill, not timeline/comparison/classification guidance.
+3. It enables skill-level eval. V6 can measure whether `optimization-model` is weak instead of only saying the whole system is unstable.
+4. It keeps the product extensible. Adding a new knowledge family means adding or tuning a Skill Pack, not hand-authoring hundreds of flows.
+
+Important boundary:
+
+- Skill Packs improve generation stability, not factual truth by themselves.
+- QualityGate remains required after generation.
+- Grounding terms and examples should be included per skill, but user-facing content must still pass visible teaching checks.
+- The first implementation should treat Skill Packs as internal prompt/reference modules, not as user-installable external skills.
+
+## 2.6 Accuracy Scope - Knowledge Skeleton First
+
+V6 should include factual accuracy work, but only as a minimum viable grounding layer. It should not attempt to build a full Wiki, search engine, citation system, or large knowledge base in this iteration.
+
+V6 accuracy goal:
+
+> Do not let a generated Flow look polished if it fails to teach the concept's essential structure.
+
+The immediate solution is a Skill Pack knowledge skeleton.
+
+Each Knowledge Skill Pack should carry a compact skeleton:
+
+```ts
+interface KnowledgeSkeleton {
+  structure_type: KnowledgeStructureType;
+  required_core_terms: string[];
+  required_teaching_steps: string[];
+  common_misconceptions: string[];
+  forbidden_framings: string[];
+  suitable_patterns: PatternType[];
+  unsuitable_patterns: PatternType[];
+  canonical_examples: string[];
+}
+```
+
+Examples:
+
+```text
+linear programming
+required_core_terms: decision variable, objective function, constraint, feasible region, optimum
+required_teaching_steps: define variables -> set objective -> apply constraints -> search feasible region -> compare optimum
+forbidden_framings: probability draw, generic parameter slider, pure quiz without model structure
+
+DNS resolution
+required_core_terms: browser, recursive resolver, root server, authoritative server, cache, IP address
+required_teaching_steps: request starts -> resolver asks hierarchy -> authoritative answer returns -> cache shortens next lookup
+forbidden_framings: one-step lookup, generic pipeline without actors, treating DNS as a database only
+```
+
+V6 QualityGate should use this skeleton deterministically:
+
+- Required core terms must appear in visible user-facing content or trace-backed step content.
+- Required teaching steps must be covered by the three Flow steps.
+- Forbidden framings and unsuitable Patterns should fail the draft or trigger regeneration.
+- Pattern choice must match the skeleton's suitable pattern set unless an explicit user request overrides it safely.
+
+Out of scope for V6:
+
+- Full internal Wiki.
+- Real-time web search as a primary generation dependency.
+- Citation-grade fact verification.
+- User-generated knowledge publishing and moderation.
+- Cross-topic long-term knowledge graph storage.
+
+Future path:
+
+1. V6: Skill Pack knowledge skeletons and deterministic accuracy checks.
+2. V6.5: Optional retrieval grounding for low-confidence or unknown topics.
+3. V7: Curated internal Wiki / Skill Memory that stores high-quality generated Blueprints and validated examples.
+
+This keeps V6 focused on the current failure mode: the model often knows the topic name but teaches it too generically. The skeleton layer forces the system to cover the essential structure before the UI is allowed to look successful.
+## 2.7 Previous Pass Summary and Repair Reduction Plan
+
+Last development pass stabilized the live generation path enough to pass the current 8-structure live sample, but it did not make raw LLM output clean enough yet.
+
+Completed in the previous pass:
+
+- Added `npm run eval:flow-live` to sample the real LLM path instead of only deterministic mock/dynamic fixtures.
+- Made topic hints run before LLM-provided structure labels, reducing drift for classification, causal, and procedure topics.
+- Made `KnowledgeBlueprint.pattern_strategy` authoritative so LLM `avoid_patterns` cannot remove required core patterns.
+- Normalized every generated step back to the exact Blueprint Pattern.
+- Added compact payload field guidance for the 10 default Pattern templates.
+- Added placeholder cleanup for unreplaced variables such as `{value}`, `{result}`, `{output1}`, `{topic}`, and generic placeholder phrases.
+
+Latest live result:
+
+```text
+8/8 cases passed
+overall: 1
+llm_success_rate: 1
+clean_schema_rate: 0.5
+schema_repair_rate: 0.5
+flow_repair_rate: 0
+repair_reliance_rate: 0.5
+```
+
+Interpretation:
+
+- The chain can recover and produce valid flows.
+- The raw generation is still too dependent on repair.
+- The next target is not `repair_reliance_rate = 0`; repair is a useful safety layer.
+- The practical target is `repair_reliance_rate <= 0.2` across repeated live runs.
+
+Repair reduction strategy:
+
+1. Do not tune the repair layer first. Tune Prompt and Blueprint constraints first.
+2. Locate which live cases depend on repair. If the 0.5 repair rate is concentrated in two structures, fix those Skill Packs or prompts instead of changing global instructions.
+3. Use the implemented repair action tags (`field_fix`, `pattern_normalize`, `placeholder_clean`, `schema_repair`, `schema_fallback`, `flow_repair`) to locate the highest-frequency failure mode before changing prompts.
+4. Report repair frequency by type, not only as one aggregate number. This is now supported by `eval:flow-live`; the next work is using the reports to tune the highest-frequency prompt/Skill Pack issue.
+5. Improve one high-frequency repair type per iteration, then rerun live eval.
+
+Desired next report format:
+
+```text
+case: linear-programming
+repair: field_fix=2, placeholder_clean=0, pattern_normalize=0
+
+case: bayes-theorem
+repair: field_fix=1, placeholder_clean=1, pattern_normalize=0
+
+summary:
+placeholder_clean: 0.10
+field_fix: 0.25
+pattern_normalize: 0.00
+repair_reliance_rate: 0.20
+```
+
+This keeps the team from saying "repair is high" without knowing what is actually broken.
 ## 3. Knowledge Structure Taxonomy
 
 V6 should first cover 6-8 high-frequency structure types, not hundreds of prebuilt concepts.

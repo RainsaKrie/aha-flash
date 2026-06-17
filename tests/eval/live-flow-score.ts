@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { generateDynamicFlow } from "../../src/lib/content/dynamic-flow-generation.ts";
+import { generateDynamicFlow, type RepairAction, type RepairActionTag } from "../../src/lib/content/dynamic-flow-generation.ts";
 import type { FlowPatternPreference } from "../../src/lib/content/flow-pattern-options.ts";
 import type { KnowledgeStructurePreference, KnowledgeStructureType } from "../../src/lib/content/knowledge-blueprint.ts";
 import { normalizeUISchema, type PatternType } from "../../src/types/schema.ts";
@@ -26,6 +26,8 @@ interface RunResult {
   validation_error?: string;
   quality_gate?: { ok: boolean; reason?: string; failures: string[] };
   repair_warnings: string[];
+  repair_actions: RepairAction[];
+  repair_action_counts: Partial<Record<RepairActionTag, number>>;
   schema_repaired: boolean;
   flow_repaired: boolean;
   repaired: boolean;
@@ -97,6 +99,45 @@ function textIncludesTopic(text: string, topic: string) {
   return text.toLowerCase().includes(topic.toLowerCase());
 }
 
+const REPAIR_ACTION_TAGS: RepairActionTag[] = [
+  "field_fix",
+  "pattern_normalize",
+  "placeholder_clean",
+  "schema_repair",
+  "schema_fallback",
+  "flow_repair",
+];
+const SCHEMA_REPAIR_TAGS = new Set<RepairActionTag>(["field_fix", "placeholder_clean", "schema_repair", "schema_fallback"]);
+const FLOW_REPAIR_TAGS = new Set<RepairActionTag>(["flow_repair", "pattern_normalize"]);
+
+function countRepairActions(actions: RepairAction[]) {
+  return actions.reduce<Partial<Record<RepairActionTag, number>>>((counts, action) => {
+    counts[action.tag] = (counts[action.tag] || 0) + 1;
+    return counts;
+  }, {});
+}
+
+function hasRepairTag(actions: RepairAction[], tags: Set<RepairActionTag>) {
+  return actions.some((action) => tags.has(action.tag));
+}
+
+function repairActionSummary(counts: Partial<Record<RepairActionTag, number>>) {
+  return REPAIR_ACTION_TAGS
+    .map((tag) => counts[tag] ? `${tag}=${counts[tag]}` : "")
+    .filter(Boolean)
+    .join(",");
+}
+
+function aggregateRepairActionCounts(results: RunResult[]) {
+  return results.reduce<Partial<Record<RepairActionTag, number>>>((totals, result) => {
+    for (const tag of REPAIR_ACTION_TAGS) totals[tag] = (totals[tag] || 0) + (result.repair_action_counts[tag] || 0);
+    return totals;
+  }, {});
+}
+
+function repairActionRate(results: RunResult[], tag: RepairActionTag) {
+  return Number(average(results.map((result) => result.repair_action_counts[tag] ? 1 : 0)).toFixed(3));
+}
 async function scoreRun(testCase: LiveFlowEvalCase, run: number): Promise<RunResult> {
   const repairWarnings: string[] = [];
   const originalError = console.error;
@@ -119,9 +160,11 @@ async function scoreRun(testCase: LiveFlowEvalCase, run: number): Promise<RunRes
 
   const patterns = getPatterns(result.flow);
   const reasons: string[] = [];
-  const schemaRepaired = repairWarnings.length > 0;
-  const flowRepaired = /repaired|validation failed|Repair failed/i.test(result.validation_error || "");
-  const repaired = schemaRepaired || flowRepaired;
+  const repairActions = result.repair_actions || [];
+  const repairActionCounts = countRepairActions(repairActions);
+  const schemaRepaired = repairWarnings.length > 0 || hasRepairTag(repairActions, SCHEMA_REPAIR_TAGS);
+  const flowRepaired = hasRepairTag(repairActions, FLOW_REPAIR_TAGS) || /repaired|validation failed|Repair failed/i.test(result.validation_error || "");
+  const repaired = schemaRepaired || flowRepaired || repairActions.length > 0;
 
   if (result.source !== "llm") reasons.push(`expected llm source, got ${result.source}`);
   if (result.failure) reasons.push(`unexpected failure state: ${result.failure.code}`);
@@ -130,7 +173,7 @@ async function scoreRun(testCase: LiveFlowEvalCase, run: number): Promise<RunRes
   for (const pattern of testCase.expectedPatterns) {
     if (!patterns.includes(pattern)) reasons.push(`missing pattern ${pattern}; got ${patterns.join(" -> ")}`);
   }
-  if (hasFlag("strict") && repaired) reasons.push(`repair relied on schema=${repairWarnings.length}, flow=${flowRepaired}`);
+  if (hasFlag("strict") && repaired) reasons.push(`repair relied on ${repairActionSummary(repairActionCounts) || `schema=${repairWarnings.length}, flow=${flowRepaired}`}`);
   if (result.flow.plays.length !== 3) reasons.push(`plays ${result.flow.plays.length}/3`);
   if (!result.flow.plays.every((play) => play.teaching_trace)) reasons.push("missing teaching_trace");
   if (!textIncludesTopic(result.flow.concept, testCase.topic)) reasons.push(`concept ${result.flow.concept} is not anchored to ${testCase.topic}`);
@@ -150,6 +193,8 @@ async function scoreRun(testCase: LiveFlowEvalCase, run: number): Promise<RunRes
     validation_error: result.validation_error,
     quality_gate: result.quality_gate ? { ok: result.quality_gate.ok, reason: result.quality_gate.reason, failures: result.quality_gate.failures } : undefined,
     repair_warnings: repairWarnings,
+    repair_actions: repairActions,
+    repair_action_counts: repairActionCounts,
     schema_repaired: schemaRepaired,
     flow_repaired: flowRepaired,
     repaired,
@@ -188,7 +233,8 @@ async function main() {
     for (let run = 1; run <= runs; run += 1) {
       const result = await scoreRun(testCase, run);
       results.push(result);
-      const repairDetails = [result.schema_repaired ? `schema=${result.repair_warnings.length}` : "", result.flow_repaired ? "flow" : ""].filter(Boolean).join(",");
+      const legacyRepairDetails = [result.schema_repaired ? `schema=${result.repair_warnings.length}` : "", result.flow_repaired ? "flow" : ""].filter(Boolean).join(",");
+      const repairDetails = repairActionSummary(result.repair_action_counts) || legacyRepairDetails;
       const repairNote = result.repaired ? `; repaired=${repairDetails || "yes"}` : "";
       const details = result.score ? result.patterns.join(" -> ") : result.reasons.join("; ");
       console.log(`${testCase.id} run ${run}/${runs}: ${result.score ? "pass" : "fail"} (${details}${repairNote})`);
@@ -202,6 +248,7 @@ async function main() {
   const flowRepairRate = Number(average(results.map((result) => (result.flow_repaired ? 1 : 0))).toFixed(3));
   const repairRate = Number(average(results.map((result) => (result.repaired ? 1 : 0))).toFixed(3));
   const failed = results.filter((result) => result.score < 1);
+  const repairActionTotals = aggregateRepairActionCounts(results);
   const reportPath = writeReport(results);
 
   console.log(`cases: ${selectedCases.length}`);
@@ -212,6 +259,8 @@ async function main() {
   console.log(`schema_repair_rate: ${schemaRepairRate}`);
   console.log(`flow_repair_rate: ${flowRepairRate}`);
   console.log(`repair_reliance_rate: ${repairRate}`);
+  console.log(`repair_action_counts: ${JSON.stringify(repairActionTotals)}`);
+  for (const tag of REPAIR_ACTION_TAGS) console.log(`repair_action_${tag}_rate: ${repairActionRate(results, tag)}`);
   console.log(`threshold: ${threshold}`);
   console.log(`failed_runs: ${failed.length ? failed.map((result) => `${result.id}#${result.run}`).join(", ") : "none"}`);
   console.log(`report: ${reportPath}`);

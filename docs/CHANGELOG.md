@@ -14,6 +14,9 @@
 - Changed knowledge-structure inference to prefer deterministic topic hints before LLM-provided structure labels, fixing drift for classification, causal, and procedure topics.
 - Added compact payload field guidance for all 10 Pattern defaults and recursive placeholder cleanup for `{value}`, `{result}`, `{output1}`, `{topic}`, and generic placeholder phrases.
 - Latest live baseline: 8/8 real LLM cases passed with `overall: 1`, `llm_success_rate: 1`, `clean_schema_rate: 0.5`, `schema_repair_rate: 0.5`, `flow_repair_rate: 0`, and `repair_reliance_rate: 0.5`; the next reliability target is reducing repair reliance, not merely passing after repair.
+- Documented the next V6 direction: internal Aha Skill Packs plus repair action tagging, with a practical repair reliance target of `<= 0.2` rather than zero repair.
+- Scoped factual accuracy for V6 to Skill Pack knowledge skeletons and deterministic QualityGate checks; full Wiki, citation-grade verification, and always-on web search remain future layers.
+- Implemented structured `repair_actions` in dynamic Flow generation and live eval, so repair dependence can now be broken down by `field_fix`, `pattern_normalize`, `placeholder_clean`, `schema_repair`, `schema_fallback`, and `flow_repair`.
 ## 2026-06-16
 
 

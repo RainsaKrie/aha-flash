@@ -612,3 +612,31 @@ Key implementation points:
 - Knowledge structure inference uses deterministic topic hints before trusting LLM-provided `knowledge_structure`; broad terms in LLM explanations should not override the user's original topic.
 - Dynamic Flow normalization enforces the exact Blueprint Pattern per step and sanitizes unreplaced placeholders such as `{value}`, `{result}`, `{output1}`, and generic placeholder phrases before QualityGate evaluation.
 - `npm run eval:flow-live` samples the real LLM path and separates schema repair from flow/quality repair, so V6 can track both structural validity and teaching reliability.
+### V6 Skill Pack Direction
+
+The next V6 reliability layer should split the current universal generation prompt into internal Aha Skill Packs. A Skill Pack is a small teaching contract for a knowledge structure or Pattern family, not prebuilt lesson content.
+
+Runtime should become:
+
+```text
+Topic -> ConceptPlan -> selected Skill Pack -> Blueprint/Pattern recipe -> Flow generation -> skill-specific QualityGate
+```
+
+Implementation principles:
+
+- Load only the relevant knowledge-structure recipe and Pattern recipes for the current topic.
+- Keep Skill Packs upstream of generation; keep deterministic QualityGate downstream of generation.
+- `generateDynamicFlow` returns structured `repair_actions` (`field_fix`, `pattern_normalize`, `placeholder_clean`, `schema_repair`, `schema_fallback`, `flow_repair`) so live eval can identify which prompt or Skill Pack needs work.
+- The repair layer should remain a safety net. The target is lowering repair reliance to about 0.2, not deleting repair entirely.
+### V6 Accuracy Grounding Scope
+
+V6 should solve factual reliability with compact Skill Pack knowledge skeletons, not with a full Wiki or always-on web search.
+
+A knowledge skeleton should define required core terms, required teaching steps, common misconceptions, forbidden framings, suitable Patterns, unsuitable Patterns, and a few canonical examples for one knowledge structure or high-risk topic family.
+
+The skeleton should be used in two places:
+
+1. Before generation: constrain the Blueprint and Pattern recipe.
+2. After generation: let deterministic QualityGate check visible content against required terms, required steps, forbidden framings, and unsuitable Patterns.
+
+Network search and a curated Wiki are future layers. They should not be a hard dependency for V6 free generation.
