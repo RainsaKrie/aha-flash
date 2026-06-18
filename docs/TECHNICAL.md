@@ -609,7 +609,7 @@ Key implementation points:
 - `QualityGate` remains deterministic-first. It checks visible step content, schema validity, pattern fit, avoided patterns, placeholder terms, Blueprint step coverage, and trace alignment.
 - Trace fields are for debugging and eval audit. They must not be used as a substitute for visible user-facing teaching copy.
 - No-key or low-quality dynamic generation returns an honest failure state while still carrying enough draft/debug information for diagnosis.
-- Knowledge structure inference uses deterministic topic hints before trusting LLM-provided `knowledge_structure`; broad terms in LLM explanations should not override the user's original topic.
+- Knowledge structure inference uses deterministic topic hints before trusting LLM-provided `knowledge_structure`; broad terms in LLM explanations should not override the user's original topic. Broad hints are intentionally kept narrow where needed, e.g. `http request` for system flow so `HTTP status codes` can remain a classification task.
 - Dynamic Flow normalization enforces the exact Blueprint Pattern per step and sanitizes unreplaced placeholders such as `{value}`, `{result}`, `{output1}`, and generic placeholder phrases before QualityGate evaluation.
 - Dynamic Flow schema repair now normalizes optional `visual_asset` and `next_concepts` before validation, so an invalid mood or advisory field cannot force a good payload into fallback.
 - Dynamic Flow LLM calls use a 45s timeout and one retry for transient provider failures.
@@ -629,9 +629,9 @@ Implementation principles:
 
 - Load only the relevant knowledge-structure recipe and Pattern recipes for the current topic.
 - Keep Skill Packs upstream of generation; keep deterministic QualityGate downstream of generation.
-- First implementation exists in `src/lib/content/skill-packs.ts`: 8 internal skeletons provide required core terms, required teaching steps, forbidden framings, suitable Patterns, and unsuitable Patterns. `KnowledgeBlueprint` carries the selected skeleton id and QualityGate blocks drafts that miss required skeleton terms or hit forbidden framings.
+- First implementation exists in `src/lib/content/skill-packs.ts`: 8 internal skeletons provide required core terms, required teaching steps, forbidden framings, suitable Patterns, and unsuitable Patterns. `KnowledgeBlueprint` carries the selected skeleton id and QualityGate blocks drafts that miss required skeleton terms or hit forbidden framings. `eval:blueprint` now covers the Stage C target of 80 fixed cases: 10 topics for each supported structure, with the current baseline at `overall: 1`. Comparison and causal skeletons include natural-language anchors such as signal, indicator, transmission mechanism, result, effect, and final value so deterministic checks match real teaching copy.
 - `generateDynamicFlow` returns structured `repair_actions` (`field_fix`, `pattern_normalize`, `placeholder_clean`, `schema_repair`, `schema_fallback`, `flow_repair`) so live eval can identify which prompt or Skill Pack needs work.
-- The repair layer remains a safety net. The practical target is keeping repair reliance at or below 0.2 while expanding coverage. Latest full 8x3 live baseline reached `clean_schema_rate: 1`, `schema_repair_rate: 0`, `schema_fallback_rate: 0`, `flow_repair_rate: 0`, and `repair_reliance_rate: 0`; all 24 sampled runs used the LLM path with no repair actions.
+- The repair layer remains a safety net. The practical target is keeping repair reliance at or below 0.2 while expanding coverage. The previous full 8x3 live baseline reached `repair_reliance_rate: 0`; the latest post-Stage-C 8x1 smoke remains green with `overall: 1`, `llm_success_rate: 1`, `schema_repair_rate: 0`, and `repair_reliance_rate: 0.125`.
 ### V6 Accuracy Grounding Scope
 
 V6 should solve factual reliability with compact Skill Pack knowledge skeletons, not with a full Wiki or always-on web search.

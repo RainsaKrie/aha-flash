@@ -126,6 +126,8 @@ Current V6 reliability work is partially implemented and verified:
 - Dynamic Flow generation has a 45s LLM timeout, deterministic `visual_asset` / `next_concepts` normalization, exact Blueprint Pattern-order instructions, and a no-brace natural-language contract for slider explanations.
 - Latest full live baseline: 8 knowledge structures x 3 runs passed with `overall: 1`, `llm_success_rate: 1`, `clean_schema_rate: 1`, `schema_repair_rate: 0`, `schema_fallback_rate: 0`, `flow_repair_rate: 0`, `repair_reliance_rate: 0`; all 24 sampled runs used the LLM path with no mock fallback and no repair actions.
 - Added the first internal Aha Skill Pack skeleton layer in `src/lib/content/skill-packs.ts`, covering 8 representative knowledge families. `KnowledgeBlueprint` now carries `skill_skeleton_id`, required core terms, required teaching steps, and forbidden framings, and QualityGate checks these deterministically.
+- Expanded `eval:blueprint` to the Stage C target: 80 fixed cases, 10 topics per supported knowledge structure, with `overall: 1`. The expansion keeps existing Chinese hints and adds broader English topic coverage such as diet problem, TCP handshake, hypothesis testing, Renaissance, SQL vs NoSQL, HTTP status codes, greenhouse effect, and dynamic programming.
+- Added natural-language anchor synonyms for comparison and causal Skill Packs, so QualityGate recognizes user-facing teaching phrases such as signal, indicator, transmission mechanism, result, effect, and final value instead of overfitting to internal terms like dimension/outcome. Latest post-expansion 8x1 live smoke: `overall: 1`, `llm_success_rate: 1`, `schema_repair_rate: 0`, `repair_reliance_rate: 0.125`, below the V6 release threshold of `0.2`.
 
 Remaining V6 work:
 
@@ -887,12 +889,12 @@ Implemented V6 reliability slices:
 - Explore failure UI offers retry, topic change, curated examples, and structure-choice retry paths.
 - `preferredStructure` now flows from `/explore` to `/api/flow` to ConceptPlan, Blueprint, fallback generation, and dynamic Flow normalization.
 - `TeachingTrace` is attached to generated plays for dev/eval audit: Blueprint goal, covered terms, intended user action, success criteria, and recommended Pattern.
-- Eval coverage now includes `eval:blueprint` with 40 Stage B structure cases: 5 topics for each of the 8 supported knowledge structures. It also includes `eval:flow-dynamic` with 9 no-key dynamic fallback / honest-failure cases.
+- Eval coverage now includes `eval:blueprint` with 80 Stage C structure cases: 10 topics for each of the 8 supported knowledge structures. It also includes `eval:flow-dynamic` with 9 no-key dynamic fallback / honest-failure cases.
 - Flow completion branches now prefer Blueprint-derived follow-ups. For example, optimization topics extend toward 单纯形法、对偶问题、敏感性分析 instead of generic mechanism/boundary/application branches.
 - Explore now shows a compact pre-flow decomposition preview from the production-safe Flow preview payload: knowledge structure, core terms, and the three-step interaction path appear before entering the generated Flow.
-- Internal Aha Skill Pack skeletons now cover 8 representative families and feed deterministic Blueprint/QualityGate checks for required terms, forbidden framings, and unsuitable Patterns.
+- Internal Aha Skill Pack skeletons now cover 8 representative families and feed deterministic Blueprint/QualityGate checks for required terms, forbidden framings, and unsuitable Patterns. The Stage C expansion also narrowed the `system_process` HTTP hint to `http request`, so `HTTP status codes` correctly remains a `classification_rule` topic.
 
 Remaining V6 work:
 
 - Expand Blueprint eval from 40 to 80 cases before calling V6 stable.
-- Full 8-structure `eval:flow-live -- --runs=3` baseline is complete at 24/24 LLM runs with 0 repair actions; future work should keep it green while expanding Skill Pack skeleton coverage.
+- Full 8-structure `eval:flow-live -- --runs=3` baseline was previously complete at 24/24 LLM runs with 0 repair actions. After the Stage C eval expansion, the latest 8x1 smoke remains green with `repair_reliance_rate: 0.125`; future work should keep the rate <= 0.2 while expanding Skill Pack skeleton coverage.

@@ -5,6 +5,15 @@
 ---
 
 
+## 2026-06-18
+
+### V6 Blueprint Stage C eval expansion
+- Expanded `tests/fixtures/blueprint-cases.json` from 40 to 80 cases: 10 topics for each supported knowledge structure.
+- Added broader deterministic hints and Skill Pack skeleton hints while preserving existing Chinese topic hints, so Chinese free input coverage is not weakened.
+- Narrowed the system-process HTTP hint from generic `http` to `http request`, fixing the `HTTP status codes` misclassification into system flow.
+- `npm run eval:blueprint` now reports 80 cases with `overall: 1`.
+- Added comparison/causal natural-language anchors for QualityGate, reducing post-expansion live smoke to `overall: 1`, `llm_success_rate: 1`, `schema_repair_rate: 0`, and `repair_reliance_rate: 0.125` on an 8x1 sample.
+
 ## 2026-06-17
 
 ### V6 live generation reliability pass
