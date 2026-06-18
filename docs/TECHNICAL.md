@@ -558,7 +558,7 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 |---|---|---|
 | 动态 Flow 生成 | `/explore` -> `POST /api/flow` | 用户输入任意 topic，并选择 `AI 推荐` 或指定 Pattern；服务端返回三关 `KnowledgeFlow`。 |
 | 动态 Flow 播放 | `/flow/custom?draftId=...` | Explore 将生成结果写入 sessionStorage，Custom Flow 页读取并复用 `KnowledgeFlowPlayer`。 |
-| Follow-up 延伸 | Flow 完成态 -> `POST /api/flow` | 动态 Flow 自带 `follow_ups`，点击 AI 延伸方向会生成下一组三关。 |
+| Follow-up 延伸 | Flow 完成态 -> `POST /api/flow` | 动态 Flow 优先使用 Blueprint-derived `follow_ups`，点击 AI 延伸方向会生成下一组三关。 |
 | 互动组件生成 | `/studio` -> `/api/chat` | 使用 DeepSeek，经 Tool Calling 优先生成 10 类 Pattern Schema；失败进入 JSON fallback；最终 mock fallback 防崩。 |
 | Showcase Flow 生成 | `/flow/[flowId]` -> `GET /api/flow` | `bayes-starter`、`industrial-revolution`、`inflation-deflation` 会请求 LLM 生成三关 Flow，失败回退本地 Flow。 |
 | 状态更新 | `/api/chat` + `/api/state` | 规则优先更新当前线程、知识资产和轻量状态；不是每一步都调用 LLM。 |
@@ -569,7 +569,7 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 |---|---|---|
 | 动态 Flow fallback | `dynamic-flow-generation.ts` 按用户 topic 包装通用三关 Flow | 无 key 或 LLM 不稳定时仍保持“输入什么就学什么”的产品承诺。 |
 | Explore 示例卡片 | `getShowcaseFlows()` 静态精选 5 个起点 | 作为低风险示例入口，不再代表系统能力上限。 |
-| 旧 curated follow-up | `getFlowFollowUps()` 静态映射 | 仅作为旧 Flow 或无 `flow.follow_ups` 时的 fallback。 |
+| 旧 curated follow-up | `getFlowFollowUps()` 静态映射 | 仅作为 curated Flow 或动态 Flow 无可用 Blueprint follow-up 时的 fallback。 |
 | Hub 图鉴 | localStorage + `/api/state` | 记录真实本机完成路径，但不做账号级持久化。 |
 | 视觉资源 | `visual-assets.ts` 本地 registry | `visual_asset` 是增强提示，不调用外部图像生成。 |
 
@@ -613,6 +613,7 @@ Key implementation points:
 - Dynamic Flow normalization enforces the exact Blueprint Pattern per step and sanitizes unreplaced placeholders such as `{value}`, `{result}`, `{output1}`, and generic placeholder phrases before QualityGate evaluation.
 - Dynamic Flow schema repair now normalizes optional `visual_asset` and `next_concepts` before validation, so an invalid mood or advisory field cannot force a good payload into fallback.
 - Dynamic Flow LLM calls use a 45s timeout and one retry for transient provider failures.
+- Dynamic Flow completion branches are generated from `KnowledgeBlueprint.structure_type`, `core_terms`, and `teaching_sequence` before considering model-provided or static follow-ups, so completion continues the same knowledge path instead of falling back to generic branches.
 - `npm run eval:flow-live` samples the real LLM path and separates schema repair from flow/quality repair, so V6 can track both structural validity and teaching reliability.
 ### V6 Skill Pack Direction
 

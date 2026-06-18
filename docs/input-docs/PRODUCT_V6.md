@@ -588,7 +588,6 @@ Acceptance:
 
 - Add compact pre-flow "拆解路径" preview.
 - Add user retry/choose-structure controls.
-- Improve flow completion follow-up generation using Blueprint relation, not generic follow_ups.
 
 ## 8. Non-goals
 
@@ -682,7 +681,7 @@ Acceptance:
 
 A Flow should not end by returning the user to the homepage. Completion should reveal 2-3 next branches based on the just-learned concept.
 
-V6 follow-ups should come from Blueprint relationships, not generic fallback copy.
+V6 follow-ups now come from Blueprint relationships first, with generic fallback copy only as a safety net.
 
 Example after learning linear programming:
 
@@ -705,8 +704,7 @@ Recommended order:
 
 1. Build Blueprint and QualityGate.
 2. Bind loading states to real backend stages.
-3. Upgrade follow-up branches to use Blueprint relations.
-4. Refine homepage copy to make free generation the obvious main action.
+3. Refine homepage copy to make free generation the obvious main action.
 
 ### 11.4 30-second Test
 
@@ -890,10 +888,10 @@ Implemented V6 reliability slices:
 - `preferredStructure` now flows from `/explore` to `/api/flow` to ConceptPlan, Blueprint, fallback generation, and dynamic Flow normalization.
 - `TeachingTrace` is attached to generated plays for dev/eval audit: Blueprint goal, covered terms, intended user action, success criteria, and recommended Pattern.
 - Eval coverage now includes `eval:blueprint` with 40 Stage B structure cases: 5 topics for each of the 8 supported knowledge structures. It also includes `eval:flow-dynamic` with 9 no-key dynamic fallback / honest-failure cases.
+- Flow completion branches now prefer Blueprint-derived follow-ups. For example, optimization topics extend toward 单纯形法、对偶问题、敏感性分析 instead of generic mechanism/boundary/application branches.
 
 Remaining V6 work:
 
 - Expand Blueprint eval from 40 to 80 cases before calling V6 stable.
 - Full 8-structure `eval:flow-live -- --runs=3` baseline is complete at 24/24 LLM runs with 0 repair actions; future work should keep it green while expanding Skill Pack skeleton coverage.
-- Improve generated follow-up branches so they use Blueprint relations instead of generic fallback relations.
 - Add a compact pre-flow decomposition preview once reliability is stable enough to expose it as product UX.

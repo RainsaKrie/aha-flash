@@ -899,7 +899,7 @@ function makeFallbackFlowFromPlan(
     summary: `你已经把${plan.topic}拆成了可以继续探索的理解路径。`,
     concepts: plan.grounding_terms.slice(0, 5),
     plays: patterns.map((pattern, index) => attachBlueprintStepCue(makeFallbackPlay(plan.topic, pattern, index, plan.grounding_terms), blueprint.teaching_sequence[index])),
-    follow_ups: makeFallbackFollowUps(plan.topic),
+    follow_ups: makeBlueprintFollowUps(blueprint),
     source: "generated",
   };
 }
@@ -1136,6 +1136,73 @@ function makeFallbackFollowUps(topic: string): FollowUpTopic[] {
   ];
 }
 
+function makeFollowUp(id: string, title: string, concept: string, hook: string, relation: string, suggestedPattern: PatternType | "auto"): FollowUpTopic {
+  return { id, title, concept, hook, relation, kind: "ai_seed", suggestedPattern };
+}
+
+function pickBlueprintTerm(blueprint: KnowledgeBlueprint, index: number, fallback: string) {
+  return cleanText(blueprint.core_terms[index], fallback, 18);
+}
+
+function makeBlueprintFollowUps(blueprint: KnowledgeBlueprint): FollowUpTopic[] {
+  const topic = blueprint.topic;
+  const first = pickBlueprintTerm(blueprint, 0, topic);
+  const second = pickBlueprintTerm(blueprint, 1, topic);
+  const third = pickBlueprintTerm(blueprint, 2, topic);
+
+  switch (blueprint.structure_type) {
+    case "optimization_model":
+      return [
+        makeFollowUp("blueprint-optimization-simplex", "继续看单纯形法", "单纯形法", "看看最优解为什么常常出现在可行域顶点。", `从${topic}的可行域走向求解步骤`, "process_timeline"),
+        makeFollowUp("blueprint-optimization-dual", "换到对偶问题", "对偶问题", "从资源价格的角度重新理解同一个优化问题。", `从${first}走向约束背后的影子价格`, "comparison"),
+        makeFollowUp("blueprint-optimization-sensitivity", "试试敏感性分析", "敏感性分析", "看看约束或目标系数变化后，最优解还稳不稳。", `从${second}走向参数变化后的最优性`, "parameter_explore"),
+      ];
+    case "system_process":
+      return [
+        makeFollowUp("blueprint-system-failure", "追踪失败路径", `${topic}的失败路径`, "看看哪个模块出错会让整条链路卡住。", `从${first}走向系统边界与异常`, "system_builder"),
+        makeFollowUp("blueprint-system-cache", "看缓存怎么帮忙", `${topic}的缓存机制`, "把重复请求、命中和失效串起来。", `从${second}走向加速与复用`, "process_timeline"),
+        makeFollowUp("blueprint-system-observe", "做一次链路诊断", `${topic}的链路诊断`, "用一次故障排查检查你是否真的懂流程。", `从${third}走向可观测性`, "knowledge_check"),
+      ];
+    case "probabilistic_reasoning":
+      return [
+        makeFollowUp("blueprint-probability-base-rate", "看看基础率", "基础率谬误", "先验被忽略时，判断会怎样跑偏？", `从${first}走向常见误判`, "probability"),
+        makeFollowUp("blueprint-probability-expected", "接到期望值", "期望值", "把不确定结果换成可比较的长期平均。", `从${second}走向决策收益`, "parameter_explore"),
+        makeFollowUp("blueprint-probability-test", "试试 A/B 测试", "A/B 测试", "用证据强度决定哪个方案更可信。", `从${third}走向真实实验`, "knowledge_check"),
+      ];
+    case "historical_change":
+      return [
+        makeFollowUp("blueprint-history-driver", "拆关键驱动力", `${topic}的驱动力`, "把触发因素、加速器和背景条件分开。", `从${first}走向变化原因`, "classification_sort"),
+        makeFollowUp("blueprint-history-branch", "换一条历史分支", `${topic}的转折点`, "如果关键条件不同，后果会怎样变化？", `从${second}走向转折路径`, "narrative_branch"),
+        makeFollowUp("blueprint-history-effect", "看长期后果", `${topic}的长期影响`, "把短期事件接到制度、城市和生活变化。", `从${third}走向后续影响`, "process_timeline"),
+      ];
+    case "comparison_frame":
+      return [
+        makeFollowUp("blueprint-comparison-boundary", "看适用边界", `${topic}的适用边界`, "什么时候该选 A，什么时候该选 B？", `从${first}走向边界判断`, "comparison"),
+        makeFollowUp("blueprint-comparison-case", "测一个反例", `${topic}的易错场景`, "用反例检查你有没有把差异看反。", `从${second}走向误区识别`, "knowledge_check"),
+        makeFollowUp("blueprint-comparison-decision", "放进真实决策", `${topic}的选择策略`, "把对比维度变成选择标准。", `从${third}走向行动选择`, "classification_sort"),
+      ];
+    case "classification_rule":
+      return [
+        makeFollowUp("blueprint-classification-boundary", "专攻边界样本", `${topic}的边界样本`, "看最容易混淆的样本应该归到哪里。", `从${first}走向边界规则`, "knowledge_check"),
+        makeFollowUp("blueprint-classification-anchor", "记住典型样本", `${topic}的典型样本`, "用几个锚点把分类规则记牢。", `从${second}走向记忆锚点`, "concept_memory"),
+        makeFollowUp("blueprint-classification-rule", "重写分类规则", `${topic}的分类规则`, "把直觉归类改成可复用的判断标准。", `从${third}走向稳定规则`, "classification_sort"),
+      ];
+    case "causal_mechanism":
+      return [
+        makeFollowUp("blueprint-causal-feedback", "追一圈反馈", `${topic}的反馈回路`, "看看结果如何反过来改变下一轮输入。", `从${first}走向反馈机制`, "system_builder"),
+        makeFollowUp("blueprint-causal-intervention", "找干预点", `${topic}的干预点`, "调一个因素，看看结果怎么变。", `从${second}走向可控变量`, "parameter_explore"),
+        makeFollowUp("blueprint-causal-scenario", "放进真实场景", `${topic}的真实场景`, "用一个场景验证因果链是否站得住。", `从${third}走向应用检验`, "simulation_play"),
+      ];
+    case "procedure_algorithm":
+      return [
+        makeFollowUp("blueprint-procedure-complexity", "看复杂度", `${topic}的复杂度`, "同样的规则，数据变大后成本怎么变？", `从${first}走向效率判断`, "parameter_explore"),
+        makeFollowUp("blueprint-procedure-edge", "测边界情况", `${topic}的边界情况`, "什么时候流程应该停，什么时候会出错？", `从${second}走向终止条件`, "knowledge_check"),
+        makeFollowUp("blueprint-procedure-trace", "手动走一遍", `${topic}的执行轨迹`, "一步步推进状态，看看规则如何重复生效。", `从${third}走向过程模拟`, "simulation_play"),
+      ];
+    default:
+      return makeFallbackFollowUps(topic);
+  }
+}
 function makeFallbackFlow(topicInput: string, preferredPattern: FlowPatternPreference): KnowledgeFlow {
   const topic = cleanTopic(topicInput);
   const patterns = fallbackPatternChain(preferredPattern);
@@ -1412,8 +1479,8 @@ function repairSchema(
 
   return validated;
 }
-function normalizeFollowUps(value: unknown, topic: string): FollowUpTopic[] {
-  const fallback = makeFallbackFollowUps(topic);
+function normalizeFollowUps(value: unknown, topic: string, blueprint?: KnowledgeBlueprint): FollowUpTopic[] {
+  const fallback = blueprint ? makeBlueprintFollowUps(blueprint) : makeFallbackFollowUps(topic);
   if (!Array.isArray(value)) return fallback;
   const followUps = value.slice(0, 3).map((item, index) => {
     const record = asRecord(item) || {};
@@ -1432,7 +1499,7 @@ function normalizeFollowUps(value: unknown, topic: string): FollowUpTopic[] {
   });
   const merged: FollowUpTopic[] = [];
   const seen = new Set<string>();
-  for (const item of [...followUps, ...fallback]) {
+  for (const item of [...fallback, ...followUps]) {
     const key = `${item.concept}-${item.suggestedPattern}`.toLowerCase().replace(/[^a-z0-9]+/g, "");
     if (!key || seen.has(key)) continue;
     seen.add(key);
@@ -1522,7 +1589,7 @@ function normalizeGeneratedFlow(
       summary: cleanText(candidate.summary, fallback.summary, 100),
       concepts: concepts.length > 0 ? concepts : fallback.concepts,
       plays,
-      follow_ups: normalizeFollowUps(candidate.follow_ups, topic),
+      follow_ups: normalizeFollowUps(candidate.follow_ups, topic, blueprint || undefined),
       source: "generated",
     } satisfies KnowledgeFlow,
     groundingTerms,
@@ -1597,6 +1664,7 @@ function buildDynamicSystemPrompt(
     "- Do not use ConceptPlan.avoid_patterns.",
     "- Keep UI text concise Simplified Chinese.",
     "- Never use raw placeholders, HTML, Markdown, template variables, braces, {value}, {result}, {output1}, or literal placeholder phrases like key variable / similar concept / generic mechanism as educational content.",
+    "- follow_ups must extend the KnowledgeBlueprint: connect to a next concept, boundary case, method, or prerequisite from the same knowledge structure; avoid generic branches like real application / key mechanism unless they name the specific relation.",
     "- Pattern choice must match knowledge structure: deterministic optimization/planning/constraints should avoid probability unless the topic itself is about uncertainty.",
     "- Each step should ask the user to do something: guess, choose, sort, connect, slide, compare, or simulate.",
     "- Do not invent payload field names. Use only the required fields listed above for the selected pattern/template.",

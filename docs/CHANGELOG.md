@@ -19,6 +19,7 @@
 - Implemented structured `repair_actions` in dynamic Flow generation and live eval, so repair dependence can now be broken down by `field_fix`, `pattern_normalize`, `placeholder_clean`, `schema_repair`, `schema_fallback`, and `flow_repair`.
 - Added a 45s timeout to dynamic Flow LLM calls so live eval and user generation do not hang indefinitely on provider stalls.
 - Hardened dynamic Flow generation with exact Blueprint Pattern order in both user and repair prompts, probability payload numeric coercion, narrower placeholder detection, small topic core-term skeletons, and a no-brace `parameter_explore` explanation contract; full 8x3 live sample now holds at `repair_reliance_rate=0`, below the V6 target of 0.2.
+- Upgraded dynamic Flow completion branches to prefer Blueprint-derived follow-ups. Generated/fallback flows now extend by structure-specific next concepts such as simplex method / dual problem / sensitivity analysis for optimization topics, while old static `getFlowFollowUps()` remains only as a fallback for curated flows.
 ## 2026-06-16
 
 

@@ -14,6 +14,7 @@ interface DynamicFlowEvalCase {
   requiredTerms?: string[];
   bannedTerms?: string[];
   bannedPatterns?: PatternType[];
+  requiredFollowUpTerms?: string[];
 }
 
 interface CaseResult {
@@ -32,7 +33,7 @@ const cases: DynamicFlowEvalCase[] = [
   { id: "dynamic-parameter-utility", topic: "marginal utility", preferredPattern: "parameter_explore", expectedPattern: "parameter_explore" },
   { id: "dynamic-agent-grounding", topic: "Agent", preferredPattern: "auto", expectedConceptIncludes: "Agent", bannedTerms: ["相近概念", "专用兜底"] },
   { id: "dynamic-kubernetes-operator", topic: "Kubernetes operator", preferredPattern: "auto", expectedConceptIncludes: "Kubernetes operator", bannedTerms: ["相近概念"] },
-  { id: "dynamic-linear-programming-grounding", topic: "linear programming", preferredPattern: "auto", expectedConceptIncludes: "linear programming", bannedPatterns: ["probability"] },
+  { id: "dynamic-linear-programming-grounding", topic: "linear programming", preferredPattern: "auto", expectedConceptIncludes: "linear programming", bannedPatterns: ["probability"], requiredFollowUpTerms: ["单纯形法", "对偶问题", "敏感性分析"] },
   { id: "dynamic-structure-override-comparison", topic: "Agent", preferredPattern: "auto", preferredStructure: "comparison_frame", expectedStructure: "comparison_frame", expectedPattern: "comparison", expectedConceptIncludes: "Agent" },
 
 ];
@@ -73,6 +74,10 @@ async function scoreCase(testCase: DynamicFlowEvalCase): Promise<CaseResult> {
   if (!flow.concept.toLowerCase().includes(expectedConcept.toLowerCase())) failures.push(`concept ${flow.concept} is not anchored to ${expectedConcept}`);
   if (!flow.title.toLowerCase().includes(expectedConcept.toLowerCase())) failures.push("title is not anchored to topic");
   if (!flow.follow_ups || flow.follow_ups.length < 2) failures.push("missing follow_ups");
+  const followUpText = JSON.stringify(flow.follow_ups || []);
+  for (const term of testCase.requiredFollowUpTerms || []) {
+    if (!followUpText.includes(term)) failures.push(`missing follow-up term ${term}`);
+  }
 
   const flowText = JSON.stringify(flow);
   for (const term of testCase.requiredTerms || []) {
