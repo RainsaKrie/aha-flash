@@ -995,16 +995,32 @@ Knowledge structure preference: ${preferredStructure}
 ${previousOutput.slice(0, 3000)}`;
 }
 
-function buildFlowUserPrompt(topic: string, plan: ConceptPlan) {
-  return `根据下面的 ConceptPlan 生成 exactly 3 个互动关卡 Flow。不得偏离计划。
-ConceptPlan:
-${JSON.stringify(plan, null, 2)}
+function patternOrderInstruction(blueprint: KnowledgeBlueprint | undefined, preferredPattern: FlowPatternPreference) {
+  const sequence = blueprint ? selectBlueprintPatternStrategy(blueprint, preferredPattern).slice(0, 3) : [];
+  if (sequence.length !== 3) return "";
+  return `plays[0].schema.pattern="${sequence[0]}", plays[1].schema.pattern="${sequence[1]}", plays[2].schema.pattern="${sequence[2]}". Do not substitute another pattern.`;
+}
 
-生成要求：
-- flow.concept 必须是 "${topic}"。
-- plays 的 schema.pattern 必须优先使用 recommended_patterns，不得使用 avoid_patterns。
-- 每一关必须覆盖 grounding_terms，并对应 learning_path 的一个阶段。
-- 不要把定义塞进标题。`;
+function buildFlowUserPrompt(
+  topic: string,
+  plan: ConceptPlan,
+  blueprint?: KnowledgeBlueprint,
+  preferredPattern: FlowPatternPreference = "auto",
+) {
+  const orderRule = patternOrderInstruction(blueprint, preferredPattern);
+  return [
+    "Generate exactly 3 interactive Flow plays from the ConceptPlan and KnowledgeBlueprint. Output JSON only.",
+    "Topic: " + topic,
+    "ConceptPlan:",
+    JSON.stringify(plan, null, 2),
+    orderRule ? "Pattern order rule: " + orderRule : "",
+    "Requirements:",
+    "- flow.concept must be \"" + topic + "\".",
+    "- Every play must use concrete grounding_terms in visible user-facing text.",
+    "- Each play must map to the matching learning_path and Blueprint step.",
+    "- Do not use ConceptPlan.avoid_patterns.",
+    "- Do not put long definitions into titles.",
+  ].filter(Boolean).join("\n");
 }
 
 async function generateConceptPlan(
@@ -1056,16 +1072,19 @@ function buildRepairUserPrompt(
   reason: string,
   previousOutput: string,
   plan?: ConceptPlan,
+  blueprint?: KnowledgeBlueprint,
 ) {
   const preferred = preferredPattern === "auto" ? "AI recommends patterns" : "User requires core pattern: " + preferredPattern;
   const clippedOutput = previousOutput.slice(0, 6000);
   const planBlock = plan ? "\nConceptPlan, follow it exactly:\n" + JSON.stringify(plan, null, 2) + "\n" : "";
+  const orderRule = patternOrderInstruction(blueprint, preferredPattern);
   return [
     "The previous Flow JSON failed validation. Repair it and output valid JSON only.",
     "Topic: " + topic,
     "Pattern preference: " + preferred,
     "Failure reason: " + reason,
     planBlock,
+    orderRule ? "Exact pattern order: " + orderRule : "",
     "Rules:",
     "- Keep flow.concept equal to the user topic.",
     "- Generate exactly 3 plays.",
@@ -1077,7 +1096,7 @@ function buildRepairUserPrompt(
     "- The visible copy must teach the KnowledgeBlueprint core_terms, not merely mention the topic.",
     "- Do not use patterns listed in ConceptPlan.avoid_patterns.",
     "- If the user selected a pattern, at least one play.schema.pattern must equal it.",
-    "- Do not use placeholder copy such as similar concept, key variable, mechanism, result, output1, result, or {value}.",
+    "- Do not use raw placeholder tokens such as similar concept, generic mechanism, output1, {value}, or {result}.",
     "- User-facing text should be concise Simplified Chinese.",
     "Previous output, for repair reference only:",
     clippedOutput,
@@ -1212,21 +1231,41 @@ function normalizePayloadTitle(payload: unknown, topic: string) {
   };
 }
 
+function coercePayloadNumber(value: unknown, fallback: number) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const match = value.match(/-?\d+(?:\.\d+)?/);
+    if (match) {
+      const next = Number(match[0]);
+      if (Number.isFinite(next)) return next;
+    }
+  }
+  return fallback;
+}
+
 function normalizeProbabilityPayload(payload: unknown, topic: string) {
   const record = asRecord(normalizePayloadTitle(payload, topic));
   if (!record || !Array.isArray(record.pool)) return record || payload;
-  const pool = record.pool.map((item) => {
+  const fallbackValues = [90, 55, 20];
+  const pool = record.pool.map((item, index) => {
     const itemRecord = asRecord(item) || {};
     return {
       ...itemRecord,
-      probability: typeof itemRecord.probability === "number" && Number.isFinite(itemRecord.probability) ? itemRecord.probability : 0,
+      probability: coercePayloadNumber(itemRecord.probability, 0),
+      value: coercePayloadNumber(itemRecord.value, fallbackValues[index] ?? Math.max(10, 90 - index * 20)),
     };
   });
   const total = pool.reduce((sum, item) => sum + Math.max(0, item.probability), 0);
   const normalizedPool = total > 1.5
     ? pool.map((item) => ({ ...item, probability: total > 0 ? Math.max(0, item.probability) / total : 0 }))
     : pool;
-  return { ...record, pool: normalizedPool };
+  return {
+    ...record,
+    option_cost: coercePayloadNumber(record.option_cost, 10),
+    strike_price: coercePayloadNumber(record.strike_price, 60),
+    pulls_per_try: Math.max(1, Math.round(coercePayloadNumber(record.pulls_per_try, 1))),
+    pool: normalizedPool,
+  };
 }
 
 function addRepairAction(
@@ -1627,7 +1666,7 @@ export async function generateDynamicFlow(
     const result = await retryGenerateText({
       model,
       system,
-      messages: [{ role: "user", content: buildFlowUserPrompt(topic, plan) }],
+      messages: [{ role: "user", content: buildFlowUserPrompt(topic, plan, blueprint, preferredPattern) }],
     });
     const parsed = parseJson(result.text);
     const normalized = normalizeGeneratedFlow(parsed, topic, preferredPattern, plan, preferredStructure);
@@ -1653,7 +1692,7 @@ export async function generateDynamicFlow(
     const repair = await retryGenerateText({
       model,
       system,
-      messages: [{ role: "user", content: buildRepairUserPrompt(topic, preferredPattern, repairReason, result.text, plan) }],
+      messages: [{ role: "user", content: buildRepairUserPrompt(topic, preferredPattern, repairReason, result.text, plan, blueprint) }],
     });
     const repaired = normalizeGeneratedFlow(parseJson(repair.text), topic, preferredPattern, plan, preferredStructure);
     const repairedActions = [...(normalized.repair_actions || [])];

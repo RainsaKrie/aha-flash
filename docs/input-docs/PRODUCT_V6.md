@@ -124,7 +124,7 @@ Current V6 reliability work is partially implemented and verified:
 - Normalization removes unreplaced placeholders such as `{value}`, `{result}`, `{output1}`, `{topic}`, and generic English placeholders before QualityGate scoring.
 - `repair_actions` now tags normalization and repair events as `field_fix`, `pattern_normalize`, `placeholder_clean`, `schema_repair`, `schema_fallback`, or `flow_repair`; `eval:flow-live` reports per-tag counts and rates.
 - Dynamic Flow generation has a 45s LLM timeout, deterministic `visual_asset` / `next_concepts` normalization, exact Blueprint Pattern-order instructions, and a no-brace natural-language contract for slider explanations.
-- Latest full live baseline: 8 knowledge structures x 3 runs passed with `overall: 1`, `llm_success_rate: 1`, `clean_schema_rate: 0.958`, `schema_repair_rate: 0.042`, `schema_fallback_rate: 0.042`, `flow_repair_rate: 0.042`, `repair_reliance_rate: 0.083`; remaining repairs were one Bayes probability schema fallback and one industrial-revolution pattern normalization.
+- Latest full live baseline: 8 knowledge structures x 3 runs passed with `overall: 1`, `llm_success_rate: 1`, `clean_schema_rate: 0.958`, `schema_repair_rate: 0.042`, `schema_fallback_rate: 0`, `flow_repair_rate: 0`, `repair_reliance_rate: 0.042`; remaining repair action was one `placeholder_clean`, with `pattern_normalize`, `schema_fallback`, and `flow_repair` all at 0.
 
 Remaining V6 work:
 
@@ -915,6 +915,6 @@ Implemented V6 reliability slices:
 Remaining V6 work:
 
 - Expand Blueprint eval from 40 to 80 cases before calling V6 stable.
-- Full 8-structure `eval:flow-live -- --runs=3` baseline is complete; future work should keep it green while improving the remaining Bayes and industrial-revolution repair cases.
+- Full 8-structure `eval:flow-live -- --runs=3` baseline is complete; future work should keep it green while reducing the last low-frequency `placeholder_clean` cases and expanding Skill Pack skeleton coverage.
 - Improve generated follow-up branches so they use Blueprint relations instead of generic fallback relations.
 - Add a compact pre-flow decomposition preview once reliability is stable enough to expose it as product UX.

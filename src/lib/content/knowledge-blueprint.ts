@@ -183,7 +183,7 @@ const DEFAULT_STEPS: Record<Exclude<KnowledgeStructureType, "unclassified">, Arr
 };
 
 const CURATED_FLOW_IDS = ["bayes-starter", "dns-router", "industrial-revolution"];
-const PLACEHOLDERS = [/\{\s*(result|output\d*|value|variable|term|concept)\s*\}/i, /similar concept/i, /key variable/i, /generic mechanism/i, /output1/i, /\u76f8\u8fd1\u6982\u5ff5/, /\u5173\u952e\u53d8\u91cf/];
+const PLACEHOLDERS = [/\{\s*(result|output\d*|value|variable|term|concept)\s*\}/i, /similar concept/i, /key variable/i, /generic mechanism/i, /output1/i, /\u76f8\u8fd1\u6982\u5ff5/];
 
 function norm(value: string) {
   return value.toLowerCase().replace(/[\s\-_，。、“”‘’：:；;,.!?()[\]{}<>]+/g, "");
@@ -255,6 +255,33 @@ export function selectBlueprintPatternStrategy(blueprint: KnowledgeBlueprint, pr
   return result.slice(0, 3);
 }
 
+const TOPIC_CORE_TERM_SKELETONS: Array<{ hints: string[]; terms: string[] }> = [
+  {
+    hints: ["industrial revolution", "\u5de5\u4e1a\u9769\u547d"],
+    terms: ["steam engine", "factory system", "urbanization", "machine", "energy", "\u84b8\u6c7d\u673a", "\u5de5\u5382\u5236\u5ea6", "\u57ce\u5e02\u5316", "\u673a\u5668", "\u80fd\u6e90"],
+  },
+  {
+    hints: ["linear programming", "\u7ebf\u6027\u89c4\u5212"],
+    terms: ["decision variable", "objective function", "constraint", "feasible region", "optimum", "\u51b3\u7b56\u53d8\u91cf", "\u76ee\u6807\u51fd\u6570", "\u7ea6\u675f\u6761\u4ef6", "\u53ef\u884c\u57df", "\u6700\u4f18\u89e3"],
+  },
+  {
+    hints: ["bayes", "\u8d1d\u53f6\u65af"],
+    terms: ["prior", "likelihood", "posterior", "evidence", "conditional probability", "\u5148\u9a8c", "\u4f3c\u7136", "\u540e\u9a8c", "\u8bc1\u636e", "\u6761\u4ef6\u6982\u7387"],
+  },
+  {
+    hints: ["dns"],
+    terms: ["browser", "recursive resolver", "root server", "authoritative server", "cache", "IP address", "\u6d4f\u89c8\u5668", "\u9012\u5f52\u89e3\u6790\u5668", "\u6839\u670d\u52a1\u5668", "\u6743\u5a01\u670d\u52a1\u5668", "\u7f13\u5b58", "IP \u5730\u5740"],
+  },
+];
+
+function topicCoreTerms(topic: string) {
+  const result: string[] = [];
+  for (const item of TOPIC_CORE_TERM_SKELETONS) {
+    if (containsAny(topic, item.hints)) result.push(...item.terms);
+  }
+  return unique(result);
+}
+
 export function buildKnowledgeBlueprint(
   plan: BlueprintPlanInput,
   preferredPattern: FlowPatternPreference = "auto",
@@ -278,7 +305,7 @@ export function buildKnowledgeBlueprint(
     };
   }
   const steps = makeSteps(structure);
-  const coreTerms = unique([...grounding, ...steps.flatMap((step) => step.must_explain)]).slice(0, 6);
+  const coreTerms = unique([...topicCoreTerms(plan.topic), ...grounding, ...steps.flatMap((step) => step.must_explain)]).slice(0, 10);
   const draft: KnowledgeBlueprint = {
     topic: plan.topic,
     structure_type: structure,

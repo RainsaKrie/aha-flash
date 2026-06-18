@@ -629,7 +629,7 @@ Implementation principles:
 - Load only the relevant knowledge-structure recipe and Pattern recipes for the current topic.
 - Keep Skill Packs upstream of generation; keep deterministic QualityGate downstream of generation.
 - `generateDynamicFlow` returns structured `repair_actions` (`field_fix`, `pattern_normalize`, `placeholder_clean`, `schema_repair`, `schema_fallback`, `flow_repair`) so live eval can identify which prompt or Skill Pack needs work.
-- The repair layer should remain a safety net. The target is lowering repair reliance to about 0.2, not deleting repair entirely. Latest full 8x3 live baseline reached `schema_repair_rate: 0.042`, `schema_fallback_rate: 0.042`, and `repair_reliance_rate: 0.083`.
+- The repair layer should remain a safety net. The target is lowering repair reliance to about 0.2, not deleting repair entirely. Latest full 8x3 live baseline reached `schema_repair_rate: 0.042`, `schema_fallback_rate: 0`, `flow_repair_rate: 0`, and `repair_reliance_rate: 0.042`.
 ### V6 Accuracy Grounding Scope
 
 V6 should solve factual reliability with compact Skill Pack knowledge skeletons, not with a full Wiki or always-on web search.
