@@ -1,4 +1,5 @@
 import { validateSchema } from "../llm/schema-validator.ts";
+import { selectKnowledgeSkeleton, topicSkeletonTerms } from "./skill-packs.ts";
 import type { FlowPatternPreference } from "./flow-pattern-options.ts";
 import type { KnowledgeFlow } from "./mock-flows.ts";
 import type { PatternType } from "../../types/schema.ts";
@@ -38,6 +39,10 @@ export interface KnowledgeBlueprint {
   avoid_patterns: PatternType[];
   failure_risks: string[];
   confidence: number;
+  skill_skeleton_id?: string;
+  required_core_terms?: string[];
+  required_teaching_steps?: string[];
+  forbidden_framings?: string[];
 }
 
 export interface QualityGateResult {
@@ -275,7 +280,7 @@ const TOPIC_CORE_TERM_SKELETONS: Array<{ hints: string[]; terms: string[] }> = [
 ];
 
 function topicCoreTerms(topic: string) {
-  const result: string[] = [];
+  const result: string[] = [...topicSkeletonTerms(topic)];
   for (const item of TOPIC_CORE_TERM_SKELETONS) {
     if (containsAny(topic, item.hints)) result.push(...item.terms);
   }
@@ -288,6 +293,7 @@ export function buildKnowledgeBlueprint(
   preferredStructure: KnowledgeStructurePreference = "auto",
 ): KnowledgeBlueprint {
   const structure = preferredStructure === "auto" ? inferKnowledgeStructure(plan) : preferredStructure;
+  const skeleton = selectKnowledgeSkeleton(plan.topic, structure);
   const grounding = unique(plan.grounding_terms || []);
   if (structure === "unclassified") {
     return {
@@ -305,19 +311,24 @@ export function buildKnowledgeBlueprint(
     };
   }
   const steps = makeSteps(structure);
-  const coreTerms = unique([...topicCoreTerms(plan.topic), ...grounding, ...steps.flatMap((step) => step.must_explain)]).slice(0, 10);
+  const coreTerms = unique([...(skeleton?.required_core_terms || []), ...topicCoreTerms(plan.topic), ...grounding, ...steps.flatMap((step) => step.must_explain)]).slice(0, 14);
+  const avoidPatterns = protectBlueprintAvoidPatterns(structure, Array.from(new Set([...(plan.avoid_patterns || []), ...(skeleton?.unsuitable_patterns || [])])));
   const draft: KnowledgeBlueprint = {
     topic: plan.topic,
     structure_type: structure,
     learning_objective: plan.core_question || `Understand ${plan.topic}`,
     prerequisite_terms: [],
     core_terms: coreTerms,
-    misconceptions: [],
+    misconceptions: skeleton?.common_misconceptions || [],
     teaching_sequence: steps,
     pattern_strategy: STRATEGY[structure],
-    avoid_patterns: protectBlueprintAvoidPatterns(structure, plan.avoid_patterns),
-    failure_risks: [],
-    confidence: Math.min(0.96, 0.72 + Math.min(grounding.length, 5) * 0.04 + (plan.recommended_patterns?.length ? 0.04 : 0)),
+    avoid_patterns: avoidPatterns,
+    failure_risks: skeleton?.forbidden_framings || [],
+    confidence: Math.min(0.96, 0.72 + Math.min(grounding.length, 5) * 0.04 + (plan.recommended_patterns?.length ? 0.04 : 0) + (skeleton ? 0.04 : 0)),
+    skill_skeleton_id: skeleton?.id,
+    required_core_terms: skeleton?.required_core_terms,
+    required_teaching_steps: skeleton?.required_teaching_steps,
+    forbidden_framings: skeleton?.forbidden_framings,
   };
   return { ...draft, pattern_strategy: selectBlueprintPatternStrategy(draft, preferredPattern) };
 }
@@ -368,6 +379,9 @@ export function evaluateFlowAgainstBlueprint(flow: KnowledgeFlow, blueprint: Kno
   const blueprintAvoidPatterns = protectBlueprintAvoidPatterns(blueprint.structure_type, blueprint.avoid_patterns);
   const avoid = new Set(preferredPattern === "auto" ? blueprintAvoidPatterns : blueprintAvoidPatterns.filter((pattern) => pattern !== preferredPattern));
   const coveredTerms = termHits(text, blueprint.core_terms);
+  const requiredCoreTerms = blueprint.required_core_terms || [];
+  const requiredCoreHits = termHits(text, requiredCoreTerms);
+  const forbiddenFrameHits = termHits(text, blueprint.forbidden_framings || []);
   const disallowed = patterns.filter((pattern) => !allowed.has(pattern));
   const avoided = patterns.filter((pattern) => avoid.has(pattern));
   const placeholderHits = PLACEHOLDERS.filter((pattern) => pattern.test(text));
@@ -378,6 +392,8 @@ export function evaluateFlowAgainstBlueprint(flow: KnowledgeFlow, blueprint: Kno
   if (blueprint.structure_type === "unclassified") failures.push("KnowledgeBlueprint is unclassified");
   if (flow.plays.length < Math.max(3, Math.min(blueprint.teaching_sequence.length, 3))) failures.push(`Flow has ${flow.plays.length} steps, below Blueprint minimum`);
   if (blueprint.core_terms.length >= 3 && coveredTerms.length < Math.min(3, blueprint.core_terms.length)) failures.push(`Flow covers ${coveredTerms.length}/${Math.min(3, blueprint.core_terms.length)} required core terms`);
+  if (requiredCoreTerms.length >= 3 && requiredCoreHits.length < Math.min(3, requiredCoreTerms.length)) failures.push(`Flow covers ${requiredCoreHits.length}/${Math.min(3, requiredCoreTerms.length)} Skill Pack required terms`);
+  if (forbiddenFrameHits.length) failures.push(`Flow hits forbidden Skill Pack framings: ${forbiddenFrameHits.join(", ")}`);
   if (disallowed.length) failures.push(`Flow uses patterns outside Blueprint strategy: ${disallowed.join(" -> ")}`);
   if (avoided.length) failures.push(`Flow uses avoided patterns: ${avoided.join(" -> ")}`);
   if (preferredPattern !== "auto" && !patterns.includes(preferredPattern)) failures.push(`Flow misses user-selected pattern: ${preferredPattern}`);
@@ -429,6 +445,8 @@ export function evaluateFlowAgainstBlueprint(flow: KnowledgeFlow, blueprint: Kno
     disallowed.length === 0,
     avoided.length === 0,
     placeholderHits.length === 0,
+    forbiddenFrameHits.length === 0,
+    requiredCoreTerms.length < 3 || requiredCoreHits.length >= Math.min(3, requiredCoreTerms.length),
     schemaFailures.length === 0,
     stepFailures.length === 0,
     blueprint.structure_type !== "unclassified",

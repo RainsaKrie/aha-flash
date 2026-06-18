@@ -125,12 +125,12 @@ Current V6 reliability work is partially implemented and verified:
 - `repair_actions` now tags normalization and repair events as `field_fix`, `pattern_normalize`, `placeholder_clean`, `schema_repair`, `schema_fallback`, or `flow_repair`; `eval:flow-live` reports per-tag counts and rates.
 - Dynamic Flow generation has a 45s LLM timeout, deterministic `visual_asset` / `next_concepts` normalization, exact Blueprint Pattern-order instructions, and a no-brace natural-language contract for slider explanations.
 - Latest full live baseline: 8 knowledge structures x 3 runs passed with `overall: 1`, `llm_success_rate: 1`, `clean_schema_rate: 1`, `schema_repair_rate: 0`, `schema_fallback_rate: 0`, `flow_repair_rate: 0`, `repair_reliance_rate: 0`; all 24 sampled runs used the LLM path with no mock fallback and no repair actions.
+- Added the first internal Aha Skill Pack skeleton layer in `src/lib/content/skill-packs.ts`, covering 8 representative knowledge families. `KnowledgeBlueprint` now carries `skill_skeleton_id`, required core terms, required teaching steps, and forbidden framings, and QualityGate checks these deterministically.
 
 Remaining V6 work:
 
 - Keep using `eval:flow-live -- --limit=8 --runs=3` as the release smoke test for future prompt or Skill Pack changes.
 - Keep `repair_reliance_rate <= 0.2` as the release smoke-test threshold while expanding Skill Pack skeleton coverage; current 8x3 baseline is `0`.
-- Surface the generation/quality-check stages in the user experience without exposing technical logs.
 - Improve honest failure UX with retry/change-topic/showcase escape paths.
 ## 2.5 Next Direction - Aha Skill Packs
 
@@ -890,6 +890,7 @@ Implemented V6 reliability slices:
 - Eval coverage now includes `eval:blueprint` with 40 Stage B structure cases: 5 topics for each of the 8 supported knowledge structures. It also includes `eval:flow-dynamic` with 9 no-key dynamic fallback / honest-failure cases.
 - Flow completion branches now prefer Blueprint-derived follow-ups. For example, optimization topics extend toward 单纯形法、对偶问题、敏感性分析 instead of generic mechanism/boundary/application branches.
 - Explore now shows a compact pre-flow decomposition preview from the production-safe Flow preview payload: knowledge structure, core terms, and the three-step interaction path appear before entering the generated Flow.
+- Internal Aha Skill Pack skeletons now cover 8 representative families and feed deterministic Blueprint/QualityGate checks for required terms, forbidden framings, and unsuitable Patterns.
 
 Remaining V6 work:
 

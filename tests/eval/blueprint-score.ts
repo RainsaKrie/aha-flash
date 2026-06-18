@@ -1,5 +1,6 @@
-﻿import cases from "../fixtures/blueprint-cases.json" with { type: "json" };
+import cases from "../fixtures/blueprint-cases.json" with { type: "json" };
 import { buildKnowledgeBlueprint, type KnowledgeStructureType } from "../../src/lib/content/knowledge-blueprint.ts";
+import { selectKnowledgeSkeleton } from "../../src/lib/content/skill-packs.ts";
 import type { PatternType } from "../../src/types/schema.ts";
 
 interface BlueprintEvalCase {
@@ -53,6 +54,18 @@ function scoreCase(testCase: BlueprintEvalCase): BlueprintEvalResult {
 
   if (blueprint.confidence < 0.7) {
     failures.push(`confidence ${blueprint.confidence} < 0.7`);
+  }
+
+  const skeleton = selectKnowledgeSkeleton(testCase.topic, testCase.expectedStructure);
+  if (skeleton) {
+    if (blueprint.skill_skeleton_id !== skeleton.id) {
+      failures.push(`skeleton ${blueprint.skill_skeleton_id || "missing"} != ${skeleton.id}`);
+    }
+    const requiredTerms = skeleton.required_core_terms.slice(0, 3);
+    const missingTerms = requiredTerms.filter((term) => !blueprint.core_terms.includes(term));
+    if (missingTerms.length) failures.push(`missing skeleton terms: ${missingTerms.join(", ")}`);
+    const missingAvoidPatterns = skeleton.unsuitable_patterns.filter((pattern) => !blueprint.avoid_patterns.includes(pattern));
+    if (missingAvoidPatterns.length) failures.push(`missing skeleton avoid patterns: ${missingAvoidPatterns.join(", ")}`);
   }
 
   return {

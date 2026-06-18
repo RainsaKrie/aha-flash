@@ -629,6 +629,7 @@ Implementation principles:
 
 - Load only the relevant knowledge-structure recipe and Pattern recipes for the current topic.
 - Keep Skill Packs upstream of generation; keep deterministic QualityGate downstream of generation.
+- First implementation exists in `src/lib/content/skill-packs.ts`: 8 internal skeletons provide required core terms, required teaching steps, forbidden framings, suitable Patterns, and unsuitable Patterns. `KnowledgeBlueprint` carries the selected skeleton id and QualityGate blocks drafts that miss required skeleton terms or hit forbidden framings.
 - `generateDynamicFlow` returns structured `repair_actions` (`field_fix`, `pattern_normalize`, `placeholder_clean`, `schema_repair`, `schema_fallback`, `flow_repair`) so live eval can identify which prompt or Skill Pack needs work.
 - The repair layer remains a safety net. The practical target is keeping repair reliance at or below 0.2 while expanding coverage. Latest full 8x3 live baseline reached `clean_schema_rate: 1`, `schema_repair_rate: 0`, `schema_fallback_rate: 0`, `flow_repair_rate: 0`, and `repair_reliance_rate: 0`; all 24 sampled runs used the LLM path with no repair actions.
 ### V6 Accuracy Grounding Scope

@@ -21,6 +21,7 @@
 - Hardened dynamic Flow generation with exact Blueprint Pattern order in both user and repair prompts, probability payload numeric coercion, narrower placeholder detection, small topic core-term skeletons, and a no-brace `parameter_explore` explanation contract; full 8x3 live sample now holds at `repair_reliance_rate=0`, below the V6 target of 0.2.
 - Upgraded dynamic Flow completion branches to prefer Blueprint-derived follow-ups. Generated/fallback flows now extend by structure-specific next concepts such as simplex method / dual problem / sensitivity analysis for optimization topics, while old static `getFlowFollowUps()` remains only as a fallback for curated flows.
 - Added a production-safe pre-flow decomposition preview to `/api/flow` and `/explore`, so users briefly see the detected knowledge structure, core terms, and planned three-step interaction path before entering a generated Flow.
+- Added the first internal Aha Skill Pack skeleton layer with 8 representative knowledge families. Blueprint and QualityGate now carry/check skeleton ids, required terms, forbidden framings, and unsuitable Patterns; `eval:blueprint` validates skeleton attachment and guards.
 ## 2026-06-16
 
 
