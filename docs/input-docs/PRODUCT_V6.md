@@ -914,6 +914,8 @@ Implemented asset layer:
 - `docs/knowledge-skills/aha-causal-mechanism`
 - `docs/knowledge-skills/aha-procedure-algorithm`
 
-Each folder contains only `SKILL.md` and `evals/evals.json`, keeping the skill lean and progressively disclosed. `npm run eval:skills` checks that these files do not drift from `src/lib/content/skill-packs.ts` or the 80-case Blueprint eval set.
+Each folder contains only `SKILL.md` and `evals/evals.json`, keeping the skill lean and progressively disclosed. `npm run eval:skills` checks that these files do not drift from `src/lib/content/skill-packs.ts`, the runtime prompt contract, or the 80-case Blueprint eval set.
+
+Runtime Flow generation now injects the selected Skill Pack contract into both the first-pass prompt and the repair prompt. This makes Skill Packs operational: they are not only documentation assets, but the concise teaching contract seen by the LLM before it writes UI schemas.
 
 This is the intended V6 working mode going forward: do not patch random fallback content for one failed topic; update the relevant Skill Pack contract, rerun skill/blueprint/live evals, and keep repair reliance under the release threshold.

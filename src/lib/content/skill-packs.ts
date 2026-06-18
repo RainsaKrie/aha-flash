@@ -129,6 +129,30 @@ export function selectKnowledgeSkeleton(topic: string, structureType?: Knowledge
   });
 }
 
+export function getKnowledgeSkeletonById(id?: string) {
+  if (!id) return undefined;
+  return KNOWLEDGE_SKILL_PACKS.find((pack) => pack.id === id);
+}
+
+function shortList(values: string[], limit = 8) {
+  return values.slice(0, limit).join(", ");
+}
+
+export function formatKnowledgeSkillContract(pack: KnowledgeSkeleton) {
+  return [
+    "Skill Pack: " + pack.id,
+    "Structure type: " + pack.structure_type,
+    "Teach these core terms in visible UI copy: " + shortList(pack.required_core_terms, 10),
+    "Follow this teaching order: " + shortList(pack.required_teaching_steps, 8),
+    "Recommended Pattern family: " + pack.suitable_patterns.join(" -> "),
+    "Avoid Pattern family: " + (pack.unsuitable_patterns.join(", ") || "none"),
+    "Correct these misconceptions: " + shortList(pack.common_misconceptions, 4),
+    "Do not frame the topic as: " + (shortList(pack.forbidden_framings, 5) || "none"),
+    "Useful example anchors: " + shortList(pack.canonical_examples, 4),
+    "Use this as a teaching contract, not as prewritten lesson copy. Adapt the examples to the user topic.",
+  ].join("\n");
+}
+
 export function topicSkeletonTerms(topic: string) {
   const terms: string[] = [];
   for (const pack of KNOWLEDGE_SKILL_PACKS) {

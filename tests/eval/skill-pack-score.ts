@@ -1,6 +1,6 @@
 ﻿import fs from "node:fs";
 import path from "node:path";
-import { KNOWLEDGE_SKILL_PACKS } from "../../src/lib/content/skill-packs.ts";
+import { formatKnowledgeSkillContract, KNOWLEDGE_SKILL_PACKS } from "../../src/lib/content/skill-packs.ts";
 
 interface BlueprintCase {
   id: string;
@@ -32,6 +32,7 @@ function parseFrontmatter(markdown: string) {
 const root = process.cwd();
 const skillRoot = path.join(root, "docs", "knowledge-skills");
 const cases = readJson<BlueprintCase[]>(path.join(root, "tests", "fixtures", "blueprint-cases.json"));
+const dynamicFlowSource = fs.readFileSync(path.join(root, "src", "lib", "content", "dynamic-flow-generation.ts"), "utf8");
 const failures: string[] = [];
 
 function fail(message: string) {
@@ -70,6 +71,18 @@ for (const pack of KNOWLEDGE_SKILL_PACKS) {
   }
 
   if (!markdown.includes("Structure type: `" + pack.structure_type + "`")) fail(skillName + ": missing structure type in body");
+  const runtimeContract = formatKnowledgeSkillContract(pack);
+  if (!runtimeContract.includes(pack.id)) fail(skillName + ": runtime contract missing skill id");
+  if (!runtimeContract.includes(pack.structure_type)) fail(skillName + ": runtime contract missing structure type");
+  for (const term of pack.required_core_terms.slice(0, 5)) {
+    if (!runtimeContract.includes(term)) fail(skillName + ": runtime contract missing core term " + term);
+  }
+  for (const step of pack.required_teaching_steps) {
+    if (!runtimeContract.includes(step)) fail(skillName + ": runtime contract missing teaching step " + step);
+  }
+  for (const pattern of pack.suitable_patterns) {
+    if (!runtimeContract.includes(pattern)) fail(skillName + ": runtime contract missing suitable Pattern " + pattern);
+  }
   for (const pattern of pack.suitable_patterns) {
     if (!markdown.includes("`" + pattern + "`")) fail(skillName + ": missing suitable Pattern " + pattern);
   }
@@ -111,6 +124,10 @@ if (fs.existsSync(skillRoot)) {
   for (const entry of fs.readdirSync(skillRoot, { withFileTypes: true })) {
     if (entry.isDirectory() && !expectedSkillNames.has(entry.name)) fail("unexpected skill directory: " + entry.name);
   }
+}
+
+if (!dynamicFlowSource.includes("Aha Skill Pack runtime contract") || !dynamicFlowSource.includes("formatKnowledgeSkillContract")) {
+  fail("dynamic Flow prompt does not inject Skill Pack runtime contract");
 }
 
 console.log("skills: " + KNOWLEDGE_SKILL_PACKS.length);

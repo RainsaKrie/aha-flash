@@ -22,6 +22,7 @@ import {
   type KnowledgeStructurePreference,
   type QualityGateResult,
 } from "./knowledge-blueprint.ts";
+import { formatKnowledgeSkillContract, getKnowledgeSkeletonById } from "./skill-packs.ts";
 
 export interface DynamicFlowInput {
   topic: string;
@@ -1001,6 +1002,23 @@ function patternOrderInstruction(blueprint: KnowledgeBlueprint | undefined, pref
   return `plays[0].schema.pattern="${sequence[0]}", plays[1].schema.pattern="${sequence[1]}", plays[2].schema.pattern="${sequence[2]}". Do not substitute another pattern.`;
 }
 
+function buildSkillContractBlock(blueprint?: KnowledgeBlueprint) {
+  if (!blueprint || blueprint.structure_type === "unclassified") return "";
+  const skeleton = getKnowledgeSkeletonById(blueprint.skill_skeleton_id);
+  if (skeleton) return "\nAha Skill Pack runtime contract:\n" + formatKnowledgeSkillContract(skeleton) + "\n";
+  return [
+    "\nAha Skill Pack runtime contract:",
+    "Structure type: " + blueprint.structure_type,
+    "Teach these core terms in visible UI copy: " + (blueprint.required_core_terms || blueprint.core_terms).slice(0, 10).join(", "),
+    "Follow this teaching order: " + (blueprint.required_teaching_steps || blueprint.teaching_sequence.map((step) => step.goal)).slice(0, 8).join(", "),
+    "Recommended Pattern family: " + blueprint.pattern_strategy.join(" -> "),
+    "Avoid Pattern family: " + (blueprint.avoid_patterns.join(", ") || "none"),
+    "Do not frame the topic as: " + ((blueprint.forbidden_framings || blueprint.failure_risks).slice(0, 5).join(", ") || "none"),
+    "Use this as a teaching contract, not as prewritten lesson copy. Adapt the examples to the user topic.",
+    "",
+  ].join("\n");
+}
+
 function buildFlowUserPrompt(
   topic: string,
   plan: ConceptPlan,
@@ -1014,6 +1032,7 @@ function buildFlowUserPrompt(
     "ConceptPlan:",
     JSON.stringify(plan, null, 2),
     orderRule ? "Pattern order rule: " + orderRule : "",
+    buildSkillContractBlock(blueprint) ? "Skill Pack reminder: follow the runtime contract in the system prompt; do not teach with generic placeholder copy." : "",
     "Requirements:",
     "- flow.concept must be \"" + topic + "\".",
     "- Every play must use concrete grounding_terms in visible user-facing text.",
@@ -1078,6 +1097,7 @@ function buildRepairUserPrompt(
   const preferred = preferredPattern === "auto" ? "AI recommends patterns" : "User requires core pattern: " + preferredPattern;
   const clippedOutput = previousOutput.slice(0, 6000);
   const planBlock = plan ? "\nConceptPlan, follow it exactly:\n" + JSON.stringify(plan, null, 2) + "\n" : "";
+  const repairSkillContractBlock = buildSkillContractBlock(blueprint);
   const orderRule = patternOrderInstruction(blueprint, preferredPattern);
   return [
     "The previous Flow JSON failed validation. Repair it and output valid JSON only.",
@@ -1085,6 +1105,7 @@ function buildRepairUserPrompt(
     "Pattern preference: " + preferred,
     "Failure reason: " + reason,
     planBlock,
+    repairSkillContractBlock,
     orderRule ? "Exact pattern order: " + orderRule : "",
     "Rules:",
     "- Keep flow.concept equal to the user topic.",
@@ -1624,6 +1645,7 @@ function buildDynamicSystemPrompt(
     : "The user selected core pattern " + preferredPattern + "; at least one play.schema.pattern must equal " + preferredPattern + ".";
   const planBlock = plan ? "\nConceptPlan, mandatory source of truth:\n" + JSON.stringify(plan, null, 2) + "\n" : "";
   const blueprintBlock = blueprint ? "\nKnowledgeBlueprint, mandatory teaching contract:\n" + JSON.stringify(blueprint, null, 2) + "\n" : "";
+  const skillContractBlock = buildSkillContractBlock(blueprint);
   const requiredPatternSequence = blueprint ? selectBlueprintPatternStrategy(blueprint, preferredPattern).slice(0, 3) : [];
   const requiredPatternRule = requiredPatternSequence.length === 3
     ? "Required play pattern order: step-1 must use " + requiredPatternSequence[0] + ", step-2 must use " + requiredPatternSequence[1] + ", step-3 must use " + requiredPatternSequence[2] + ". Do not substitute another pattern."
@@ -1635,6 +1657,7 @@ function buildDynamicSystemPrompt(
     preferenceRule,
     planBlock,
     blueprintBlock,
+    skillContractBlock,
     "Allowed patterns and templates:",
     patternDirectory,
     "",

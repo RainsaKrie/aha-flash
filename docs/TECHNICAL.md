@@ -658,4 +658,6 @@ V6 internal Skill Packs now have a project-level, skill-creator-style asset laye
 
 These folders are not user-installable Codex skills yet. They are the human/agent-editable specification layer for the runtime skeletons in `src/lib/content/skill-packs.ts`. Runtime generation still reads the TypeScript skeletons so product behavior remains deterministic and cheap.
 
-`npm run eval:skills` verifies that the skill folders, frontmatter, Pattern recipes, teaching steps, and eval cases stay aligned with the runtime skeletons and Blueprint fixture set.
+`npm run eval:skills` verifies that the skill folders, frontmatter, Pattern recipes, teaching steps, eval cases, and runtime prompt contracts stay aligned with the runtime skeletons and Blueprint fixture set.
+
+Runtime Flow generation now injects a compact Aha Skill Pack contract into both the first-pass Flow prompt and the repair prompt. The contract exposes only the selected skeleton id, structure type, required visible core terms, teaching order, recommended/avoided Pattern family, misconceptions, forbidden framings, and example anchors. This keeps the LLM focused on the selected teaching skill instead of relying only on a large generic Blueprint JSON block.

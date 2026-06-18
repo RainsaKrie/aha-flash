@@ -7,6 +7,11 @@
 
 ## 2026-06-18
 
+### V6 Skill Pack runtime contract
+- Added a compact runtime formatter for Aha Skill Packs, exposing selected skeleton id, structure type, required visible terms, teaching order, Pattern family, misconceptions, forbidden framings, and example anchors.
+- Injected the selected Skill Pack contract into both first-pass dynamic Flow generation and LLM repair prompts, so free generation uses the same teaching skill contract as Blueprint/QualityGate.
+- Extended `eval:skills` to verify runtime prompt contracts and dynamic Flow injection do not drift from `docs/knowledge-skills/` or `src/lib/content/skill-packs.ts`.
+
 ### V6 Blueprint Stage C eval expansion
 - Expanded `tests/fixtures/blueprint-cases.json` from 40 to 80 cases: 10 topics for each supported knowledge structure.
 - Added broader deterministic hints and Skill Pack skeleton hints while preserving existing Chinese topic hints, so Chinese free input coverage is not weakened.
