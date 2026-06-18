@@ -124,11 +124,11 @@ Current V6 reliability work is partially implemented and verified:
 - Normalization removes unreplaced placeholders such as `{value}`, `{result}`, `{output1}`, `{topic}`, and generic English placeholders before QualityGate scoring.
 - `repair_actions` now tags normalization and repair events as `field_fix`, `pattern_normalize`, `placeholder_clean`, `schema_repair`, `schema_fallback`, or `flow_repair`; `eval:flow-live` reports per-tag counts and rates.
 - Dynamic Flow generation has a 45s LLM timeout, deterministic `visual_asset` / `next_concepts` normalization, exact Blueprint Pattern-order instructions, and a no-brace natural-language contract for slider explanations.
-- Latest 4-case live smoke sample: `overall: 1`, `llm_success_rate: 1`, `clean_schema_rate: 1`, `schema_repair_rate: 0`, `schema_fallback=0`, `placeholder_clean=0`, `repair_reliance_rate: 0.25`; remaining repair was one `pattern_normalize` in Bayes.
+- Latest full live baseline: 8 knowledge structures x 3 runs passed with `overall: 1`, `llm_success_rate: 1`, `clean_schema_rate: 0.958`, `schema_repair_rate: 0.042`, `schema_fallback_rate: 0.042`, `flow_repair_rate: 0.042`, `repair_reliance_rate: 0.083`; remaining repairs were one Bayes probability schema fallback and one industrial-revolution pattern normalization.
 
 Remaining V6 work:
 
-- Repeat live baseline with `--runs=3` to measure stability rather than a single lucky sample.
+- Keep using `eval:flow-live -- --limit=8 --runs=3` as the release smoke test for future prompt or Skill Pack changes.
 - Lower repair reliance further, especially for schema payload drift in classification and timeline-like outputs.
 - Surface the generation/quality-check stages in the user experience without exposing technical logs.
 - Improve honest failure UX with retry/change-topic/showcase escape paths.
@@ -915,6 +915,6 @@ Implemented V6 reliability slices:
 Remaining V6 work:
 
 - Expand Blueprint eval from 40 to 80 cases before calling V6 stable.
-- Repeat `eval:flow-live` with `--runs=3` across the full 8-structure set before calling V6 stable.
+- Full 8-structure `eval:flow-live -- --runs=3` baseline is complete; future work should keep it green while improving the remaining Bayes and industrial-revolution repair cases.
 - Improve generated follow-up branches so they use Blueprint relations instead of generic fallback relations.
 - Add a compact pre-flow decomposition preview once reliability is stable enough to expose it as product UX.
