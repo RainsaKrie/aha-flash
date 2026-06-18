@@ -5055,6 +5055,110 @@ button.v5-flow-branch-card {
   transform: translateY(-1px);
 }
 
+.v6-decomposition-preview {
+  display: grid;
+  width: min(100%, var(--v5-input-max, 860px));
+  gap: 14px;
+  border: 1px solid rgba(74, 111, 165, 0.14);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.96);
+  padding: 16px;
+  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.08);
+}
+
+.v6-decomposition-preview__summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.v6-decomposition-preview__summary span,
+.v6-decomposition-preview__summary small {
+  color: #7c7c7c;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.v6-decomposition-preview__summary strong {
+  color: #1a1a1a;
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.v6-decomposition-preview__terms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.v6-decomposition-preview__terms span {
+  border-radius: 999px;
+  background: rgba(74, 111, 165, 0.09);
+  padding: 6px 10px;
+  color: var(--v5-play-blue-dark);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.v6-decomposition-preview__steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.v6-decomposition-preview__steps li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 58px;
+  border-radius: 18px;
+  background: #f7f7f7;
+  padding: 10px 12px;
+}
+
+.v6-decomposition-preview__steps li > span {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--v5-play-blue-dark);
+  font-size: 12px;
+  font-weight: 950;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.v6-decomposition-preview__steps div {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.v6-decomposition-preview__steps strong,
+.v6-decomposition-preview__steps small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.v6-decomposition-preview__steps strong {
+  color: #1a1a1a;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.v6-decomposition-preview__steps small {
+  color: #7c7c7c;
+  font-size: 11px;
+  font-weight: 850;
+}
+
 .v6-failure-card {
   display: grid;
   width: min(100%, var(--v5-input-max, 860px));
@@ -5216,6 +5320,7 @@ button.v5-flow-branch-card {
 
 @media (max-width: 760px) {
   .v6-generation-status,
+  .v6-decomposition-preview__steps,
   .v6-failure-card__structures > div {
     grid-template-columns: 1fr;
   }

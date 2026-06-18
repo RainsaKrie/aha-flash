@@ -5,6 +5,7 @@ import { ArrowRight, BrainCircuit, Gauge, Home, LibraryBig, Loader2, Sparkles, T
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { PATTERN_LABELS } from "@/lib/content/flow-pattern-options";
 import { getShowcaseFlows, type KnowledgeFlow } from "@/lib/content/mock-flows";
 import { writeFlowDraft, type FlowDraftDebug } from "@/lib/utils/storage";
 
@@ -27,6 +28,22 @@ interface FlowFailureResponse {
   curated_flow_ids?: string[];
 }
 
+interface GenerationPreviewStep {
+  label: string;
+  pattern: string;
+  terms?: string[];
+  title?: string;
+}
+
+interface GenerationPreview {
+  topic: string;
+  structure: string;
+  terms: string[];
+  steps: GenerationPreviewStep[];
+  gate: "pass" | "warn" | "unknown";
+  source: "llm" | "mock";
+}
+
 interface FlowApiResponse {
   flow: KnowledgeFlow;
   source: "llm" | "mock";
@@ -36,6 +53,7 @@ interface FlowApiResponse {
   concept_plan?: unknown;
   blueprint?: unknown;
   quality_gate?: unknown;
+  preview?: GenerationPreview;
   failure?: FlowFailureResponse;
 }
 
@@ -55,12 +73,34 @@ const STRUCTURE_CHOICES = [
   { id: "optimization_model", label: "\u770b\u5efa\u6a21", hint: "\u76ee\u6807 / \u7ea6\u675f / \u6700\u4f18" },
 ] as const;
 
+function patternLabel(value: unknown) {
+  if (typeof value === "string" && value in PATTERN_LABELS) return PATTERN_LABELS[value as keyof typeof PATTERN_LABELS];
+  return typeof value === "string" && value.trim() ? value : "互动组件";
+}
+
+function makeFallbackPreview(flow: KnowledgeFlow, source: "llm" | "mock"): GenerationPreview {
+  return {
+    topic: flow.concept || flow.title,
+    structure: "AI 推荐",
+    terms: flow.concepts.slice(0, 5),
+    steps: flow.plays.slice(0, 3).map((play) => ({
+      label: play.teaching_trace?.blueprint_step_goal || play.title,
+      pattern: patternLabel(play.schema.pattern),
+      terms: play.teaching_trace?.covered_terms?.slice(0, 3),
+      title: play.title,
+    })),
+    gate: "unknown",
+    source,
+  };
+}
+
 export default function ExplorePage() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [topic, setTopic] = useState("贝叶斯定理");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
+  const [generationPreview, setGenerationPreview] = useState<GenerationPreview | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [failureState, setFailureState] = useState<FlowFailureResponse | null>(null);
   const [failureAttempts, setFailureAttempts] = useState(0);
@@ -77,6 +117,7 @@ export default function ExplorePage() {
     setGenerationStep(0);
     setErrorMessage(null);
     setFailureState(null);
+    setGenerationPreview(null);
     const timers = GENERATION_STEPS.slice(1).map((_, index) =>
       window.setTimeout(() => setGenerationStep(index + 1), 680 * (index + 1)),
     );
@@ -91,11 +132,15 @@ export default function ExplorePage() {
       const payload = (await response.json()) as FlowApiResponse;
       if (payload.failure) {
         setFailureState(payload.failure);
+        setGenerationPreview(null);
         setFailureAttempts((count) => (lastFailedTopic === trimmed ? count + 1 : 1));
         setLastFailedTopic(trimmed);
         return;
       }
       const flow = payload.flow;
+      setGenerationStep(GENERATION_STEPS.length - 1);
+      setGenerationPreview(payload.preview || makeFallbackPreview(flow, payload.source));
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 820));
       setFailureAttempts(0);
       setLastFailedTopic(null);
       const draftId = flow.id || crypto.randomUUID();
@@ -111,6 +156,7 @@ export default function ExplorePage() {
       writeFlowDraft(draftId, flow, debug);
       router.push(`/flow/custom?draftId=${encodeURIComponent(draftId)}`);
     } catch (error) {
+      setGenerationPreview(null);
       setErrorMessage(error instanceof Error ? error.message : String(error));
     } finally {
       timers.forEach((timer) => window.clearTimeout(timer));
@@ -165,6 +211,7 @@ export default function ExplorePage() {
                 setTopic(event.target.value);
                 setErrorMessage(null);
                 setFailureState(null);
+                setGenerationPreview(null);
                 setFailureAttempts(0);
                 setLastFailedTopic(null);
               }}
@@ -190,6 +237,7 @@ export default function ExplorePage() {
                   setTopic(example);
                   setErrorMessage(null);
                   setFailureState(null);
+                  setGenerationPreview(null);
                   setFailureAttempts(0);
                   setLastFailedTopic(null);
                 }}
@@ -207,6 +255,33 @@ export default function ExplorePage() {
                 {index + 1}. {step}
               </span>
             ))}
+          </div>
+        )}
+        {generationPreview && (
+          <div className="v6-decomposition-preview" aria-live="polite">
+            <div className="v6-decomposition-preview__summary">
+              <span>拆解好了</span>
+              <strong>{generationPreview.structure}</strong>
+              <small>{generationPreview.source === "llm" ? "AI 现场生成" : "兜底路径"}</small>
+            </div>
+            {generationPreview.terms.length > 0 && (
+              <div className="v6-decomposition-preview__terms" aria-label="核心词">
+                {generationPreview.terms.slice(0, 5).map((term) => (
+                  <span key={term}>{term}</span>
+                ))}
+              </div>
+            )}
+            <ol className="v6-decomposition-preview__steps" aria-label="三关路径">
+              {generationPreview.steps.slice(0, 3).map((step, index) => (
+                <li key={`${index}-${step.label}`}>
+                  <span>{index + 1}</span>
+                  <div>
+                    <strong>{step.title || step.label}</strong>
+                    <small>{step.pattern}</small>
+                  </div>
+                </li>
+              ))}
+            </ol>
           </div>
         )}
         {failureState && (
@@ -253,6 +328,7 @@ export default function ExplorePage() {
                 onClick={() => {
                   setTopic("");
                   setFailureState(null);
+                  setGenerationPreview(null);
                   setFailureAttempts(0);
                   setLastFailedTopic(null);
                   setErrorMessage(null);

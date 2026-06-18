@@ -889,9 +889,9 @@ Implemented V6 reliability slices:
 - `TeachingTrace` is attached to generated plays for dev/eval audit: Blueprint goal, covered terms, intended user action, success criteria, and recommended Pattern.
 - Eval coverage now includes `eval:blueprint` with 40 Stage B structure cases: 5 topics for each of the 8 supported knowledge structures. It also includes `eval:flow-dynamic` with 9 no-key dynamic fallback / honest-failure cases.
 - Flow completion branches now prefer Blueprint-derived follow-ups. For example, optimization topics extend toward 单纯形法、对偶问题、敏感性分析 instead of generic mechanism/boundary/application branches.
+- Explore now shows a compact pre-flow decomposition preview from the production-safe Flow preview payload: knowledge structure, core terms, and the three-step interaction path appear before entering the generated Flow.
 
 Remaining V6 work:
 
 - Expand Blueprint eval from 40 to 80 cases before calling V6 stable.
 - Full 8-structure `eval:flow-live -- --runs=3` baseline is complete at 24/24 LLM runs with 0 repair actions; future work should keep it green while expanding Skill Pack skeleton coverage.
-- Add a compact pre-flow decomposition preview once reliability is stable enough to expose it as product UX.

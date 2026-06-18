@@ -1,7 +1,8 @@
-﻿import { NextResponse } from "next/server";
-import { generateDynamicFlow } from "@/lib/content/dynamic-flow-generation";
+import { NextResponse } from "next/server";
+import { generateDynamicFlow, type DynamicFlowGenerationResult } from "@/lib/content/dynamic-flow-generation";
 import { getFlowById } from "@/lib/content/mock-flows";
 import { generateFlowSteps, isLLMFlowSupported } from "@/lib/content/flow-generation";
+import { PATTERN_LABELS } from "@/lib/content/flow-pattern-options";
 import { normalizeKnowledgeStructure, type KnowledgeStructurePreference } from "@/lib/content/knowledge-blueprint";
 import { SCHEMA_CATALOG, type PatternType } from "@/types/schema";
 
@@ -21,6 +22,70 @@ function normalizePreferredStructure(value: unknown): KnowledgeStructurePreferen
   if (value === "auto") return "auto";
   const structure = normalizeKnowledgeStructure(value);
   return structure === "unclassified" ? "auto" : structure;
+}
+
+const STRUCTURE_LABELS: Record<string, string> = {
+  optimization_model: "优化建模",
+  system_process: "系统流程",
+  probabilistic_reasoning: "概率推理",
+  historical_change: "历史变迁",
+  comparison_frame: "对比框架",
+  classification_rule: "分类规则",
+  causal_mechanism: "因果机制",
+  procedure_algorithm: "步骤算法",
+  unclassified: "待确认结构",
+};
+
+function compactUnique(values: Array<unknown>, limit: number) {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of values) {
+    if (typeof value !== "string") continue;
+    const text = value.trim();
+    const key = text.toLowerCase();
+    if (!text || seen.has(key)) continue;
+    seen.add(key);
+    result.push(text.slice(0, 20));
+    if (result.length >= limit) break;
+  }
+  return result;
+}
+
+function patternLabel(value: unknown) {
+  if (typeof value === "string" && value in PATTERN_LABELS) return PATTERN_LABELS[value as keyof typeof PATTERN_LABELS];
+  return typeof value === "string" && value.trim() ? value : "互动组件";
+}
+
+function makeFlowPreview(result: DynamicFlowGenerationResult) {
+  const blueprint = result.blueprint;
+  const plan = result.concept_plan;
+  const flow = result.flow;
+  const structureKey = blueprint?.structure_type || plan?.knowledge_structure || "";
+  const structure = STRUCTURE_LABELS[structureKey] || structureKey || "AI 推荐";
+  const terms = compactUnique([...(blueprint?.core_terms || []), ...(plan?.grounding_terms || []), ...flow.concepts], 5);
+  const blueprintSteps = blueprint?.teaching_sequence?.slice(0, 3).map((step, index) => ({
+    label: step.goal,
+    pattern: patternLabel(step.recommended_pattern),
+    terms: compactUnique(step.must_explain || [], 3),
+    title: flow.plays[index]?.title,
+  })) || [];
+  const steps = blueprintSteps.length > 0
+    ? blueprintSteps
+    : flow.plays.slice(0, 3).map((play) => ({
+        label: play.teaching_trace?.blueprint_step_goal || play.title,
+        pattern: patternLabel(play.schema.pattern),
+        terms: compactUnique(play.teaching_trace?.covered_terms || [], 3),
+        title: play.title,
+      }));
+
+  return {
+    topic: flow.concept || plan?.topic || blueprint?.topic || flow.title,
+    structure,
+    terms,
+    steps,
+    gate: result.quality_gate?.ok === false ? "warn" : "pass",
+    source: result.source,
+  };
 }
 
 export async function GET(req: Request) {
@@ -78,6 +143,7 @@ export async function POST(req: Request) {
         concept_plan: exposeDebug ? result.concept_plan : undefined,
         blueprint: exposeDebug ? result.blueprint : undefined,
         quality_gate: exposeDebug ? result.quality_gate : undefined,
+        preview: makeFlowPreview(result),
         failure: result.failure,
       },
       { headers: { "Cache-Control": "no-store" } },

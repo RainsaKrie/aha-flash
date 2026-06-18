@@ -643,3 +643,7 @@ The skeleton should be used in two places:
 2. After generation: let deterministic QualityGate check visible content against required terms, required steps, forbidden framings, and unsuitable Patterns.
 
 Network search and a curated Wiki are future layers. They should not be a hard dependency for V6 free generation.
+
+### V6 Generation Visibility
+
+`POST /api/flow` now returns a sanitized `preview` payload for production UI: topic, detected knowledge structure, compact core terms, planned three-step path, source, and gate state. `/explore` uses this payload for a short pre-flow decomposition preview before routing into `/flow/custom`, making the live generation pipeline visible without exposing raw model output or internal debug logs.
