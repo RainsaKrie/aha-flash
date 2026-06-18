@@ -13,12 +13,12 @@
 - Made `KnowledgeBlueprint.pattern_strategy` authoritative: LLM `avoid_patterns` can no longer delete Blueprint core patterns, and each generated step is normalized to the exact Blueprint Pattern.
 - Changed knowledge-structure inference to prefer deterministic topic hints before LLM-provided structure labels, fixing drift for classification, causal, and procedure topics.
 - Added compact payload field guidance for all 10 Pattern defaults and recursive placeholder cleanup for `{value}`, `{result}`, `{output1}`, `{topic}`, and generic placeholder phrases.
-- Latest full live baseline: 8 knowledge structures x 3 runs passed with `overall: 1`, `llm_success_rate: 1`, `clean_schema_rate: 0.958`, `schema_repair_rate: 0.042`, `flow_repair_rate: 0`, and `repair_reliance_rate: 0.042`; remaining repair action was one `placeholder_clean`, with `pattern_normalize`, `schema_fallback`, and `flow_repair` all at 0.
+- Latest full live baseline: 8 knowledge structures x 3 runs passed with `overall: 1`, `llm_success_rate: 1`, `clean_schema_rate: 1`, `schema_repair_rate: 0`, `schema_fallback_rate: 0`, `flow_repair_rate: 0`, and `repair_reliance_rate: 0`; all 24 runs used the LLM path with no mock fallback and no repair actions.
 - Documented the next V6 direction: internal Aha Skill Packs plus repair action tagging, with a practical repair reliance target of `<= 0.2` rather than zero repair.
 - Scoped factual accuracy for V6 to Skill Pack knowledge skeletons and deterministic QualityGate checks; full Wiki, citation-grade verification, and always-on web search remain future layers.
 - Implemented structured `repair_actions` in dynamic Flow generation and live eval, so repair dependence can now be broken down by `field_fix`, `pattern_normalize`, `placeholder_clean`, `schema_repair`, `schema_fallback`, and `flow_repair`.
 - Added a 45s timeout to dynamic Flow LLM calls so live eval and user generation do not hang indefinitely on provider stalls.
-- Hardened dynamic Flow generation with exact Blueprint Pattern order in both user and repair prompts, probability payload numeric coercion, narrower placeholder detection, and small topic core-term skeletons for live-eval anchors; full 8x3 live sample now holds at `repair_reliance_rate=0.042`, below the V6 target of 0.2.
+- Hardened dynamic Flow generation with exact Blueprint Pattern order in both user and repair prompts, probability payload numeric coercion, narrower placeholder detection, small topic core-term skeletons, and a no-brace `parameter_explore` explanation contract; full 8x3 live sample now holds at `repair_reliance_rate=0`, below the V6 target of 0.2.
 ## 2026-06-16
 
 

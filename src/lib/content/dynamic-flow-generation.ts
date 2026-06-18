@@ -87,7 +87,7 @@ const VISUAL_TAGS: Record<PatternType, string> = {
 const FLOW_SCHEMA_PAYLOAD_GUIDE = [
   "Payload required fields. Use the template after each slash as the default. Do not choose alternate templates unless all fields still match this contract:",
   "- probability/card_flip_reveal: payload.title; payload.pool [{name, rarity, probability, value}]; option_cost number; strike_price number; pulls_per_try number; explanation_map {win, lose}",
-  "- parameter_explore/single_slider: payload.title; variable_label; min number; max number; default_value number; explanation_template as one complete natural sentence with no braces or variables; optional scenarios [{label,value}], outputs [{label, model one of linear/quadratic/exponential/inverse/logarithmic, multiplier number, offset number}]",
+  "- parameter_explore/single_slider: payload.title; variable_label; min number; max number; default_value number; explanation_template must be one fixed complete natural sentence, not a template; never include braces, {value}, {result}, or value-substitution slots; optional scenarios [{label,value}], outputs [{label, model one of linear/quadratic/exponential/inverse/logarithmic, multiplier number, offset number}]",
   "- concept_memory/term_cards: payload.title; cards [{front, back}]",
   "- process_timeline/horizontal_timeline: payload.title; events [{label, description}]",
   "- comparison/split_panel: payload.title; left {label, content}; right {label, content}; optional dimensions [{label,a,b,insight}]",
@@ -1020,6 +1020,7 @@ function buildFlowUserPrompt(
     "- Each play must map to the matching learning_path and Blueprint step.",
     "- Do not use ConceptPlan.avoid_patterns.",
     "- Do not put long definitions into titles.",
+    "- For parameter_explore/single_slider, explanation_template must be a finished sentence the user can read as-is; never include braces, {value}, {result}, or value-substitution slots.",
   ].filter(Boolean).join("\n");
 }
 
@@ -1092,6 +1093,7 @@ function buildRepairUserPrompt(
     "- Every play must satisfy the matching KnowledgeBlueprint teaching_sequence goal.",
     "- Use the exact payload fields required by the selected pattern/template; do not place payload under config, data, fields, steps_data, nodes, or questions.",
     "- Prefer default templates: parameter_explore/single_slider, knowledge_check/single_question, system_builder/module_sandbox.",
+    "- For parameter_explore/single_slider, explanation_template must be a fixed readable sentence, not a variable template; never include braces, {value}, or {result}.",
     "- simulation_play.params must contain at least 2 parameter objects. outputs[].model must use linear/quadratic/exponential/inverse/logarithmic.",
     "- The visible copy must teach the KnowledgeBlueprint core_terms, not merely mention the topic.",
     "- Do not use patterns listed in ConceptPlan.avoid_patterns.",
@@ -1594,7 +1596,7 @@ function buildDynamicSystemPrompt(
     "- Use ConceptPlan.grounding_terms in visible titles, questions, options, labels, modules, slider outputs, or explanations. Listing terms only in arrays is not enough.",
     "- Do not use ConceptPlan.avoid_patterns.",
     "- Keep UI text concise Simplified Chinese.",
-    "- Never use raw placeholders, HTML, Markdown, template variables, {value}, {result}, {output1}, or generic labels like key variable / similar concept / mechanism / result as the actual educational content.",
+    "- Never use raw placeholders, HTML, Markdown, template variables, braces, {value}, {result}, {output1}, or literal placeholder phrases like key variable / similar concept / generic mechanism as educational content.",
     "- Pattern choice must match knowledge structure: deterministic optimization/planning/constraints should avoid probability unless the topic itself is about uncertainty.",
     "- Each step should ask the user to do something: guess, choose, sort, connect, slide, compare, or simulate.",
     "- Do not invent payload field names. Use only the required fields listed above for the selected pattern/template.",

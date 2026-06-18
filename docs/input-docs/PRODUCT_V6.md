@@ -124,12 +124,12 @@ Current V6 reliability work is partially implemented and verified:
 - Normalization removes unreplaced placeholders such as `{value}`, `{result}`, `{output1}`, `{topic}`, and generic English placeholders before QualityGate scoring.
 - `repair_actions` now tags normalization and repair events as `field_fix`, `pattern_normalize`, `placeholder_clean`, `schema_repair`, `schema_fallback`, or `flow_repair`; `eval:flow-live` reports per-tag counts and rates.
 - Dynamic Flow generation has a 45s LLM timeout, deterministic `visual_asset` / `next_concepts` normalization, exact Blueprint Pattern-order instructions, and a no-brace natural-language contract for slider explanations.
-- Latest full live baseline: 8 knowledge structures x 3 runs passed with `overall: 1`, `llm_success_rate: 1`, `clean_schema_rate: 0.958`, `schema_repair_rate: 0.042`, `schema_fallback_rate: 0`, `flow_repair_rate: 0`, `repair_reliance_rate: 0.042`; remaining repair action was one `placeholder_clean`, with `pattern_normalize`, `schema_fallback`, and `flow_repair` all at 0.
+- Latest full live baseline: 8 knowledge structures x 3 runs passed with `overall: 1`, `llm_success_rate: 1`, `clean_schema_rate: 1`, `schema_repair_rate: 0`, `schema_fallback_rate: 0`, `flow_repair_rate: 0`, `repair_reliance_rate: 0`; all 24 sampled runs used the LLM path with no mock fallback and no repair actions.
 
 Remaining V6 work:
 
 - Keep using `eval:flow-live -- --limit=8 --runs=3` as the release smoke test for future prompt or Skill Pack changes.
-- Lower repair reliance further, especially for schema payload drift in classification and timeline-like outputs.
+- Keep `repair_reliance_rate <= 0.2` as the release smoke-test threshold while expanding Skill Pack skeleton coverage; current 8x3 baseline is `0`.
 - Surface the generation/quality-check stages in the user experience without exposing technical logs.
 - Improve honest failure UX with retry/change-topic/showcase escape paths.
 ## 2.5 Next Direction - Aha Skill Packs
@@ -242,63 +242,42 @@ Future path:
 3. V7: Curated internal Wiki / Skill Memory that stores high-quality generated Blueprints and validated examples.
 
 This keeps V6 focused on the current failure mode: the model often knows the topic name but teaches it too generically. The skeleton layer forces the system to cover the essential structure before the UI is allowed to look successful.
-## 2.7 Previous Pass Summary and Repair Reduction Plan
+## 2.7 Current Live Baseline and Repair Policy
 
-Last development pass stabilized the live generation path enough to pass the current 8-structure live sample, but it did not make raw LLM output clean enough yet.
-
-Completed in the previous pass:
-
-- Added `npm run eval:flow-live` to sample the real LLM path instead of only deterministic mock/dynamic fixtures.
-- Made topic hints run before LLM-provided structure labels, reducing drift for classification, causal, and procedure topics.
-- Made `KnowledgeBlueprint.pattern_strategy` authoritative so LLM `avoid_patterns` cannot remove required core patterns.
-- Normalized every generated step back to the exact Blueprint Pattern.
-- Added compact payload field guidance for the 10 default Pattern templates.
-- Added placeholder cleanup for unreplaced variables such as `{value}`, `{result}`, `{output1}`, `{topic}`, and generic placeholder phrases.
+The latest V6 pass tightened the `parameter_explore/single_slider` prompt so `explanation_template` is a fixed natural sentence, not a `{value}` template. This removed the last observed `placeholder_clean` repair in the 8-structure live sample.
 
 Latest live result:
 
 ```text
-8/8 cases passed
+command: npm run eval:flow-live -- --limit=8 --runs=3 --threshold=0
+report: output/live-flow-eval/live-flow-2026-06-18T03-14-13-758Z.json
+24/24 runs passed
+8/8 structures covered
 overall: 1
 llm_success_rate: 1
-clean_schema_rate: 0.5
-schema_repair_rate: 0.5
+clean_schema_rate: 1
+schema_repair_rate: 0
+schema_fallback_rate: 0
 flow_repair_rate: 0
-repair_reliance_rate: 0.5
+repair_reliance_rate: 0
+repair_action_counts: {}
 ```
 
 Interpretation:
 
-- The chain can recover and produce valid flows.
-- The raw generation is still too dependent on repair.
-- The next target is not `repair_reliance_rate = 0`; repair is a useful safety layer.
-- The practical target is `repair_reliance_rate <= 0.2` across repeated live runs.
+- The current live sample can generate usable three-step flows without mock fallback or repair actions.
+- Repair remains necessary as a safety layer because LLM output is probabilistic, but it should not be part of the happy path.
+- The practical release threshold stays `repair_reliance_rate <= 0.2`; the current baseline is better than the threshold, not proof that repair can be removed.
 
-Repair reduction strategy:
+Repair reduction strategy remains:
 
-1. Do not tune the repair layer first. Tune Prompt and Blueprint constraints first.
-2. Locate which live cases depend on repair. If the 0.5 repair rate is concentrated in two structures, fix those Skill Packs or prompts instead of changing global instructions.
-3. Use the implemented repair action tags (`field_fix`, `pattern_normalize`, `placeholder_clean`, `schema_repair`, `schema_fallback`, `flow_repair`) to locate the highest-frequency failure mode before changing prompts.
-4. Report repair frequency by type, not only as one aggregate number. This is now supported by `eval:flow-live`; the next work is using the reports to tune the highest-frequency prompt/Skill Pack issue.
-5. Improve one high-frequency repair type per iteration, then rerun live eval.
-
-Desired next report format:
-
-```text
-case: linear-programming
-repair: field_fix=2, placeholder_clean=0, pattern_normalize=0
-
-case: bayes-theorem
-repair: field_fix=1, placeholder_clean=1, pattern_normalize=0
-
-summary:
-placeholder_clean: 0.10
-field_fix: 0.25
-pattern_normalize: 0.00
-repair_reliance_rate: 0.20
-```
+1. Do not tune the repair layer first. Tune Prompt, Blueprint constraints, and Skill Pack contracts first.
+2. Use `repair_actions` (`field_fix`, `pattern_normalize`, `placeholder_clean`, `schema_repair`, `schema_fallback`, `flow_repair`) to locate the highest-frequency failure mode before changing prompts.
+3. Improve one high-frequency repair type per iteration, then rerun `eval:flow-live`.
+4. Report repair frequency by type, not only as one aggregate number.
 
 This keeps the team from saying "repair is high" without knowing what is actually broken.
+
 ## 3. Knowledge Structure Taxonomy
 
 V6 should first cover 6-8 high-frequency structure types, not hundreds of prebuilt concepts.
@@ -915,6 +894,6 @@ Implemented V6 reliability slices:
 Remaining V6 work:
 
 - Expand Blueprint eval from 40 to 80 cases before calling V6 stable.
-- Full 8-structure `eval:flow-live -- --runs=3` baseline is complete; future work should keep it green while reducing the last low-frequency `placeholder_clean` cases and expanding Skill Pack skeleton coverage.
+- Full 8-structure `eval:flow-live -- --runs=3` baseline is complete at 24/24 LLM runs with 0 repair actions; future work should keep it green while expanding Skill Pack skeleton coverage.
 - Improve generated follow-up branches so they use Blueprint relations instead of generic fallback relations.
 - Add a compact pre-flow decomposition preview once reliability is stable enough to expose it as product UX.
