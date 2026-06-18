@@ -1,0 +1,125 @@
+{
+  "skill_name": "aha-procedure-algorithm",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: binary search algorithm.",
+      "expected_output": "Classify as procedure_algorithm and use Pattern chain: process_timeline -> simulation_play -> knowledge_check.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is procedure_algorithm.",
+        "The Pattern chain is exactly process_timeline -> simulation_play -> knowledge_check.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: gradient descent.",
+      "expected_output": "Classify as procedure_algorithm and use Pattern chain: process_timeline -> simulation_play -> knowledge_check.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is procedure_algorithm.",
+        "The Pattern chain is exactly process_timeline -> simulation_play -> knowledge_check.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: Dijkstra algorithm.",
+      "expected_output": "Classify as procedure_algorithm and use Pattern chain: process_timeline -> simulation_play -> knowledge_check.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is procedure_algorithm.",
+        "The Pattern chain is exactly process_timeline -> simulation_play -> knowledge_check.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: merge sort algorithm.",
+      "expected_output": "Classify as procedure_algorithm and use Pattern chain: process_timeline -> simulation_play -> knowledge_check.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is procedure_algorithm.",
+        "The Pattern chain is exactly process_timeline -> simulation_play -> knowledge_check.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: breadth first search algorithm.",
+      "expected_output": "Classify as procedure_algorithm and use Pattern chain: process_timeline -> simulation_play -> knowledge_check.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is procedure_algorithm.",
+        "The Pattern chain is exactly process_timeline -> simulation_play -> knowledge_check.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: quicksort algorithm.",
+      "expected_output": "Classify as procedure_algorithm and use Pattern chain: process_timeline -> simulation_play -> knowledge_check.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is procedure_algorithm.",
+        "The Pattern chain is exactly process_timeline -> simulation_play -> knowledge_check.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: dynamic programming.",
+      "expected_output": "Classify as procedure_algorithm and use Pattern chain: process_timeline -> simulation_play -> knowledge_check.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is procedure_algorithm.",
+        "The Pattern chain is exactly process_timeline -> simulation_play -> knowledge_check.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: A* search algorithm.",
+      "expected_output": "Classify as procedure_algorithm and use Pattern chain: process_timeline -> simulation_play -> knowledge_check.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is procedure_algorithm.",
+        "The Pattern chain is exactly process_timeline -> simulation_play -> knowledge_check.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: topological sort.",
+      "expected_output": "Classify as procedure_algorithm and use Pattern chain: process_timeline -> simulation_play -> knowledge_check.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is procedure_algorithm.",
+        "The Pattern chain is exactly process_timeline -> simulation_play -> knowledge_check.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: backpropagation.",
+      "expected_output": "Classify as procedure_algorithm and use Pattern chain: process_timeline -> simulation_play -> knowledge_check.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is procedure_algorithm.",
+        "The Pattern chain is exactly process_timeline -> simulation_play -> knowledge_check.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    }
+  ]
+}

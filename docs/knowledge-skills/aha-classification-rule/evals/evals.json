@@ -1,0 +1,125 @@
+{
+  "skill_name": "aha-classification-rule",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: waste classification.",
+      "expected_output": "Classify as classification_rule and use Pattern chain: classification_sort -> knowledge_check -> concept_memory.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is classification_rule.",
+        "The Pattern chain is exactly classification_sort -> knowledge_check -> concept_memory.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: machine learning task classification.",
+      "expected_output": "Classify as classification_rule and use Pattern chain: classification_sort -> knowledge_check -> concept_memory.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is classification_rule.",
+        "The Pattern chain is exactly classification_sort -> knowledge_check -> concept_memory.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: legal liability categories.",
+      "expected_output": "Classify as classification_rule and use Pattern chain: classification_sort -> knowledge_check -> concept_memory.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is classification_rule.",
+        "The Pattern chain is exactly classification_sort -> knowledge_check -> concept_memory.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: biological taxonomy.",
+      "expected_output": "Classify as classification_rule and use Pattern chain: classification_sort -> knowledge_check -> concept_memory.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is classification_rule.",
+        "The Pattern chain is exactly classification_sort -> knowledge_check -> concept_memory.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: email sorting rules.",
+      "expected_output": "Classify as classification_rule and use Pattern chain: classification_sort -> knowledge_check -> concept_memory.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is classification_rule.",
+        "The Pattern chain is exactly classification_sort -> knowledge_check -> concept_memory.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: Bloom taxonomy.",
+      "expected_output": "Classify as classification_rule and use Pattern chain: classification_sort -> knowledge_check -> concept_memory.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is classification_rule.",
+        "The Pattern chain is exactly classification_sort -> knowledge_check -> concept_memory.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: rock types.",
+      "expected_output": "Classify as classification_rule and use Pattern chain: classification_sort -> knowledge_check -> concept_memory.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is classification_rule.",
+        "The Pattern chain is exactly classification_sort -> knowledge_check -> concept_memory.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: design pattern types.",
+      "expected_output": "Classify as classification_rule and use Pattern chain: classification_sort -> knowledge_check -> concept_memory.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is classification_rule.",
+        "The Pattern chain is exactly classification_sort -> knowledge_check -> concept_memory.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: HTTP status codes.",
+      "expected_output": "Classify as classification_rule and use Pattern chain: classification_sort -> knowledge_check -> concept_memory.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is classification_rule.",
+        "The Pattern chain is exactly classification_sort -> knowledge_check -> concept_memory.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: customer segmentation.",
+      "expected_output": "Classify as classification_rule and use Pattern chain: classification_sort -> knowledge_check -> concept_memory.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is classification_rule.",
+        "The Pattern chain is exactly classification_sort -> knowledge_check -> concept_memory.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    }
+  ]
+}

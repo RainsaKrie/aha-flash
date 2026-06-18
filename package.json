@@ -15,7 +15,8 @@
     "eval:flow-dynamic": "node --no-warnings --experimental-strip-types tests/eval/dynamic-flow-score.ts",
     "eval:flow-live": "node --no-warnings --experimental-strip-types tests/eval/live-flow-score.ts",
     "eval:showcase": "node --no-warnings --experimental-strip-types tests/eval/showcase-pattern-score.ts",
-    "eval:blueprint": "node --no-warnings --experimental-strip-types tests/eval/blueprint-score.ts"
+    "eval:blueprint": "node --no-warnings --experimental-strip-types tests/eval/blueprint-score.ts",
+    "eval:skills": "node --no-warnings --experimental-strip-types tests/eval/skill-pack-score.ts"
   },
   "dependencies": {
     "@ai-sdk/deepseek": "^2.0.35",

@@ -936,3 +936,7 @@ th-child 顺序轮换改为按知识语义映射。
 - Optimization topics now use a fixed pedagogical Pattern chain: system_builder -> parameter_explore -> simulation_play.
 - Verified linear programming locally: first step builds a factory model with x/y, objective 40x+30y, labor/material constraints, and feasible region; later steps explore constraints and simulate optimum movement.
 
+### V6 Skill-Creator style Skill Pack assets
+- Added `docs/knowledge-skills/` with 8 internal Aha Skill folders, one per supported knowledge structure.
+- Each skill now has a lean `SKILL.md` plus `evals/evals.json`, following the skill-creator pattern of metadata, concise instructions, and realistic test prompts.
+- Added `npm run eval:skills` to verify frontmatter, Pattern recipes, teaching steps, and eval coverage stay synchronized with runtime `skill-packs.ts` and the 80-case Blueprint fixture set.

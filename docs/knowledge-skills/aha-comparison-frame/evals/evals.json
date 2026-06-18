@@ -1,0 +1,125 @@
+{
+  "skill_name": "aha-comparison-frame",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: inflation vs deflation.",
+      "expected_output": "Classify as comparison_frame and use Pattern chain: comparison -> classification_sort -> knowledge_check.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is comparison_frame.",
+        "The Pattern chain is exactly comparison -> classification_sort -> knowledge_check.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: TCP vs UDP.",
+      "expected_output": "Classify as comparison_frame and use Pattern chain: comparison -> classification_sort -> knowledge_check.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is comparison_frame.",
+        "The Pattern chain is exactly comparison -> classification_sort -> knowledge_check.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: stocks vs options.",
+      "expected_output": "Classify as comparison_frame and use Pattern chain: comparison -> classification_sort -> knowledge_check.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is comparison_frame.",
+        "The Pattern chain is exactly comparison -> classification_sort -> knowledge_check.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: capitalism vs socialism.",
+      "expected_output": "Classify as comparison_frame and use Pattern chain: comparison -> classification_sort -> knowledge_check.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is comparison_frame.",
+        "The Pattern chain is exactly comparison -> classification_sort -> knowledge_check.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: REST vs GraphQL.",
+      "expected_output": "Classify as comparison_frame and use Pattern chain: comparison -> classification_sort -> knowledge_check.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is comparison_frame.",
+        "The Pattern chain is exactly comparison -> classification_sort -> knowledge_check.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: SQL vs NoSQL.",
+      "expected_output": "Classify as comparison_frame and use Pattern chain: comparison -> classification_sort -> knowledge_check.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is comparison_frame.",
+        "The Pattern chain is exactly comparison -> classification_sort -> knowledge_check.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: supervised vs unsupervised learning.",
+      "expected_output": "Classify as comparison_frame and use Pattern chain: comparison -> classification_sort -> knowledge_check.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is comparison_frame.",
+        "The Pattern chain is exactly comparison -> classification_sort -> knowledge_check.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: CPU vs GPU.",
+      "expected_output": "Classify as comparison_frame and use Pattern chain: comparison -> classification_sort -> knowledge_check.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is comparison_frame.",
+        "The Pattern chain is exactly comparison -> classification_sort -> knowledge_check.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: renewable energy vs fossil energy.",
+      "expected_output": "Classify as comparison_frame and use Pattern chain: comparison -> classification_sort -> knowledge_check.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is comparison_frame.",
+        "The Pattern chain is exactly comparison -> classification_sort -> knowledge_check.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "Generate a three-step Aha Flash learning Flow for topic: renting vs buying.",
+      "expected_output": "Classify as comparison_frame and use Pattern chain: comparison -> classification_sort -> knowledge_check.",
+      "files": [],
+      "expectations": [
+        "The output structure_type is comparison_frame.",
+        "The Pattern chain is exactly comparison -> classification_sort -> knowledge_check.",
+        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
+        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
+      ]
+    }
+  ]
+}

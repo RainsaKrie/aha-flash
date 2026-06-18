@@ -898,3 +898,22 @@ Remaining V6 work:
 
 - Expand Blueprint eval from 40 to 80 cases before calling V6 stable.
 - Full 8-structure `eval:flow-live -- --runs=3` baseline was previously complete at 24/24 LLM runs with 0 repair actions. After the Stage C eval expansion, the latest 8x1 smoke remains green with `repair_reliance_rate: 0.125`; future work should keep the rate <= 0.2 while expanding Skill Pack skeleton coverage.
+
+## 14. Skill-Creator Standardization
+
+V6 Skill Packs should now be maintained with the skill-creator loop: write a compact skill, attach realistic eval prompts, run deterministic checks, review failures, and only then tune Prompt or Blueprint constraints.
+
+Implemented asset layer:
+
+- `docs/knowledge-skills/aha-optimization-model`
+- `docs/knowledge-skills/aha-system-process`
+- `docs/knowledge-skills/aha-probabilistic-reasoning`
+- `docs/knowledge-skills/aha-historical-change`
+- `docs/knowledge-skills/aha-comparison-frame`
+- `docs/knowledge-skills/aha-classification-rule`
+- `docs/knowledge-skills/aha-causal-mechanism`
+- `docs/knowledge-skills/aha-procedure-algorithm`
+
+Each folder contains only `SKILL.md` and `evals/evals.json`, keeping the skill lean and progressively disclosed. `npm run eval:skills` checks that these files do not drift from `src/lib/content/skill-packs.ts` or the 80-case Blueprint eval set.
+
+This is the intended V6 working mode going forward: do not patch random fallback content for one failed topic; update the relevant Skill Pack contract, rerun skill/blueprint/live evals, and keep repair reliance under the release threshold.

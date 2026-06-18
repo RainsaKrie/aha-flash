@@ -648,3 +648,14 @@ Network search and a curated Wiki are future layers. They should not be a hard d
 ### V6 Generation Visibility
 
 `POST /api/flow` now returns a sanitized `preview` payload for production UI: topic, detected knowledge structure, compact core terms, planned three-step path, source, and gate state. `/explore` uses this payload for a short pre-flow decomposition preview before routing into `/flow/custom`, making the live generation pipeline visible without exposing raw model output or internal debug logs.
+
+### V6 Skill-Creator Asset Standard
+
+V6 internal Skill Packs now have a project-level, skill-creator-style asset layer under `docs/knowledge-skills/`. Each supported knowledge structure owns one skill folder named `aha-<structure>` with:
+
+- `SKILL.md`: YAML frontmatter with `name` and a triggering `description`, plus concise teaching-contract instructions.
+- `evals/evals.json`: skill-level prompts and expectations synchronized with `tests/fixtures/blueprint-cases.json`.
+
+These folders are not user-installable Codex skills yet. They are the human/agent-editable specification layer for the runtime skeletons in `src/lib/content/skill-packs.ts`. Runtime generation still reads the TypeScript skeletons so product behavior remains deterministic and cheap.
+
+`npm run eval:skills` verifies that the skill folders, frontmatter, Pattern recipes, teaching steps, and eval cases stay aligned with the runtime skeletons and Blueprint fixture set.
