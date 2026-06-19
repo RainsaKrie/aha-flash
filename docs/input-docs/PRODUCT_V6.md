@@ -124,16 +124,17 @@ Current V6 reliability work is partially implemented and verified:
 - Normalization removes unreplaced placeholders such as `{value}`, `{result}`, `{output1}`, `{topic}`, and generic English placeholders before QualityGate scoring.
 - `repair_actions` now tags normalization and repair events as `field_fix`, `pattern_normalize`, `placeholder_clean`, `schema_repair`, `schema_fallback`, or `flow_repair`; `eval:flow-live` reports per-tag counts and rates.
 - Dynamic Flow generation has a 45s LLM timeout, deterministic `visual_asset` / `next_concepts` normalization, exact Blueprint Pattern-order instructions, and a no-brace natural-language contract for slider explanations.
-- Latest full live baseline: 8 knowledge structures x 3 runs passed with `overall: 1`, `llm_success_rate: 1`, `clean_schema_rate: 1`, `schema_repair_rate: 0`, `schema_fallback_rate: 0`, `flow_repair_rate: 0`, `repair_reliance_rate: 0`; all 24 sampled runs used the LLM path with no mock fallback and no repair actions.
+- Previous pre-Skill-Contract full live baseline passed 24/24 with `repair_reliance_rate: 0`. Latest post-Skill-Contract full live baseline on 2026-06-19 passed 24/24 with `overall: 1`, `llm_success_rate: 1`, `schema_repair_rate: 0`, `flow_repair_rate: 0.083`, and `repair_reliance_rate: 0.083`; remaining repair reliance is 2 flow-level repairs in causal/compound-interest.
 - Added the first internal Aha Skill Pack skeleton layer in `src/lib/content/skill-packs.ts`, covering 8 representative knowledge families. `KnowledgeBlueprint` now carries `skill_skeleton_id`, required core terms, required teaching steps, and forbidden framings, and QualityGate checks these deterministically.
 - Expanded `eval:blueprint` to the Stage C target: 80 fixed cases, 10 topics per supported knowledge structure, with `overall: 1`. The expansion keeps existing Chinese hints and adds broader English topic coverage such as diet problem, TCP handshake, hypothesis testing, Renaissance, SQL vs NoSQL, HTTP status codes, greenhouse effect, and dynamic programming.
-- Added natural-language anchor synonyms for comparison and causal Skill Packs, so QualityGate recognizes user-facing teaching phrases such as signal, indicator, transmission mechanism, result, effect, and final value instead of overfitting to internal terms like dimension/outcome. Latest post-expansion 8x1 live smoke: `overall: 1`, `llm_success_rate: 1`, `schema_repair_rate: 0`, `repair_reliance_rate: 0.125`, below the V6 release threshold of `0.2`.
+- Added natural-language anchor synonyms for comparison and causal Skill Packs, so QualityGate recognizes user-facing teaching phrases such as signal, indicator, transmission mechanism, result, effect, and final value instead of overfitting to internal terms like dimension/outcome. Latest full 8x3 live baseline remains below the V6 repair threshold with `repair_reliance_rate: 0.083`.
 
 Remaining V6 work:
 
 - Keep using `eval:flow-live -- --limit=8 --runs=3` as the release smoke test for future prompt or Skill Pack changes.
-- Keep `repair_reliance_rate <= 0.2` as the release smoke-test threshold while expanding Skill Pack skeleton coverage; current 8x3 baseline is `0`.
+- Keep `repair_reliance_rate <= 0.2` as the release smoke-test threshold while expanding Skill Pack skeleton coverage; current post-Skill-Contract 8x3 baseline is `0.083`, with repairs concentrated in causal/compound-interest flow repair.
 - Improve honest failure UX with retry/change-topic/showcase escape paths.
+- Runtime Skill Pack prompt contracts are now injected into first-pass Flow generation and repair prompts; keep `eval:skills` in the release check so this contract cannot drift from `docs/knowledge-skills/` or `src/lib/content/skill-packs.ts`.
 ## 2.5 Next Direction - Aha Skill Packs
 
 V6 should not rely on one large universal prompt to teach every concept. The next reliability direction is to split the generation brain into reusable Aha Skill Packs.
@@ -252,7 +253,7 @@ Latest live result:
 
 ```text
 command: npm run eval:flow-live -- --limit=8 --runs=3 --threshold=0
-report: output/live-flow-eval/live-flow-2026-06-18T03-14-13-758Z.json
+report: output/live-flow-eval/live-flow-2026-06-19T01-53-40-581Z.json
 24/24 runs passed
 8/8 structures covered
 overall: 1
@@ -260,14 +261,14 @@ llm_success_rate: 1
 clean_schema_rate: 1
 schema_repair_rate: 0
 schema_fallback_rate: 0
-flow_repair_rate: 0
-repair_reliance_rate: 0
-repair_action_counts: {}
+flow_repair_rate: 0.083
+repair_reliance_rate: 0.083
+repair_action_counts: {"flow_repair":2}
 ```
 
 Interpretation:
 
-- The current live sample can generate usable three-step flows without mock fallback or repair actions.
+- The current live sample can generate usable three-step flows without mock fallback or schema repair; the remaining repair reliance is limited to 2 flow-level repairs in causal/compound-interest.
 - Repair remains necessary as a safety layer because LLM output is probabilistic, but it should not be part of the happy path.
 - The practical release threshold stays `repair_reliance_rate <= 0.2`; the current baseline is better than the threshold, not proof that repair can be removed.
 
@@ -896,8 +897,7 @@ Implemented V6 reliability slices:
 
 Remaining V6 work:
 
-- Expand Blueprint eval from 40 to 80 cases before calling V6 stable.
-- Full 8-structure `eval:flow-live -- --runs=3` baseline was previously complete at 24/24 LLM runs with 0 repair actions. After the Stage C eval expansion, the latest 8x1 smoke remains green with `repair_reliance_rate: 0.125`; future work should keep the rate <= 0.2 while expanding Skill Pack skeleton coverage.
+- Full 8-structure `eval:flow-live -- --limit=8 --runs=3` baseline was rerun after runtime Skill Contract injection: 24/24 LLM runs passed with `repair_reliance_rate: 0.083`. Future work should keep the rate <= 0.2 and reduce the remaining causal/compound-interest flow repair cases.
 
 ## 14. Skill-Creator Standardization
 

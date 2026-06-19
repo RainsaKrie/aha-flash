@@ -5,6 +5,12 @@
 ---
 
 
+## 2026-06-19
+
+### V6 post-contract live baseline
+- Reran `npm run eval:flow-live -- --limit=8 --runs=3` after runtime Skill Contract injection. All 24 real LLM runs passed with `overall: 1`, `llm_success_rate: 1`, `schema_repair_rate: 0`, `flow_repair_rate: 0.083`, and `repair_reliance_rate: 0.083`.
+- Remaining repair reliance is concentrated in causal/compound-interest flow repair (2/24 runs), making it the next targeted Prompt/Skill Pack tuning area.
+
 ## 2026-06-18
 
 ### V6 Skill Pack runtime contract
