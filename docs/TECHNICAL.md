@@ -647,7 +647,7 @@ Network search and a curated Wiki are future layers. They should not be a hard d
 
 ### V6 Generation Visibility
 
-`POST /api/flow` now returns a sanitized `preview` payload for production UI: topic, detected knowledge structure, compact core terms, planned three-step path, source, and gate state. `/explore` uses this payload for a short pre-flow decomposition preview before routing into `/flow/custom`, making the live generation pipeline visible without exposing raw model output or internal debug logs.
+`POST /api/flow` now returns a sanitized `preview` payload for production UI: topic, detected knowledge structure, compact core terms, planned three-step path, source, and gate state. `/explore` uses this payload as an explicit pre-flow checkpoint: users see the decomposition first, then click `进入三关` to route into `/flow/custom`, or `重新拆一次` to regenerate. This makes the live generation pipeline visible without exposing raw model output or internal debug logs.
 
 ### V6 Skill-Creator Asset Standard
 

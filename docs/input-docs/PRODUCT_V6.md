@@ -679,6 +679,7 @@ Acceptance:
 
 - The user can tell the system is assembling a path, not fetching a static page.
 - The loading copy is short and product-like, not a debug log.
+- Implemented checkpoint: after generation succeeds, Explore shows the detected structure, core terms, and three planned steps; the user explicitly enters the Flow instead of being auto-routed.
 
 #### Signal 3: Completion Leads to Growth
 

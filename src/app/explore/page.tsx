@@ -101,6 +101,7 @@ export default function ExplorePage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
   const [generationPreview, setGenerationPreview] = useState<GenerationPreview | null>(null);
+  const [pendingDraftId, setPendingDraftId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [failureState, setFailureState] = useState<FlowFailureResponse | null>(null);
   const [failureAttempts, setFailureAttempts] = useState(0);
@@ -118,6 +119,7 @@ export default function ExplorePage() {
     setErrorMessage(null);
     setFailureState(null);
     setGenerationPreview(null);
+    setPendingDraftId(null);
     const timers = GENERATION_STEPS.slice(1).map((_, index) =>
       window.setTimeout(() => setGenerationStep(index + 1), 680 * (index + 1)),
     );
@@ -140,7 +142,6 @@ export default function ExplorePage() {
       const flow = payload.flow;
       setGenerationStep(GENERATION_STEPS.length - 1);
       setGenerationPreview(payload.preview || makeFallbackPreview(flow, payload.source));
-      await new Promise<void>((resolve) => window.setTimeout(resolve, 820));
       setFailureAttempts(0);
       setLastFailedTopic(null);
       const draftId = flow.id || crypto.randomUUID();
@@ -154,9 +155,10 @@ export default function ExplorePage() {
         quality_gate: payload.quality_gate,
       };
       writeFlowDraft(draftId, flow, debug);
-      router.push(`/flow/custom?draftId=${encodeURIComponent(draftId)}`);
+      setPendingDraftId(draftId);
     } catch (error) {
       setGenerationPreview(null);
+      setPendingDraftId(null);
       setErrorMessage(error instanceof Error ? error.message : String(error));
     } finally {
       timers.forEach((timer) => window.clearTimeout(timer));
@@ -195,13 +197,7 @@ export default function ExplorePage() {
         <h1 id="explore-title">想学什么，玩三关。</h1>
         <p>输入概念，趣灵自动生成互动路径。</p>
 
-        <form
-          className="v5-flow-generator"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void startGeneratedFlow();
-          }}
-        >
+        <div className="v5-flow-generator">
           <label className="v5-flow-generator__input">
             <span>我想理解</span>
             <input
@@ -212,18 +208,25 @@ export default function ExplorePage() {
                 setErrorMessage(null);
                 setFailureState(null);
                 setGenerationPreview(null);
+                setPendingDraftId(null);
                 setFailureAttempts(0);
                 setLastFailedTopic(null);
               }}
               placeholder="比如：光合作用、DNS 解析、沉没成本"
               disabled={isGenerating}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  void startGeneratedFlow();
+                }
+              }}
             />
           </label>
-          <button type="submit" className="v5-primary-button" disabled={isGenerating}>
+          <button type="button" className="v5-primary-button" disabled={isGenerating} onClick={() => void startGeneratedFlow()}>
             {isGenerating ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
             开始闯关
           </button>
-        </form>
+        </div>
 
         <div className="v5-flow-controls" aria-label={"\u8f85\u52a9\u8bbe\u7f6e"}>
           <div className="v5-flow-examples" aria-label={"\u8f93\u5165\u793a\u4f8b"}>
@@ -238,6 +241,7 @@ export default function ExplorePage() {
                   setErrorMessage(null);
                   setFailureState(null);
                   setGenerationPreview(null);
+                  setPendingDraftId(null);
                   setFailureAttempts(0);
                   setLastFailedTopic(null);
                 }}
@@ -282,6 +286,20 @@ export default function ExplorePage() {
                 </li>
               ))}
             </ol>
+            {pendingDraftId && (
+              <div className="v6-decomposition-preview__actions">
+                <button
+                  type="button"
+                  className="v6-decomposition-preview__start"
+                  onClick={() => router.push(`/flow/custom?draftId=${encodeURIComponent(pendingDraftId)}`)}
+                >
+                  进入三关 <ArrowRight size={16} />
+                </button>
+                <button type="button" className="v6-decomposition-preview__retry" onClick={() => void startGeneratedFlow()}>
+                  重新拆一次
+                </button>
+              </div>
+            )}
           </div>
         )}
         {failureState && (
@@ -329,6 +347,7 @@ export default function ExplorePage() {
                   setTopic("");
                   setFailureState(null);
                   setGenerationPreview(null);
+                  setPendingDraftId(null);
                   setFailureAttempts(0);
                   setLastFailedTopic(null);
                   setErrorMessage(null);

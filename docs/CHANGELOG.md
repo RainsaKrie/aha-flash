@@ -7,6 +7,10 @@
 
 ## 2026-06-19
 
+### V6 generation preview checkpoint
+- Changed `/explore` dynamic generation from automatic route jump to an explicit decomposition preview checkpoint. After `POST /api/flow` succeeds, users see the detected structure, core terms, and planned three-step path, then choose `进入三关` or `重新拆一次`.
+- Added preview action styling and pending draft state cleanup so stale generated drafts are not reused after editing the topic, choosing an example, or hitting a failure state.
+- Removed the native form-submit fallback from the Explore generator; the CTA now triggers generation explicitly and Enter is handled on the input, preventing accidental `/explore?` refreshes before the client event layer is ready.
 ### V6 post-contract live baseline
 - Reran `npm run eval:flow-live -- --limit=8 --runs=3` after runtime Skill Contract injection. All 24 real LLM runs passed with `overall: 1`, `llm_success_rate: 1`, `schema_repair_rate: 0`, `flow_repair_rate: 0.083`, and `repair_reliance_rate: 0.083`.
 - Remaining repair reliance is concentrated in causal/compound-interest flow repair (2/24 runs), making it the next targeted Prompt/Skill Pack tuning area.
