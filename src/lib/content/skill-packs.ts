@@ -58,7 +58,7 @@ export const KNOWLEDGE_SKILL_PACKS: KnowledgeSkeleton[] = [
     required_core_terms: ["steam engine", "factory system", "urbanization", "machine", "energy", "蒸汽机", "工厂制度", "城市化", "机器", "能源"],
     required_teaching_steps: ["initial condition", "trigger", "driver separation", "turning point", "long-term consequence"],
     common_misconceptions: ["one invention alone caused the whole change", "history is just a date list"],
-    forbidden_framings: ["pure date memorization", "只背年份"],
+    forbidden_framings: ["pure date memorization", "年份就是全部"],
     suitable_patterns: ["process_timeline", "classification_sort", "narrative_branch"],
     unsuitable_patterns: ["probability"],
     canonical_examples: ["steam power changes factory rhythm", "rural workers move to cities"],

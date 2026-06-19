@@ -62,7 +62,7 @@ Common misconceptions to avoid:
 Forbidden framings:
 
 - pure date memorization
-- 只背年份
+- 年份就是全部
 
 ## Pattern Recipe
 

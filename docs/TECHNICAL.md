@@ -676,3 +676,12 @@ Current validation:
 
 - Non-live gates pass: `typecheck`, `build`, `eval:score`, `eval:blueprint`, `eval:flow-dynamic`, `eval:skills`.
 - Provider live rebaseline is blocked by `Insufficient Balance`; this is an external API/account state, not a schema or QualityGate failure.
+### V6 Live Baseline After Provider Recharge
+
+After the provider key was recharged, `eval:flow-live` was rerun successfully.
+
+- `npm run eval:flow-live -- --case=history --runs=5`: 5/5 pass, repair reliance 0.
+- `npm run eval:flow-live -- --limit=8 --runs=3`: 24/24 pass, `overall: 1`, `llm_success_rate: 1`, `schema_repair_rate: 0`, `flow_repair_rate: 0.042`, `repair_reliance_rate: 0.042`.
+- The only follow-up code change was narrowing the historical-change forbidden framing from `只背年份` to `年份就是全部`, preventing QualityGate from rejecting useful wrong-answer/anti-pattern copy.
+
+This is the current V6 live reliability baseline.

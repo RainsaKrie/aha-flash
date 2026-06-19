@@ -960,3 +960,11 @@ th-child 顺序轮换改为按知识语义映射。
 - Added `--case=` filtering to `npm run eval:flow-live` for targeted live regression runs by case id, topic, or structure.
 - Verified `typecheck`, `build`, `eval:score`, `eval:blueprint`, `eval:flow-dynamic`, and `eval:skills` pass after the change.
 - Live LLM rebaseline is paused because the current provider returned `Insufficient Balance`; rerun `npm run eval:flow-live -- --limit=8 --runs=3` after the API key has balance.
+### V6 live rebaseline after API recharge
+
+- Recharged the provider key and reran the full live baseline after grounding stabilization.
+- Initial live run after recharge exposed one historical-change false positive: the forbidden framing `只背年份` also blocked legitimate wrong-answer / anti-pattern copy.
+- Updated the historical Skill Pack forbidden framing to `年份就是全部`, preserving the shallow-history guard while allowing useful contrastive answer choices.
+- Targeted history live check: `npm run eval:flow-live -- --case=history --runs=5` passed 5/5 with repair reliance 0.
+- Final full live baseline: `npm run eval:flow-live -- --limit=8 --runs=3` passed 24/24 with `overall: 1`, `llm_success_rate: 1`, `schema_repair_rate: 0`, `flow_repair_rate: 0.042`, and `repair_reliance_rate: 0.042`.
+- Latest live report: `output/live-flow-eval/live-flow-2026-06-19T03-03-51-560Z.json`.

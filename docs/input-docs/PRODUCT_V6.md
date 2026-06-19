@@ -943,3 +943,27 @@ Validation completed:
 Blocked:
 
 - Full live rebaseline is currently blocked by provider `Insufficient Balance`. After recharge or key replacement, rerun `npm run eval:flow-live -- --limit=8 --runs=3` and update this section with the new repair reliance rate.
+## 16. V6 Live Baseline After API Recharge - 2026-06-19
+
+After the provider key was recharged, the full live baseline was rerun.
+
+Results:
+
+- Targeted history check: `npm run eval:flow-live -- --case=history --runs=5` passed 5/5, repair reliance 0.
+- Full live baseline: `npm run eval:flow-live -- --limit=8 --runs=3` passed 24/24.
+- `overall`: 1
+- `llm_success_rate`: 1
+- `schema_repair_rate`: 0
+- `flow_repair_rate`: 0.042
+- `repair_reliance_rate`: 0.042
+
+Follow-up fix from the live run:
+
+- Historical-change forbidden framing changed from `只背年份` to `年份就是全部`.
+- Reason: `只背年份` can appear as a useful wrong answer or anti-pattern in a learning component, while `年份就是全部` better represents the harmful shallow-history framing that QualityGate should block.
+
+Current V6 reliability status:
+
+- The 8-structure live baseline is green.
+- Repair reliance is below the 0.2 target and improved from the previous 0.083 baseline to 0.042.
+- Next reliability work should focus on the remaining occasional probability/Bayes flow repair, not broad prompt rewrites.
