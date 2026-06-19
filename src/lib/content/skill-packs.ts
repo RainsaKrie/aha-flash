@@ -149,8 +149,10 @@ export function formatKnowledgeSkillContract(pack: KnowledgeSkeleton) {
     "Correct these misconceptions: " + shortList(pack.common_misconceptions, 4),
     "Do not frame the topic as: " + (shortList(pack.forbidden_framings, 5) || "none"),
     "Useful example anchors: " + shortList(pack.canonical_examples, 4),
+    "Visible step coverage: every play must visibly include at least one term from its matching teaching step.",
+    pack.structure_type === "causal_mechanism" ? "Causal final-step rule: the final simulation must visibly name outcome/result/feedback/final value and show how the result changes." : "",
     "Use this as a teaching contract, not as prewritten lesson copy. Adapt the examples to the user topic.",
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 }
 
 export function topicSkeletonTerms(topic: string) {

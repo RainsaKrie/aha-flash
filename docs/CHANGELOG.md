@@ -951,3 +951,12 @@ th-child 顺序轮换改为按知识语义映射。
 - Added `docs/knowledge-skills/` with 8 internal Aha Skill folders, one per supported knowledge structure.
 - Each skill now has a lean `SKILL.md` plus `evals/evals.json`, following the skill-creator pattern of metadata, concise instructions, and realistic test prompts.
 - Added `npm run eval:skills` to verify frontmatter, Pattern recipes, teaching steps, and eval coverage stay synchronized with runtime `skill-packs.ts` and the 80-case Blueprint fixture set.
+
+### V6 grounding stabilization and fallback quality
+
+- Stabilized ConceptPlan `grounding_terms` with the selected Aha Skill Pack skeleton before Flow generation. Skill Pack required terms now take priority over accidental advanced or generic LLM anchors.
+- Skill Pack matching now falls back from `topic + structure` to `topic` when an LLM-provided structure is too generic, so topics such as `compound interest` and `binary search algorithm` still get their causal/procedure teaching contracts.
+- No-key / provider-failure fallback now uses Skill Pack terms and adds visible Blueprint step terms into fallback play copy, so fallback Flows can pass deterministic QualityGate instead of showing hollow generic mock content.
+- Added `--case=` filtering to `npm run eval:flow-live` for targeted live regression runs by case id, topic, or structure.
+- Verified `typecheck`, `build`, `eval:score`, `eval:blueprint`, `eval:flow-dynamic`, and `eval:skills` pass after the change.
+- Live LLM rebaseline is paused because the current provider returned `Insufficient Balance`; rerun `npm run eval:flow-live -- --limit=8 --runs=3` after the API key has balance.

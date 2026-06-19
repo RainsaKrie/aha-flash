@@ -661,3 +661,18 @@ These folders are not user-installable Codex skills yet. They are the human/agen
 `npm run eval:skills` verifies that the skill folders, frontmatter, Pattern recipes, teaching steps, eval cases, and runtime prompt contracts stay aligned with the runtime skeletons and Blueprint fixture set.
 
 Runtime Flow generation now injects a compact Aha Skill Pack contract into both the first-pass Flow prompt and the repair prompt. The contract exposes only the selected skeleton id, structure type, required visible core terms, teaching order, recommended/avoided Pattern family, misconceptions, forbidden framings, and example anchors. This keeps the LLM focused on the selected teaching skill instead of relying only on a large generic Blueprint JSON block.
+
+### V6 Grounding Stabilization Update
+
+ConceptPlan grounding is now deterministic-first:
+
+- `normalizeConceptPlan()` stabilizes `grounding_terms` through the selected Skill Pack skeleton before the Flow prompt is composed.
+- Matching uses `selectKnowledgeSkeleton(topic, structure) || selectKnowledgeSkeleton(topic)` so a weak LLM structure label cannot block a topic-specific teaching contract.
+- Fallback ConceptPlans also use stabilized Skill Pack terms, not generic `<topic>入口 / 关键动作` anchors.
+- Fallback plays append visible Blueprint step terms to `reward_copy`; `teaching_trace` remains eval/debug metadata and is not treated as a substitute for visible teaching copy.
+- `eval:flow-live` supports `--case=` for targeted live checks, e.g. `npm run eval:flow-live -- --case=optimization --runs=5`.
+
+Current validation:
+
+- Non-live gates pass: `typecheck`, `build`, `eval:score`, `eval:blueprint`, `eval:flow-dynamic`, `eval:skills`.
+- Provider live rebaseline is blocked by `Insufficient Balance`; this is an external API/account state, not a schema or QualityGate failure.

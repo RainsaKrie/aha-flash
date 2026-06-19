@@ -919,3 +919,27 @@ Each folder contains only `SKILL.md` and `evals/evals.json`, keeping the skill l
 Runtime Flow generation now injects the selected Skill Pack contract into both the first-pass prompt and the repair prompt. This makes Skill Packs operational: they are not only documentation assets, but the concise teaching contract seen by the LLM before it writes UI schemas.
 
 This is the intended V6 working mode going forward: do not patch random fallback content for one failed topic; update the relevant Skill Pack contract, rerun skill/blueprint/live evals, and keep repair reliance under the release threshold.
+
+## 15. V6 Grounding Stabilization Status - 2026-06-19
+
+Implemented after the first Skill Pack runtime injection baseline:
+
+- ConceptPlan grounding terms are now stabilized by the selected Aha Skill Pack before Flow generation.
+- The stabilizer prioritizes Skill Pack required core terms, then topic-aware fallback terms, then LLM terms. This prevents a topic such as `linear programming` from drifting into over-advanced anchors like `simplex method` or `dual problem` when the current three-step lesson only teaches the modeling foundation.
+- Skill Pack lookup now falls back to topic-only matching when the model supplies a generic or mismatched structure label.
+- Fallback Flows now expose Blueprint step terms in user-facing play copy, so no-key/provider-failure fallback is still auditable by deterministic QualityGate.
+- Local no-key checks pass for `compound interest` and `binary search algorithm` fallback Flows.
+
+Validation completed:
+
+- `npm run typecheck`: pass
+- `npm run build`: pass
+- `npm run eval:score`: overall 1
+- `npm run eval:blueprint`: 80/80 pass, overall 1
+- `npm run eval:flow-dynamic`: 9/9 pass, overall 1
+- `npm run eval:skills`: 8/8 pass, overall 1
+- Targeted live before provider balance exhaustion: `optimization` 5/5 pass with repair reliance 0; `classification` 3/3 pass with repair reliance 0.
+
+Blocked:
+
+- Full live rebaseline is currently blocked by provider `Insufficient Balance`. After recharge or key replacement, rerun `npm run eval:flow-live -- --limit=8 --runs=3` and update this section with the new repair reliance rate.

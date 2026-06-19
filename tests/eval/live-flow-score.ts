@@ -223,10 +223,20 @@ async function main() {
   }
 
   const runs = Math.max(1, Math.min(5, Number(getArg("runs", "1")) || 1));
-  const limit = Math.max(1, Math.min(cases.length, Number(getArg("limit", String(cases.length))) || cases.length));
+  const caseFilter = getArg("case", "").toLowerCase();
+  const candidateCases = caseFilter
+    ? cases.filter((item) => [item.id, item.topic, item.expectedStructure].some((value) => value.toLowerCase().includes(caseFilter)))
+    : cases;
+  if (!candidateCases.length) {
+    console.log(`cases: 0`);
+    console.log(`overall: 0`);
+    console.log(`failed_runs: no case matched --case=${caseFilter}`);
+    process.exit(1);
+  }
+  const limit = Math.max(1, Math.min(candidateCases.length, Number(getArg("limit", String(candidateCases.length))) || candidateCases.length));
   const thresholdInput = Number(getArg("threshold", "0.75"));
   const threshold = Math.max(0, Math.min(1, Number.isFinite(thresholdInput) ? thresholdInput : 0.75));
-  const selectedCases = cases.slice(0, limit);
+  const selectedCases = candidateCases.slice(0, limit);
   const results: RunResult[] = [];
 
   for (const testCase of selectedCases) {

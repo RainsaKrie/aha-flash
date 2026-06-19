@@ -22,7 +22,7 @@ import {
   type KnowledgeStructurePreference,
   type QualityGateResult,
 } from "./knowledge-blueprint.ts";
-import { formatKnowledgeSkillContract, getKnowledgeSkeletonById } from "./skill-packs.ts";
+import { formatKnowledgeSkillContract, getKnowledgeSkeletonById, selectKnowledgeSkeleton } from "./skill-packs.ts";
 
 export interface DynamicFlowInput {
   topic: string;
@@ -664,6 +664,19 @@ function normalizeGroundingTerms(value: unknown, topic: string, concepts: string
     .slice(0, 5);
 }
 
+function stabilizeGroundingTerms(topic: string, structureValue: unknown, terms: string[], fallback: string[]) {
+  const structure = normalizeKnowledgeStructure(structureValue);
+  const skeleton = selectKnowledgeSkeleton(topic, structure) || selectKnowledgeSkeleton(topic);
+  const skeletonTerms = skeleton?.required_core_terms || [];
+  const normalizedTerms = normalizeGroundingTerms(terms, topic, fallback);
+  const topicSpecificTerms = skeletonTerms.filter((term) => countIncludes(topic, term) > 0 || countIncludes(term, topic) > 0);
+  const baseTerms = topicSpecificTerms.length >= 2 ? topicSpecificTerms : skeletonTerms;
+  const blended = uniqueCleanStrings([...baseTerms, ...fallback, ...normalizedTerms], fallback, 28)
+    .filter((term) => !isGenericGroundingTerm(term, topic));
+
+  return blended.slice(0, 5);
+}
+
 function countIncludes(text: string, term: string) {
   const normalizedText = normalizeGroundingText(text);
   const normalizedTerm = normalizeGroundingText(term);
@@ -758,12 +771,15 @@ function makeFallbackConceptPlan(
 ): ConceptPlan {
   const topic = cleanTopic(topicInput);
   const recommended = heuristicPatternChain(topic, preferredPattern);
+  const knowledgeStructure = preferredStructure !== "auto" ? preferredStructure : hasAnyHint(topic, DETERMINISTIC_MODELING_HINTS) ? "optimization_model" : "concept_mechanism";
+  const basicGroundingTerms = fallbackGroundingTerms(topic);
+  const groundingTerms = stabilizeGroundingTerms(topic, knowledgeStructure, basicGroundingTerms, basicGroundingTerms);
   return {
     topic,
     domain: hasAnyHint(topic, DETERMINISTIC_MODELING_HINTS) ? "建模与优化" : "通用知识",
     core_question: `怎样真正理解${topic}，并把它用在判断里？`,
-    grounding_terms: fallbackGroundingTerms(topic),
-    knowledge_structure: preferredStructure !== "auto" ? preferredStructure : hasAnyHint(topic, DETERMINISTIC_MODELING_HINTS) ? "optimization_model" : "concept_mechanism",
+    grounding_terms: groundingTerms,
+    knowledge_structure: knowledgeStructure,
     recommended_patterns: recommended,
     avoid_patterns: hasAnyHint(topic, DETERMINISTIC_MODELING_HINTS) ? ["probability"] : [],
     learning_path: ["先判断入口", "再看关键机制", "最后动手验证"],
@@ -773,15 +789,16 @@ function makeFallbackConceptPlan(
   };
 }
 
-function normalizeConceptPlan(raw: unknown, topicInput: string, preferredPattern: FlowPatternPreference): ConceptPlan {
-  const fallback = makeFallbackConceptPlan(topicInput, preferredPattern);
+function normalizeConceptPlan(raw: unknown, topicInput: string, preferredPattern: FlowPatternPreference, preferredStructure: KnowledgeStructurePreference = "auto"): ConceptPlan {
+  const fallback = makeFallbackConceptPlan(topicInput, preferredPattern, preferredStructure);
   const root = asRecord(raw);
   const candidate = asRecord(root?.concept_plan) || asRecord(root?.plan) || root;
   if (!candidate) return fallback;
 
   const topic = cleanTopic(topicInput);
   const rawTerms = uniqueCleanStrings(candidate.grounding_terms ?? candidate.groundingTerms, fallback.grounding_terms, 28);
-  const groundingTerms = rawTerms.filter((term) => !isGenericGroundingTerm(term, topic)).slice(0, 5);
+  const knowledgeStructure = cleanText(candidate.knowledge_structure ?? candidate.knowledgeStructure, fallback.knowledge_structure, 32);
+  const groundingTerms = stabilizeGroundingTerms(topic, knowledgeStructure, rawTerms, fallback.grounding_terms);
   const recommended = normalizePatternList(candidate.recommended_patterns ?? candidate.recommendedPatterns, fallback.recommended_patterns);
   const avoid = normalizePatternList(candidate.avoid_patterns ?? candidate.avoidPatterns, fallback.avoid_patterns);
   const preferredRecommended: PatternType[] = preferredPattern !== "auto" && !recommended.includes(preferredPattern)
@@ -793,7 +810,7 @@ function normalizeConceptPlan(raw: unknown, topicInput: string, preferredPattern
     domain: cleanText(candidate.domain, fallback.domain, 24),
     core_question: cleanText(candidate.core_question ?? candidate.coreQuestion, fallback.core_question, 60),
     grounding_terms: groundingTerms.length >= 3 ? groundingTerms : fallback.grounding_terms,
-    knowledge_structure: cleanText(candidate.knowledge_structure ?? candidate.knowledgeStructure, fallback.knowledge_structure, 32),
+    knowledge_structure: knowledgeStructure,
     recommended_patterns: preferredRecommended.slice(0, 4),
     avoid_patterns: avoid.filter((pattern) => preferredPattern === "auto" || pattern !== preferredPattern).slice(0, 4),
     learning_path: uniqueCleanStrings(candidate.learning_path ?? candidate.learningPath, fallback.learning_path, 36).slice(0, 4),
@@ -878,7 +895,14 @@ function makeTeachingTrace(step?: BlueprintStep): KnowledgePlay["teaching_trace"
 
 function attachBlueprintStepCue(play: KnowledgePlay, step?: BlueprintStep): KnowledgePlay {
   const teaching_trace = makeTeachingTrace(step);
-  return teaching_trace ? { ...play, teaching_trace } : play;
+  if (!teaching_trace || !step) return play;
+
+  const visibleTerms = Array.from(new Set(step.must_explain)).slice(0, 3).join("、");
+  const reward_copy = visibleTerms
+    ? `${play.reward_copy} 这一关会用到：${visibleTerms}。`
+    : play.reward_copy;
+
+  return { ...play, reward_copy, teaching_trace };
 }
 function makeFallbackFlowFromPlan(
   plan: ConceptPlan,
@@ -1019,6 +1043,20 @@ function buildSkillContractBlock(blueprint?: KnowledgeBlueprint) {
   ].join("\n");
 }
 
+function buildVisibleStepCoverageBlock(blueprint?: KnowledgeBlueprint) {
+  if (!blueprint || blueprint.structure_type === "unclassified") return "";
+  const lines = blueprint.teaching_sequence.slice(0, 3).map((step, index) => {
+    const terms = step.must_explain.slice(0, 6).join(", ");
+    return `- step-${index + 1} (${step.goal}) visible copy must include at least one of: ${terms}`;
+  });
+  return ["Visible Blueprint step coverage:", ...lines].join("\n");
+}
+
+function buildStructureSpecificPromptRules(blueprint?: KnowledgeBlueprint) {
+  if (!blueprint || blueprint.structure_type !== "causal_mechanism") return "";
+  return "Causal mechanism rule: the final simulation_play step must make the outcome/result/feedback visible in payload.title, compute_formula_description, output labels, result copy, or explanation text; do not leave outcome only implied by a chart.";
+}
+
 function buildFlowUserPrompt(
   topic: string,
   plan: ConceptPlan,
@@ -1026,6 +1064,8 @@ function buildFlowUserPrompt(
   preferredPattern: FlowPatternPreference = "auto",
 ) {
   const orderRule = patternOrderInstruction(blueprint, preferredPattern);
+  const visibleStepCoverage = buildVisibleStepCoverageBlock(blueprint);
+  const structureRules = buildStructureSpecificPromptRules(blueprint);
   return [
     "Generate exactly 3 interactive Flow plays from the ConceptPlan and KnowledgeBlueprint. Output JSON only.",
     "Topic: " + topic,
@@ -1033,6 +1073,8 @@ function buildFlowUserPrompt(
     JSON.stringify(plan, null, 2),
     orderRule ? "Pattern order rule: " + orderRule : "",
     buildSkillContractBlock(blueprint) ? "Skill Pack reminder: follow the runtime contract in the system prompt; do not teach with generic placeholder copy." : "",
+    visibleStepCoverage,
+    structureRules,
     "Requirements:",
     "- flow.concept must be \"" + topic + "\".",
     "- Every play must use concrete grounding_terms in visible user-facing text.",
@@ -1057,7 +1099,7 @@ async function generateConceptPlan(
     system,
     messages: [{ role: "user", content: `为「${topic}」生成 ConceptPlan。` }],
   });
-  const plan = normalizeConceptPlan(parseJson(result.text), topic, preferredPattern);
+  const plan = normalizeConceptPlan(parseJson(result.text), topic, preferredPattern, preferredStructure);
   const evaluation = evaluateConceptPlan(plan, preferredPattern);
   if (evaluation.ok) {
     return { plan, source: "llm" as const, raw_output: includeRaw ? result.text : undefined };
@@ -1068,7 +1110,7 @@ async function generateConceptPlan(
     system,
     messages: [{ role: "user", content: buildConceptPlanRepairPrompt(topic, preferredPattern, preferredStructure, evaluation.reason, result.text) }],
   });
-  const repairedPlan = normalizeConceptPlan(parseJson(repair.text), topic, preferredPattern);
+  const repairedPlan = normalizeConceptPlan(parseJson(repair.text), topic, preferredPattern, preferredStructure);
   const repairedEvaluation = evaluateConceptPlan(repairedPlan, preferredPattern);
   if (repairedEvaluation.ok) {
     return {
@@ -1098,6 +1140,8 @@ function buildRepairUserPrompt(
   const clippedOutput = previousOutput.slice(0, 6000);
   const planBlock = plan ? "\nConceptPlan, follow it exactly:\n" + JSON.stringify(plan, null, 2) + "\n" : "";
   const repairSkillContractBlock = buildSkillContractBlock(blueprint);
+  const repairVisibleStepCoverage = buildVisibleStepCoverageBlock(blueprint);
+  const repairStructureRules = buildStructureSpecificPromptRules(blueprint);
   const orderRule = patternOrderInstruction(blueprint, preferredPattern);
   return [
     "The previous Flow JSON failed validation. Repair it and output valid JSON only.",
@@ -1106,6 +1150,8 @@ function buildRepairUserPrompt(
     "Failure reason: " + reason,
     planBlock,
     repairSkillContractBlock,
+    repairVisibleStepCoverage,
+    repairStructureRules,
     orderRule ? "Exact pattern order: " + orderRule : "",
     "Rules:",
     "- Keep flow.concept equal to the user topic.",
@@ -1646,6 +1692,8 @@ function buildDynamicSystemPrompt(
   const planBlock = plan ? "\nConceptPlan, mandatory source of truth:\n" + JSON.stringify(plan, null, 2) + "\n" : "";
   const blueprintBlock = blueprint ? "\nKnowledgeBlueprint, mandatory teaching contract:\n" + JSON.stringify(blueprint, null, 2) + "\n" : "";
   const skillContractBlock = buildSkillContractBlock(blueprint);
+  const visibleStepCoverageBlock = buildVisibleStepCoverageBlock(blueprint);
+  const structureRulesBlock = buildStructureSpecificPromptRules(blueprint);
   const requiredPatternSequence = blueprint ? selectBlueprintPatternStrategy(blueprint, preferredPattern).slice(0, 3) : [];
   const requiredPatternRule = requiredPatternSequence.length === 3
     ? "Required play pattern order: step-1 must use " + requiredPatternSequence[0] + ", step-2 must use " + requiredPatternSequence[1] + ", step-3 must use " + requiredPatternSequence[2] + ". Do not substitute another pattern."
@@ -1658,6 +1706,8 @@ function buildDynamicSystemPrompt(
     planBlock,
     blueprintBlock,
     skillContractBlock,
+    visibleStepCoverageBlock,
+    structureRulesBlock,
     "Allowed patterns and templates:",
     patternDirectory,
     "",
@@ -1690,6 +1740,7 @@ function buildDynamicSystemPrompt(
     "- follow_ups must extend the KnowledgeBlueprint: connect to a next concept, boundary case, method, or prerequisite from the same knowledge structure; avoid generic branches like real application / key mechanism unless they name the specific relation.",
     "- Pattern choice must match knowledge structure: deterministic optimization/planning/constraints should avoid probability unless the topic itself is about uncertainty.",
     "- Each step should ask the user to do something: guess, choose, sort, connect, slide, compare, or simulate.",
+    "- Do not hide Blueprint terms only in teaching_trace; QualityGate checks visible user-facing text.",
     "- Do not invent payload field names. Use only the required fields listed above for the selected pattern/template.",
     "- Prefer default templates from FLOW_SCHEMA_PAYLOAD_GUIDE: parameter_explore uses single_slider; knowledge_check uses single_question; system_builder uses module_sandbox.",
     "- visual_asset.mood must be one of: idle, loading, success, error, reward. Use idle for generated steps unless the step is explicitly a result or reward state.",

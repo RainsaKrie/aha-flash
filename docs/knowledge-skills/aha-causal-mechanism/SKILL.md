@@ -87,6 +87,8 @@ Avoid these Patterns unless the user explicitly asks for a safe override: `conce
 
 When generating a Flow, keep the Pattern chain aligned with the teaching steps. A visually valid component is not enough; each step must teach the corresponding part of the structure.
 
+For the final `simulation_play` step, make the outcome/result/feedback visible in user-facing copy. It is not enough to show a chart or number; labels, explanations, or result text should explicitly say what outcome changed and what feedback loop caused it.
+
 ## QualityGate Checks
 
 Before a Flow reaches users, verify these deterministic checks:
