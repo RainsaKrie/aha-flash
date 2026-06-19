@@ -967,3 +967,24 @@ Current V6 reliability status:
 - The 8-structure live baseline is green.
 - Repair reliance is below the 0.2 target and improved from the previous 0.083 baseline to 0.042.
 - Next reliability work should focus on the remaining occasional probability/Bayes flow repair, not broad prompt rewrites.
+## 17. V6 Zero-Repair Live Baseline - 2026-06-19
+
+The remaining occasional probability/Bayes repair was traced to response shape, not teaching quality: one run returned content that parsed as a non-direct Flow object, which triggered `LLM output is not an object` and fell back to a repaired Flow.
+
+Implemented fix:
+
+- Added deterministic Flow candidate unwrapping for common LLM response shapes: top-level play arrays, `flow`, `knowledge_flow`, `knowledgeFlow`, `result`, `data`, and `output` wrappers.
+- The fix does not relax QualityGate. It only recovers valid Flow-shaped content before normalization.
+
+Validation:
+
+- `npm run eval:flow-live -- --case=probability --runs=5`: 5/5 pass, repair reliance 0.
+- `npm run eval:flow-live -- --limit=8 --runs=3`: 24/24 pass.
+- `overall`: 1
+- `llm_success_rate`: 1
+- `schema_repair_rate`: 0
+- `flow_repair_rate`: 0
+- `repair_reliance_rate`: 0
+- `npm run typecheck`, `npm run build`, `npm run eval:score`, `npm run eval:flow-dynamic`, and `npm run eval:skills` all pass.
+
+V6 reliability status is now green at the current 8-structure live baseline. Next work should move from reliability plumbing to user-facing generation visibility and experience polish.

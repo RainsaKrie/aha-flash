@@ -685,3 +685,18 @@ After the provider key was recharged, `eval:flow-live` was rerun successfully.
 - The only follow-up code change was narrowing the historical-change forbidden framing from `只背年份` to `年份就是全部`, preventing QualityGate from rejecting useful wrong-answer/anti-pattern copy.
 
 This is the current V6 live reliability baseline.
+### V6 Flow Candidate Unwrapping
+
+`normalizeGeneratedFlow()` now uses a deterministic `extractFlowCandidate()` layer before Flow normalization.
+
+Supported model response shapes:
+
+- Direct Flow object
+- `{ flow: {...} }`
+- `{ knowledge_flow: {...} }` / `{ knowledgeFlow: {...} }`
+- `{ result: {...} }`
+- `{ data: {...} }`
+- `{ output: {...} }`
+- Top-level play arrays, converted to `{ plays: [...] }`
+
+This change reduces avoidable `flow_repair` without weakening schema validation or QualityGate. The current full live baseline after this change is 24/24 with repair reliance 0.

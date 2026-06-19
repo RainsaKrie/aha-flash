@@ -968,3 +968,10 @@ th-child 顺序轮换改为按知识语义映射。
 - Targeted history live check: `npm run eval:flow-live -- --case=history --runs=5` passed 5/5 with repair reliance 0.
 - Final full live baseline: `npm run eval:flow-live -- --limit=8 --runs=3` passed 24/24 with `overall: 1`, `llm_success_rate: 1`, `schema_repair_rate: 0`, `flow_repair_rate: 0.042`, and `repair_reliance_rate: 0.042`.
 - Latest live report: `output/live-flow-eval/live-flow-2026-06-19T03-03-51-560Z.json`.
+### V6 zero-repair live baseline
+
+- Added a deterministic Flow candidate unwrapping layer for LLM responses that arrive as `[{ play... }]`, `{ data: {...} }`, `{ result: {...} }`, `{ output: {...} }`, or other common wrappers instead of a direct Flow object.
+- This prevents valid model content from being treated as `LLM output is not an object` and falling back to a repaired Flow.
+- Targeted probability check: `npm run eval:flow-live -- --case=probability --runs=5` passed 5/5 with repair reliance 0.
+- Final full live baseline: `npm run eval:flow-live -- --limit=8 --runs=3` passed 24/24 with `overall: 1`, `llm_success_rate: 1`, `schema_repair_rate: 0`, `flow_repair_rate: 0`, and `repair_reliance_rate: 0`.
+- Latest live report: `output/live-flow-eval/live-flow-2026-06-19T03-19-17-050Z.json`.

@@ -1575,6 +1575,22 @@ function normalizeFollowUps(value: unknown, topic: string, blueprint?: Knowledge
   }
   return merged.length > 0 ? merged : fallback;
 }
+function extractFlowCandidate(raw: unknown) {
+  if (Array.isArray(raw)) return { plays: raw };
+  const root = asRecord(raw);
+  if (!root) return null;
+
+  const nestedKeys = ["flow", "knowledge_flow", "knowledgeFlow", "result", "data", "output"];
+  for (const key of nestedKeys) {
+    const nested = root[key];
+    const nestedRecord = asRecord(nested);
+    if (nestedRecord) return nestedRecord;
+    if (Array.isArray(nested)) return { ...root, plays: nested };
+  }
+
+  return root;
+}
+
 function normalizeGeneratedFlow(
   raw: unknown,
   topicInput: string,
@@ -1584,8 +1600,7 @@ function normalizeGeneratedFlow(
 ) {
   const repairActions: RepairAction[] = [];
   const fallback = plan ? makeFallbackFlowFromPlan(plan, preferredPattern, preferredStructure) : makeFallbackFlow(topicInput, preferredPattern);
-  const root = asRecord(raw);
-  const candidate = asRecord(root?.flow) || root;
+  const candidate = extractFlowCandidate(raw);
   if (!candidate) {
     addRepairAction(repairActions, "flow_repair", "LLM output was not a Flow object; used fallback Flow");
     return { flow: fallback, error: "LLM output is not an object", groundingTerms: plan?.grounding_terms || [], repair_actions: repairActions };
