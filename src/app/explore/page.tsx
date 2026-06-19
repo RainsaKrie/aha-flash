@@ -59,12 +59,67 @@ interface FlowApiResponse {
 
 const INPUT_EXAMPLES = ["\u7ebf\u6027\u89c4\u5212", "DNS \u89e3\u6790", "\u8d1d\u53f6\u65af\u5b9a\u7406", "\u590d\u5229\u6548\u5e94"];
 const GENERATION_STEPS = [
-  "\u8bc6\u522b\u77e5\u8bc6\u7ed3\u6784",
-  "\u751f\u6210\u6559\u5b66\u84dd\u56fe",
-  "\u9009\u62e9\u4e92\u52a8\u65b9\u5f0f",
-  "\u68c0\u67e5\u662f\u5426\u771f\u7684\u6559\u6e05\u695a",
-];
+  { id: "concept_plan", label: "识别知识结构" },
+  { id: "blueprint", label: "生成教学蓝图" },
+  { id: "flow", label: "组装互动关卡" },
+  { id: "quality_gate", label: "检查是否真的教清楚" },
+] as const;
 
+type GenerationStage = (typeof GENERATION_STEPS)[number]["id"] | "repair" | "fallback";
+
+function isGenerationStage(value: unknown): value is GenerationStage {
+  return value === "concept_plan"
+    || value === "blueprint"
+    || value === "flow"
+    || value === "quality_gate"
+    || value === "repair"
+    || value === "fallback";
+}
+
+async function readFlowEventStream(
+  response: Response,
+  onStage: (stage: GenerationStage) => void,
+): Promise<FlowApiResponse> {
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("生成连接意外中断，请再试一次。");
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let result: FlowApiResponse | null = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    buffer += decoder.decode(value, { stream: !done });
+
+    let boundary = buffer.indexOf("\n\n");
+    while (boundary >= 0) {
+      const block = buffer.slice(0, boundary);
+      buffer = buffer.slice(boundary + 2);
+      const event = block.match(/^event:\s*(.+)$/m)?.[1]?.trim();
+      const data = block.match(/^data:\s*(.+)$/m)?.[1];
+
+      if (event && data) {
+        const payload: unknown = JSON.parse(data);
+        if (event === "stage" && typeof payload === "object" && payload && "stage" in payload && isGenerationStage(payload.stage)) {
+          onStage(payload.stage);
+        }
+        if (event === "result") result = payload as FlowApiResponse;
+        if (event === "error") {
+          const message = typeof payload === "object" && payload && "error" in payload && typeof payload.error === "string"
+            ? payload.error
+            : "生成连接意外中断，请再试一次。";
+          throw new Error(message);
+        }
+      }
+      boundary = buffer.indexOf("\n\n");
+    }
+
+    if (done) break;
+  }
+
+  if (!result) throw new Error("没有收到可用的生成结果，请再试一次。");
+  return result;
+}
 const STRUCTURE_CHOICES = [
   { id: "system_process", label: "\u770b\u6d41\u7a0b", hint: "DNS / Agent / \u7cfb\u7edf\u6d41\u8f6c" },
   { id: "comparison_frame", label: "\u770b\u5bf9\u6bd4", hint: "A vs B / \u533a\u522b" },
@@ -99,7 +154,7 @@ export default function ExplorePage() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [topic, setTopic] = useState("贝叶斯定理");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationStep, setGenerationStep] = useState(0);
+  const [generationStage, setGenerationStage] = useState<GenerationStage | null>(null);
   const [generationPreview, setGenerationPreview] = useState<GenerationPreview | null>(null);
   const [pendingDraftId, setPendingDraftId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -115,23 +170,20 @@ export default function ExplorePage() {
     }
 
     setIsGenerating(true);
-    setGenerationStep(0);
+    setGenerationStage(null);
     setErrorMessage(null);
     setFailureState(null);
     setGenerationPreview(null);
     setPendingDraftId(null);
-    const timers = GENERATION_STEPS.slice(1).map((_, index) =>
-      window.setTimeout(() => setGenerationStep(index + 1), 680 * (index + 1)),
-    );
 
     try {
       const response = await fetch("/api/flow", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: trimmed, preferredPattern: "auto", preferredStructure }),
+        headers: { "Accept": "text/event-stream", "Content-Type": "application/json" },
+        body: JSON.stringify({ topic: trimmed, preferredPattern: "auto", preferredStructure, stream: true }),
       });
       if (!response.ok) throw new Error(`flow request failed: ${response.status}`);
-      const payload = (await response.json()) as FlowApiResponse;
+      const payload = await readFlowEventStream(response, setGenerationStage);
       if (payload.failure) {
         setFailureState(payload.failure);
         setGenerationPreview(null);
@@ -140,7 +192,6 @@ export default function ExplorePage() {
         return;
       }
       const flow = payload.flow;
-      setGenerationStep(GENERATION_STEPS.length - 1);
       setGenerationPreview(payload.preview || makeFallbackPreview(flow, payload.source));
       setFailureAttempts(0);
       setLastFailedTopic(null);
@@ -159,9 +210,9 @@ export default function ExplorePage() {
     } catch (error) {
       setGenerationPreview(null);
       setPendingDraftId(null);
+      setGenerationStage(null);
       setErrorMessage(error instanceof Error ? error.message : String(error));
     } finally {
-      timers.forEach((timer) => window.clearTimeout(timer));
       setIsGenerating(false);
     }
   }
@@ -172,6 +223,14 @@ export default function ExplorePage() {
       ? [failureState.quality_gate.reason]
       : [];
   const shouldPreferShowcase = failureAttempts >= 2;
+  const generationStepIndex = generationStage === "repair"
+    ? GENERATION_STEPS.length - 1
+    : GENERATION_STEPS.findIndex((step) => step.id === generationStage);
+  const generationNotice = generationStage === "repair"
+    ? "发现一处不匹配，正在调整这条路径。"
+    : generationStage === "fallback"
+      ? "这次没有走通生成链路，正在整理可解释的结果。"
+      : null;
 
   return (
     <main className="v5-shell v5-showcase-shell">
@@ -255,10 +314,11 @@ export default function ExplorePage() {
         {isGenerating && (
           <div className="v6-generation-status" aria-live="polite">
             {GENERATION_STEPS.map((step, index) => (
-              <span key={step} className={index <= generationStep ? "is-active" : undefined}>
-                {index + 1}. {step}
+              <span key={step.id} className={index <= generationStepIndex ? "is-active" : undefined}>
+                {index + 1}. {step.label}
               </span>
             ))}
+            {generationNotice && <small>{generationNotice}</small>}
           </div>
         )}
         {generationPreview && (

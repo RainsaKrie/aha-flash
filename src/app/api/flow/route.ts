@@ -88,6 +88,64 @@ function makeFlowPreview(result: DynamicFlowGenerationResult) {
   };
 }
 
+function makeDynamicFlowPayload(result: DynamicFlowGenerationResult, exposeDebug: boolean) {
+  return {
+    flow: result.flow,
+    source: result.source,
+    validation_error: exposeDebug ? result.validation_error : undefined,
+    raw_output: exposeDebug ? result.raw_output : undefined,
+    raw_plan_output: exposeDebug ? result.raw_plan_output : undefined,
+    concept_plan: exposeDebug ? result.concept_plan : undefined,
+    blueprint: exposeDebug ? result.blueprint : undefined,
+    quality_gate: exposeDebug ? result.quality_gate : undefined,
+    preview: makeFlowPreview(result),
+    failure: result.failure,
+  };
+}
+
+function createDynamicFlowStream(
+  input: Parameters<typeof generateDynamicFlow>[0],
+  exposeDebug: boolean,
+) {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      let closed = false;
+      const emit = (event: string, payload: unknown) => {
+        if (closed) return;
+        try {
+          controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`));
+        } catch {
+          closed = true;
+        }
+      };
+      const close = () => {
+        if (closed) return;
+        closed = true;
+        try {
+          controller.close();
+        } catch {
+          // The client can close the stream before generation ends.
+        }
+      };
+
+      void generateDynamicFlow(input, {
+        includeRaw: exposeDebug,
+        onStage: (stage) => emit("stage", { stage }),
+      })
+        .then((result) => emit("result", makeDynamicFlowPayload(result, exposeDebug)))
+        .catch((error) => emit("error", { error: error instanceof Error ? error.message : String(error) }))
+        .finally(close);
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Cache-Control": "no-cache, no-transform",
+      "Content-Type": "text/event-stream; charset=utf-8",
+    },
+  });
+}
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const flowId = url.searchParams.get("flowId") || "bayes-starter";
@@ -124,30 +182,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "请输入至少 2 个字的主题。" }, { status: 400 });
     }
 
-    const result = await generateDynamicFlow(
-      {
-        topic: topic.slice(0, 80),
-        preferredPattern: normalizePreferredPattern(body.preferredPattern),
-        preferredStructure: normalizePreferredStructure(body.preferredStructure),
-      },
-      { includeRaw: exposeDebug },
-    );
+    const input = {
+      topic: topic.slice(0, 80),
+      preferredPattern: normalizePreferredPattern(body.preferredPattern),
+      preferredStructure: normalizePreferredStructure(body.preferredStructure),
+    };
 
-    return NextResponse.json(
-      {
-        flow: result.flow,
-        source: result.source,
-        validation_error: exposeDebug ? result.validation_error : undefined,
-        raw_output: exposeDebug ? result.raw_output : undefined,
-        raw_plan_output: exposeDebug ? result.raw_plan_output : undefined,
-        concept_plan: exposeDebug ? result.concept_plan : undefined,
-        blueprint: exposeDebug ? result.blueprint : undefined,
-        quality_gate: exposeDebug ? result.quality_gate : undefined,
-        preview: makeFlowPreview(result),
-        failure: result.failure,
-      },
-      { headers: { "Cache-Control": "no-store" } },
-    );
+    if (body.stream === true) {
+      return createDynamicFlowStream(input, exposeDebug);
+    }
+
+    const result = await generateDynamicFlow(input, { includeRaw: exposeDebug });
+
+    return NextResponse.json(makeDynamicFlowPayload(result, exposeDebug), {
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (error) {
     return NextResponse.json(
       {

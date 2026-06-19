@@ -680,6 +680,7 @@ Acceptance:
 - The user can tell the system is assembling a path, not fetching a static page.
 - The loading copy is short and product-like, not a debug log.
 - Implemented checkpoint: after generation succeeds, Explore shows the detected structure, core terms, and three planned steps; the user explicitly enters the Flow instead of being auto-routed.
+- Implemented server-driven progress: Explore consumes SSE stage events from the actual generation pipeline instead of advancing those states with a local timer.
 
 #### Signal 3: Completion Leads to Growth
 

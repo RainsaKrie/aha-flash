@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { generateDynamicFlow, type RepairAction, type RepairActionTag } from "../../src/lib/content/dynamic-flow-generation.ts";
+import { generateDynamicFlow, type DynamicFlowGenerationStage, type RepairAction, type RepairActionTag } from "../../src/lib/content/dynamic-flow-generation.ts";
 import type { FlowPatternPreference } from "../../src/lib/content/flow-pattern-options.ts";
 import type { KnowledgeStructurePreference, KnowledgeStructureType } from "../../src/lib/content/knowledge-blueprint.ts";
 import { normalizeUISchema, type PatternType } from "../../src/types/schema.ts";
@@ -28,6 +28,7 @@ interface RunResult {
   repair_warnings: string[];
   repair_actions: RepairAction[];
   repair_action_counts: Partial<Record<RepairActionTag, number>>;
+  generation_stages: DynamicFlowGenerationStage[];
   schema_repaired: boolean;
   flow_repaired: boolean;
   repaired: boolean;
@@ -140,6 +141,7 @@ function repairActionRate(results: RunResult[], tag: RepairActionTag) {
 }
 async function scoreRun(testCase: LiveFlowEvalCase, run: number): Promise<RunResult> {
   const repairWarnings: string[] = [];
+  const generationStages: DynamicFlowGenerationStage[] = [];
   const originalError = console.error;
   console.error = (...args: unknown[]) => {
     const text = args.map((item) => (typeof item === "string" ? item : JSON.stringify(item))).join(" ");
@@ -153,7 +155,10 @@ async function scoreRun(testCase: LiveFlowEvalCase, run: number): Promise<RunRes
       topic: testCase.topic,
       preferredPattern: testCase.preferredPattern,
       preferredStructure: testCase.preferredStructure,
-    }, { includeRaw: hasFlag("raw") });
+    }, {
+      includeRaw: hasFlag("raw"),
+      onStage: (stage) => { generationStages.push(stage); },
+    });
   } finally {
     console.error = originalError;
   }
@@ -179,6 +184,14 @@ async function scoreRun(testCase: LiveFlowEvalCase, run: number): Promise<RunRes
   if (!textIncludesTopic(result.flow.concept, testCase.topic)) reasons.push(`concept ${result.flow.concept} is not anchored to ${testCase.topic}`);
   if (!result.flow.follow_ups || result.flow.follow_ups.length < 2) reasons.push("missing follow_ups");
 
+  const expectedStages: DynamicFlowGenerationStage[] = ["concept_plan", "blueprint", "flow", "quality_gate"];
+  let previousStageIndex = -1;
+  for (const stage of expectedStages) {
+    const stageIndex = generationStages.indexOf(stage);
+    if (stageIndex < 0) reasons.push(`missing generation stage ${stage}`);
+    if (stageIndex >= 0 && stageIndex < previousStageIndex) reasons.push(`generation stage order drifted at ${stage}`);
+    if (stageIndex >= 0) previousStageIndex = stageIndex;
+  }
   const includeRaw = hasFlag("raw");
 
   return {
@@ -195,6 +208,7 @@ async function scoreRun(testCase: LiveFlowEvalCase, run: number): Promise<RunRes
     repair_warnings: repairWarnings,
     repair_actions: repairActions,
     repair_action_counts: repairActionCounts,
+    generation_stages: generationStages,
     schema_repaired: schemaRepaired,
     flow_repaired: flowRepaired,
     repaired,

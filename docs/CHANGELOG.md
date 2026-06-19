@@ -7,6 +7,10 @@
 
 ## 2026-06-19
 
+### V6 server-driven generation progress
+- `generateDynamicFlow` now emits real lifecycle stages: `concept_plan`, `blueprint`, `flow`, `quality_gate`, plus `repair` or `fallback` when needed.
+- `POST /api/flow` supports `stream: true` and emits SSE `stage` events followed by the same sanitized `result` payload used by the JSON path. Explore now consumes those events instead of advancing progress with local timers.
+- `eval:flow-live` records and validates the required stage order. The 2026-06-19 linear-programming live smoke passed with `concept_plan -> blueprint -> flow -> quality_gate`, LLM source, and zero repair actions.
 ### V6 generation preview checkpoint
 - Changed `/explore` dynamic generation from automatic route jump to an explicit decomposition preview checkpoint. After `POST /api/flow` succeeds, users see the detected structure, core terms, and planned three-step path, then choose `进入三关` or `重新拆一次`.
 - Added preview action styling and pending draft state cleanup so stale generated drafts are not reused after editing the topic, choosing an example, or hitting a failure state.

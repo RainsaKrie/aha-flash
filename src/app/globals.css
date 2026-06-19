@@ -5055,6 +5055,14 @@ button.v5-flow-branch-card {
   transform: translateY(-1px);
 }
 
+.v6-generation-status small {
+  grid-column: 1 / -1;
+  color: #7c7c7c;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
 .v6-decomposition-preview {
   display: grid;
   width: min(100%, var(--v5-input-max, 860px));

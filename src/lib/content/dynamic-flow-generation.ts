@@ -72,6 +72,30 @@ export interface DynamicFlowGenerationResult {
   repair_actions?: RepairAction[];
 }
 
+export type DynamicFlowGenerationStage =
+  | "concept_plan"
+  | "blueprint"
+  | "flow"
+  | "quality_gate"
+  | "repair"
+  | "fallback";
+
+export interface DynamicFlowGenerationOptions {
+  includeRaw?: boolean;
+  onStage?: (stage: DynamicFlowGenerationStage) => void | Promise<void>;
+}
+
+async function reportGenerationStage(
+  onStage: DynamicFlowGenerationOptions["onStage"],
+  stage: DynamicFlowGenerationStage,
+) {
+  try {
+    await onStage?.(stage);
+  } catch {
+    // Progress reporting must not affect the generation result.
+  }
+}
+
 const VISUAL_TAGS: Record<PatternType, string> = {
   probability: "check-spark",
   parameter_explore: "parameter-knob",
@@ -1765,7 +1789,7 @@ function buildDynamicSystemPrompt(
 
 export async function generateDynamicFlow(
   input: DynamicFlowInput,
-  { includeRaw = false } = {},
+  { includeRaw = false, onStage }: DynamicFlowGenerationOptions = {},
 ): Promise<DynamicFlowGenerationResult> {
   const topic = cleanTopic(input.topic);
   const preferredPattern = normalizePreference(input.preferredPattern || "auto");
@@ -1777,6 +1801,7 @@ export async function generateDynamicFlow(
   const model = getLLMProvider();
 
   if (!model) {
+    await reportGenerationStage(onStage, "fallback");
     return {
       flow: fallback,
       source: "mock",
@@ -1789,9 +1814,11 @@ export async function generateDynamicFlow(
   }
 
   try {
+    await reportGenerationStage(onStage, "concept_plan");
     const planResult = await generateConceptPlan(model, topic, preferredPattern, preferredStructure, includeRaw);
     const plan = planResult.plan;
     const blueprint = buildKnowledgeBlueprint(plan, preferredPattern, preferredStructure);
+    await reportGenerationStage(onStage, "blueprint");
     const plannedFallback = makeFallbackFlowFromPlan(plan, preferredPattern, preferredStructure);
     const plannedFallbackQuality = evaluateFlowAgainstBlueprint(plannedFallback, blueprint, preferredPattern);
 
@@ -1822,6 +1849,7 @@ export async function generateDynamicFlow(
     }
 
     const system = buildDynamicSystemPrompt(topic, preferredPattern, plan, blueprint);
+    await reportGenerationStage(onStage, "flow");
     const result = await retryGenerateText({
       model,
       system,
@@ -1829,6 +1857,7 @@ export async function generateDynamicFlow(
     });
     const parsed = parseJson(result.text);
     const normalized = normalizeGeneratedFlow(parsed, topic, preferredPattern, plan, preferredStructure);
+    await reportGenerationStage(onStage, "quality_gate");
     const grounding = evaluateFlowGrounding(normalized.flow, topic, normalized.groundingTerms, preferredPattern);
     const planFit = evaluateFlowAgainstPlan(normalized.flow, plan, preferredPattern, preferredStructure);
     const quality = evaluateFlowAgainstBlueprint(normalized.flow, blueprint, preferredPattern);
@@ -1848,6 +1877,7 @@ export async function generateDynamicFlow(
     }
 
     const repairReason = [grounding.reason, planFit.reason, quality.reason].filter(Boolean).join("; ");
+    await reportGenerationStage(onStage, "repair");
     const repair = await retryGenerateText({
       model,
       system,
@@ -1896,6 +1926,7 @@ export async function generateDynamicFlow(
       repair_actions: repairedActions,
     };
   } catch (error) {
+    await reportGenerationStage(onStage, "fallback");
     return {
       flow: fallback,
       source: "mock",
