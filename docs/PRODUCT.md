@@ -65,7 +65,7 @@
 
 **公开入口包含**：
 - 自由输入框：用户输入任意 topic 后，默认由 AI 推荐 Pattern 并生成三关 Flow。
-- Pattern 选择器：用户也可以手选 10 类 Pattern，指定本次三关 Flow 的核心互动形态。
+- AI 自动选型：系统根据 KnowledgeBlueprint 自动选择三关的 Pattern；仅当生成失败时，用户可以选择另一种知识拆解方式重试。
 - 5 个精选 topic 卡片：`bayes-starter`、`dns-router`、`options-risk`、`industrial-revolution`、`inflation-deflation`，作为低风险示例起点，并覆盖全部 10 类 Pattern。
 - Hub 入口：用户走完任一 Flow 后能看到本机完成记录。
 
@@ -333,7 +333,7 @@ arrative_branch` | `#E879BA` | 选择/分支 |
 
 ### 8.1 V1 做
 
-- [x] Explore 自由生成首页：任意 topic 输入 + AI 推荐/手选 Pattern + 5 个精选示例起点 + Hub 入口
+- [x] Explore 自由生成首页：任意 topic 输入 + AI 自动 Pattern 选型 + 5 个精选示例起点 + Hub 入口
 - [x] Flow 页：三段式布局 + 进度条 + 底部变色操作栏 + 组件切换动画（framer-motion）
 - [x] Flow Steps 引擎：LLM 生成 3-4 步微挑战流，知识类型自动匹配 Pattern
 - [x] 趣灵精灵：4 态情绪提示（轻量 token 版）
@@ -413,26 +413,23 @@ V5 取代旧版 PRODUCT.md 的产品定位、页面体验、V1 范围和成功�
 Hub 的路径节点不按列表顺序轮换颜色，而是复用 V5 既有四个语义角色色：技术/系统使用主蓝，数理/概率使用辅助紫，历史/时间线使用行动橙，经济/金融使用完成绿。无法归类时默认使用主蓝，避免引入新的 Hub 专属配色体系。
 
 <!-- CURRENT_STATUS_START -->
-## 13. 当前完成度快照（2026-06-14）
-当前口径：V5 已从“求职作品集三条固定切片”推进到“自由生成 Flow 的最小产品闭环”。用户可以在首页输入任意知识点，选择 `AI 推荐` 或指定 Pattern，生成三关互动 Flow，完成后继续点选 AI 延伸分支。
+## 13. 当前完成度快照（2026-06-20）
 
-已完成：
-- `/explore`：主入口为自由输入 + Pattern 选择器；五张精选 topic 降级为“试试这些起点”，并承担 Pattern 能力展示。
-- `/api/flow`：`GET` 保留 showcase Flow；`POST` 支持 `{ topic, preferredPattern }` 动态生成三关 Flow，并通过 `grounding_terms` 做通用贴题校验。
-- `/flow/custom`：播放 sessionStorage 中的动态 Flow；缺失时引导用户回首页重新生成。
-- Flow 完成态：优先展示 `flow.follow_ups`；点击 AI 延伸分支会再次调用 `/api/flow` 生成下一组三关。
-- Hub：动态 Flow 完成后继续写入本机完成记录，并通过 `source: generated` 标记来源。
-- `/studio`：保留为内部单组件生成与协议调试入口。
+当前口径：V6 已完成“可靠的自由生成知识路径”工程闭环。用户输入任意知识点后，系统先生成 `ConceptPlan` 与 `KnowledgeBlueprint`，再组装三关互动 Flow；通过确定性 QualityGate 后才允许进入体验。
 
-真实 AI 与 mock 边界：
-- 真实打通：`/explore -> POST /api/flow -> DeepSeek -> 三关 KnowledgeFlow -> /flow/custom`。
-- 真实打通：`/studio -> /api/chat -> DeepSeek -> Tool Calling / JSON fallback -> Schema -> 互动组件`。
-- 真实打通：showcase Flow 的 `/api/flow GET`，当前支持 `bayes-starter`、`dns-router`、`options-risk`、`industrial-revolution`、`inflation-deflation`，失败时回退对应 mock Flow。
-- fallback：动态 Flow 在无 key、LLM 异常或输出不可解析时，回退为“按用户输入 topic 生成的通用三关 Flow”，不再固定退回精选卡，也不为单个概念维护专用预制内容。
-- 生成质量护栏：LLM 输出必须给出 3-5 个专业锚点 `grounding_terms`，系统检查这些锚点是否进入三关内容；不通过时自动 repair 一次，仍失败才进入通用 fallback。
-- 仍为本地/静态：Explore 示例卡片、旧 curated follow-up、视觉资源 registry、Hub 本机记录、账号级持久化。
+**用户可感知的主路径**：
+- `/explore` 以自由输入为第一入口；互动 Pattern 由 AI 按知识结构自动选择，不再要求用户在十类 Pattern 中做冗长选择。
+- 生成过程展示服务端真实阶段：识别知识结构 -> 生成教学蓝图 -> 组装互动关卡 -> 检查是否教清楚；不是前端计时器模拟。
+- 生成成功后先展示知识结构、核心词和三关路径，用户确认“进入三关”或“重新拆一次”。
+- 完成 Flow 后展示 Blueprint 驱动的后续知识分支，而非默认回到首页；Hub 继续记录本机的完成足迹。
 
-暂不做：账号登录、多设备同步、真实社区发布、内容审核后台、生产级数据库、真实埋点分析、T38 默认体验额度与自定义 API Key 方案。
+**真实 AI 与质量链路**：
+- `POST /api/flow`：`topic -> ConceptPlan -> KnowledgeBlueprint -> 三关 Flow -> QualityGate`；流式请求通过 SSE 返回真实阶段与最终结果。
+- 8 类知识结构、80 个 Blueprint 固定用例、10 类 Pattern 约束、Skill Pack 合约和确定性 QualityGate 已接入。
+- 2026-06-20 完整 live smoke：8 类结构 x 3 次，共 24/24 LLM runs 通过，`overall=1`、`llm_success_rate=1`、所有 repair 指标为 `0`。
+- 无 API Key、provider 异常或质量闸门失败时，系统展示诚实失败态，提供重试、换概念、换拆解方式和精选示例逃逸路径；不会伪装成 AI 成功。
+
+**仍为本地或下一阶段能力**：Explore 示例起点、Hub 本机记录、视觉资源 registry；账号登录、多设备同步、社区发布、生产数据库、埋点分析、检索/RAG 与内部 Wiki 不属于 V6 当前范围。
 <!-- CURRENT_STATUS_END -->
 
 ## Dynamic Free Generation Current Contract

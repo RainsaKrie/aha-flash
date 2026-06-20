@@ -1,13 +1,13 @@
 # 趣灵 aha-flash 文档中心
 
-趣灵当前以 V5 自由生成 Flow 模式对外展示：一个链接打开后，用户可以输入任意知识点，选择 AI 推荐或指定 Pattern，生成三关互动 Flow；五条精选 topic 保留为稳定示例入口，并覆盖全部 10 类 Pattern。文档只保留核心事实，避免规划稿、产品说明和实现记录互相重复。
+趣灵当前以 V6 自由生成知识路径对外展示：用户输入任意概念后，系统自动识别知识结构、选择互动 Pattern、生成三关 Flow，并通过质量闸门后展示；五条精选 topic 只保留为稳定示例入口。文档只保留核心事实，避免规划稿、产品说明和实现记录互相重复。
 
 ## 当前文档
 
 | 文档 | 用途 |
 |---|---|
 | `PRODUCT.md` | 当前产品定位、作品集体验、功能边界、设计质量标准和 V1 路线 |
-| `TECHNICAL.md` | 技术架构、V5 路由、Flow 数据模型、Schema 协议、验证规则 |
+| `TECHNICAL.md` | 技术架构、V5/V6 Flow 路由、Schema 协议、QualityGate 与验证规则 |
 | `CHANGELOG.md` | 已完成任务、验收记录和重要修复 |
 | `input-docs/README.md` | 后续增量规划文档的放置和处理规则 |
 
@@ -41,7 +41,7 @@ http://localhost:3000
 | 路由 | 用途 |
 |---|---|
 | `/` | 默认跳转 `/explore` |
-| `/explore` | 自由生成主入口：输入任意 topic、选择 AI 推荐或 10 类 Pattern；五条精选 topic 作为示例起点，覆盖 10 类 Pattern |
+| `/explore` | 自由生成主入口：输入任意 topic 后由 AI 自动选择合适 Pattern；展示真实生成阶段与三关拆解预览，五条精选 topic 仅作为示例起点 |
 | `/flow/[flowId]` | 全屏三关精选 Flow，当前稳定示例为 `bayes-starter`、`dns-router`、`options-risk`、`industrial-revolution`、`inflation-deflation` |
 | `/flow/custom` | 播放 sessionStorage 中的动态生成 Flow，缺失草稿时引导回 `/explore` 重新生成 |
 | `/hub` | 轻量个人图鉴，展示本机完成记录和快速回顾 |
@@ -54,20 +54,19 @@ http://localhost:3000
 npm run typecheck
 npm run build
 npm run eval:score
-npm run eval:flow
+npm run eval:blueprint
 npm run eval:flow-dynamic
-npm run eval:showcase
+npm run eval:skills
+npm run eval:flow-live -- --limit=8 --runs=3
 ```
 
 没有配置 `DEEPSEEK_API_KEY` 时，应用会使用 mock fallback：动态输入会生成按用户 topic 包装的通用三关 Flow，五条精选示例也仍可完整走完。
 <!-- DOCS_STATUS_START -->
-## 当前状态速览（2026-06-13）
-- V5 主入口已从“3 个固定 topic 作品集”升级为“首页自由输入任意知识 -> AI 生成三关 Flow -> 完成后继续选择分支”。
-- `/explore` 现在提供自由输入框和 Pattern 选择器：默认 `AI 推荐`，也可手选 10 类 Pattern；五张精选卡片保留为示例起点，并覆盖全部 10 类 Pattern。
-- 真实 AI 主链路已打通：`/studio` 调用 `/api/chat` 生成单组件；`/api/flow` 的 `GET` 支持五条 showcase Flow，`POST` 支持任意 topic 动态 Flow。
-- 动态 Flow 只保存在当前浏览器会话：Explore 写入 sessionStorage，`/flow/custom?draftId=...` 播放；完成记录继续写入 Hub localStorage。
-- mock 边界已调整：无 API key 或 LLM 失败时，动态 Flow 回退为“按用户 topic 包装的通用 fallback Flow”，不再固定退回贝叶斯/工业革命/通胀。
-- 当前未做：账号、数据库、跨设备同步、真实社区发布、审核后台、真实埋点和生产级持久化。
-- `npm run eval:flow-dynamic` 覆盖无 API key 时的动态 fallback：任意 topic 仍生成 `custom-*` 三关 Flow，手选 Pattern 必须进入关卡链。
-- `npm run eval:showcase` 覆盖公开精选集：至少 5 条 Flow，且 10 类 Pattern 必须全部在示例关卡中出现。
+## 当前状态速览（2026-06-20）
+- V6 已完成“自由输入 -> ConceptPlan -> KnowledgeBlueprint -> 三关 Flow -> QualityGate -> 后续分支”的工程闭环；首页不再要求用户手选 Pattern，由 AI 根据知识结构自动选择。
+- `/api/flow` 支持普通 JSON 与 `stream: true` SSE 两种响应；Explore 消费真实的 `concept_plan -> blueprint -> flow -> quality_gate` 阶段，而不是前端计时器。
+- 生成成功后，用户先查看拆解预览，再自行进入三关或重新拆解；失败时提供重试、换概念、换拆解方式与精选示例逃逸路径。
+- 质量基线：80 个 Blueprint 固定用例通过；2026-06-20 的 8 结构 x 3 次 live smoke 为 24/24 通过，LLM 成功率 1，repair 指标均为 0。
+- 动态 Flow 只保存在当前浏览器会话，Hub 完成记录写入本机 localStorage。
+- 当前不做：账号、数据库、多设备同步、社区发布、生产级埋点、检索/RAG 和内部 Wiki；这些是 V6.5/V7 的后续范围。
 <!-- DOCS_STATUS_END -->

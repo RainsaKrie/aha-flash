@@ -5,6 +5,12 @@
 ---
 
 
+## 2026-06-20
+
+### V6 engineering milestone
+- Completed the V6 engineering scope: deterministic Blueprint/QualityGate, Skill Pack contracts, honest failure escapes, Blueprint-derived branches, pre-flow preview, and server-driven generation progress.
+- Full release smoke passed: `eval:blueprint` 80/80 and `eval:flow-live -- --limit=8 --runs=3` 24/24 real LLM runs with `overall: 1`, `llm_success_rate: 1`, `schema_repair_rate: 0`, `flow_repair_rate: 0`, and `repair_reliance_rate: 0`.
+- Kept retrieval/RAG and an internal Wiki explicitly out of V6; they remain V6.5/V7 accuracy work rather than hidden unfinished scope.
 ## 2026-06-19
 
 ### V6 server-driven generation progress

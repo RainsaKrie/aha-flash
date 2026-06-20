@@ -990,3 +990,13 @@ Validation:
 - `npm run typecheck`, `npm run build`, `npm run eval:score`, `npm run eval:flow-dynamic`, and `npm run eval:skills` all pass.
 
 V6 reliability status is now green at the current 8-structure live baseline. Next work should move from reliability plumbing to user-facing generation visibility and experience polish.
+## 18. V6 Engineering Milestone - 2026-06-20
+
+V6 is complete for its defined engineering scope: deterministic Blueprint/QualityGate, eight Skill Pack families, 80 fixed Blueprint cases, honest failure escape paths, Blueprint-derived continuation branches, server-driven generation visibility, and live repair telemetry.
+
+Release baseline:
+- `npm run eval:blueprint`: 80/80, `overall: 1`.
+- `npm run eval:flow-live -- --limit=8 --runs=3`: 24/24 real LLM runs, `overall: 1`, `llm_success_rate: 1`, `schema_repair_rate: 0`, `flow_repair_rate: 0`, `repair_reliance_rate: 0`.
+- Live evaluation records the required visible lifecycle: `concept_plan -> blueprint -> flow -> quality_gate`.
+
+The remaining work is not unfinished V6 plumbing: the manual 30-second first-time-user test is product validation, while retrieval grounding and an internal Wiki / Skill Memory move to V6.5 and V7 respectively.

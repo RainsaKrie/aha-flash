@@ -207,7 +207,7 @@ ormalizeUISchema()` 会把 V1/V2 统一转成：
 - `mapping_checks` 说明抽象概念与领域机制为何成立。
 - `chosen_terms` 记录最终采用的术语体系，辅助检查是否混用。
 
-## 7. V5 路由与内容模型
+## 7. V5/V6 Flow 路由与内容模型
 
 V5 的主体验从“输入生成组件”改为“浏览话题 -> 全屏 Flow 闯关 -> Hub 回顾”。现有 10 个 Pattern、Schema 校验和生成链路保留为底层 Skills，不再作为用户首页心智。
 
@@ -216,7 +216,7 @@ V5 的主体验从“输入生成组件”改为“浏览话题 -> 全屏 Flow �
 | Route | V5 职责 | 数据来源 | 备注 |
 |---|---|---|---|
 | `/` | 默认跳转 Explore | - | 入口页不承载聊天流 |
-| `/explore` | 自由生成主入口：输入任意 topic、选择 AI 推荐或指定 Pattern；五条精选 topic 作为示例起点，覆盖全部 10 类 Pattern | `POST /api/flow` + `getShowcaseFlows()` | 公开链接优先展示“想学什么就生成什么”的核心能力 |
+| `/explore` | 自由生成主入口：输入任意 topic，AI 按 KnowledgeBlueprint 自动选择三关 Pattern；展示 SSE 真实阶段与拆解预览，五条精选 Flow 仅作示例起点 | `POST /api/flow` + `getShowcaseFlows()` | 公开链接优先展示“想学什么就生成什么”的核心能力 |
 | `/flow/[flowId]` | 全屏三段式精选闯关：退出/进度条、单组件舞台、底部操作台 | `KnowledgeFlow` | curated 示例体验 |
 | `/flow/custom` | 播放当前浏览器会话中的动态 Flow | sessionStorage | Explore 写入 draft，Custom Flow 页读取并复用播放器 |
 | `/hub` | 知识路径足迹、节点回看、完成统计 | localStorage + `/api/state` | 轻量图鉴，不做知识管理 |
@@ -432,7 +432,7 @@ V5 页面布局以轻消费闯关为核心，不再把工作台和知识图谱�
 
 Explore：
 
-- Explore 主入口是自由输入 + Pattern 选择器；五条精选 topic 只作为“试试这些起点”的低风险示例，并覆盖全部 10 类 Pattern。
+- Explore 主入口是自由输入；系统依据 KnowledgeBlueprint 自动选型，五条精选 topic 只作为“试试这些起点”的低风险示例，并覆盖全部 10 类 Pattern。
 - 不内嵌 Flow、不展示聊天历史、不放 Studio 大按钮、不展示知识图谱。
 - 每张话题卡必须包含概念名、hook、分类、难度、预计时长和关卡数。
 
@@ -550,13 +550,13 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 - V5 Explore 已升级为自由生成入口；动态 Flow 通过 `POST /api/flow` 接入 LLM 并保留按用户 topic 包装的 fallback，showcase Flow 继续通过 `GET /api/flow` 保留稳定示例；Hub 使用本地完成记录和 `/api/state`。真实埋点、账号系统、生产级持久化仍未实现。
 
 <!-- AI_CHAIN_STATUS_START -->
-## 21. 当前 AI 链路与 mock 边界（2026-06-13）
+## 21. 当前 AI 链路与 mock 边界（2026-06-20）
 
 ### 已打通的真实 AI 链路
 
 | 链路 | 入口 | 说明 |
 |---|---|---|
-| 动态 Flow 生成 | `/explore` -> `POST /api/flow` | 用户输入任意 topic，并选择 `AI 推荐` 或指定 Pattern；服务端返回三关 `KnowledgeFlow`。 |
+| 动态 Flow 生成 | `/explore` -> `POST /api/flow` | 用户输入任意 topic；服务端先生成 Blueprint，再自动选择 Pattern，返回三关 `KnowledgeFlow`，流式请求同时发送真实阶段事件。 |
 | 动态 Flow 播放 | `/flow/custom?draftId=...` | Explore 将生成结果写入 sessionStorage，Custom Flow 页读取并复用 `KnowledgeFlowPlayer`。 |
 | Follow-up 延伸 | Flow 完成态 -> `POST /api/flow` | 动态 Flow 优先使用 Blueprint-derived `follow_ups`，点击 AI 延伸方向会生成下一组三关。 |
 | 互动组件生成 | `/studio` -> `/api/chat` | 使用 DeepSeek，经 Tool Calling 优先生成 10 类 Pattern Schema；失败进入 JSON fallback；最终 mock fallback 防崩。 |
@@ -577,7 +577,7 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 动态 Flow fallback 回归：
 
 - `tests/eval/dynamic-flow-score.ts` 会临时移除 `DEEPSEEK_API_KEY`，直接调用 `generateDynamicFlow()`，验证无 key 时仍返回 `source=mock` 的 `custom-*` 三关 Flow。
-- 覆盖 auto、`system_builder`、`process_timeline`、`comparison`、`parameter_explore` 五种输入，确保手选 Pattern 至少出现在一关里；补充 `Agent` 与 `Kubernetes operator` 等非预制概念，禁止回退到“相近概念”等占位式文案。
+- 覆盖 auto 与 `system_builder`、`process_timeline`、`comparison`、`parameter_explore` 四种 API 级显式 Pattern 约束，确保指定 Pattern 至少出现在一关里。Explore 公开 UI 默认只走自动选型；补充 `Agent` 与 `Kubernetes operator` 等非预制概念，禁止回退到“相近概念”等占位式文案。
 - `tests/eval/showcase-pattern-score.ts` 检查公开精选集是否至少包含 5 条 Flow，并覆盖 `SCHEMA_CATALOG` 中全部 10 类 Pattern。
 
 ### 完成口径
@@ -684,7 +684,7 @@ After the provider key was recharged, `eval:flow-live` was rerun successfully.
 - `npm run eval:flow-live -- --limit=8 --runs=3`: 24/24 pass, `overall: 1`, `llm_success_rate: 1`, `schema_repair_rate: 0`, `flow_repair_rate: 0.042`, `repair_reliance_rate: 0.042`.
 - The only follow-up code change was narrowing the historical-change forbidden framing from `只背年份` to `年份就是全部`, preventing QualityGate from rejecting useful wrong-answer/anti-pattern copy.
 
-This is the current V6 live reliability baseline.
+This was the post-recharge interim V6 live reliability baseline; the 2026-06-20 release smoke below supersedes it.
 ### V6 Flow Candidate Unwrapping
 
 `normalizeGeneratedFlow()` now uses a deterministic `extractFlowCandidate()` layer before Flow normalization.
@@ -700,3 +700,9 @@ Supported model response shapes:
 - Top-level play arrays, converted to `{ plays: [...] }`
 
 This change reduces avoidable `flow_repair` without weakening schema validation or QualityGate. The current full live baseline after this change is 24/24 with repair reliance 0.
+
+### V6 Release Smoke - 2026-06-20
+
+V6 当前工程范围已完成并复验：`eval:blueprint` 的 80 个固定用例为 `overall: 1`；`npm run eval:flow-live -- --limit=8 --runs=3` 的 24 次真实 LLM 运行全部通过，`overall: 1`、`llm_success_rate: 1`、`schema_repair_rate: 0`、`flow_repair_rate: 0`、`repair_reliance_rate: 0`。该 live Eval 还校验真实阶段顺序：`concept_plan -> blueprint -> flow -> quality_gate`。
+
+V6 之外的准确性增强仍按既定边界推进：V6.5 考虑低置信度 topic 的可选检索 grounding，V7 再考虑可审计的内部 Wiki / Skill Memory；这些能力不作为当前自由生成链路的硬依赖。
