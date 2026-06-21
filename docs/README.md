@@ -9,7 +9,8 @@
 | `PRODUCT.md` | 当前产品定位、作品集体验、功能边界、设计质量标准和 V1 路线 |
 | `TECHNICAL.md` | 技术架构、V5/V6 Flow 路由、Schema 协议、QualityGate 与验证规则 |
 | `CHANGELOG.md` | 已完成任务、验收记录和重要修复 |
-| `input-docs/README.md` | 后续增量规划文档的放置和处理规则 |
+| `knowledge-skills/` | 8 类运行时 Skill Pack 的教学合约与 Eval 资产 |
+| `input-docs/README.md` | 后续增量规划文档的放置规则；当前仅保留前端设计参考 |
 
 ## 增量文档工作流
 

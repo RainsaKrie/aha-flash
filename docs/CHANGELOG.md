@@ -14,6 +14,7 @@
 - Removed the custom Flow page's cascading render (`setState` inside `useEffect`) and stabilized the Flow completion callback dependencies; `npm run lint` is clean.
 - Diagnosed an intermittent comparison payload drift (`dimensions[].name/title` instead of `label`) and tightened the generation contract rather than masking it in fallback repair.
 - Final regression: lint, typecheck, production build, Schema 32/32, local Flow 15/15, Blueprint 80/80, dynamic fallback 9/9, Skill Packs 8/8, showcase 10/10 Pattern coverage, comparison strict 5/5, and full 8 structures x 3 strict live runs 24/24 with every repair metric at `0`.
+- Documentation consolidation: removed the fully integrated V6 planning draft from `input-docs`; current truth now lives only in `PRODUCT.md`, `TECHNICAL.md`, `CHANGELOG.md`, and this README.
 ## 2026-06-20
 
 ### V6 engineering milestone
@@ -146,7 +147,7 @@
 ### 活泼奶油视觉方向收口
 
 完成：
-- 将 `docs/input-docs/input.md` 的长期视觉要求整合进产品文档，并明确该输入文档保留不删除。
+- 将 `docs/input-docs/input.md` 的长期视觉要求整合进产品文档；该输入文档随后在内容完全合并后删除。
 - 建立主蓝、行动橙、完成绿、辅助紫的配色优先级。
 - Explore / Hub 进入“单色实底按钮 + 白字”“一行标题/副标题”“奶油色块卡片”的统一方向。
 
@@ -963,7 +964,7 @@ th-child 顺序轮换改为按知识语义映射。
 - 明确真实 AI 链路：Studio `/api/chat` 与 showcase Flow `/api/flow` 已打通。
 - 明确 mock/静态边界：Explore 起点、follow-up 分支、非 showcase Flow、视觉资源和 Hub 本地记录。
 - 修正 Hub 技术描述：当前是知识路径足迹，不再是概念卡片墙。
-- 保留 `docs/input-docs/input.md` 与 `SKILL.md`，删除已整合的历史规划输入。
+- 保留 `SKILL.md` 作为前端设计参考；`input.md` 在内容完成整合后删除。
 
 ### Optimization-topic teaching fallback
 - Added an optimization/planning teaching fallback for dynamic Flow generation. When ConceptPlan identifies optimization_model or deterministic planning terms, repair fallback now teaches with decision variables, objective function, constraints, feasible region, and optimum instead of generic slider/card copy.
