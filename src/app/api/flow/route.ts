@@ -4,7 +4,11 @@ import { getFlowById } from "@/lib/content/mock-flows";
 import { generateFlowSteps, isLLMFlowSupported } from "@/lib/content/flow-generation";
 import { PATTERN_LABELS } from "@/lib/content/flow-pattern-options";
 import { normalizeKnowledgeStructure, type KnowledgeStructurePreference } from "@/lib/content/knowledge-blueprint";
+import { checkRateLimit, getRequestRateLimitKey } from "@/lib/harness/rate-limit";
 import { SCHEMA_CATALOG, type PatternType } from "@/types/schema";
+
+const MAX_FLOW_TOPIC_CHARS = 80;
+const FLOW_RATE_LIMIT = { limit: 8, windowMs: 10 * 60 * 1000 };
 
 function canExposeDebug(req: Request) {
   const url = new URL(req.url);
@@ -174,34 +178,60 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const exposeDebug = canExposeDebug(req);
+  const rateLimit = checkRateLimit(getRequestRateLimitKey(req, "flow"), FLOW_RATE_LIMIT);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "生成请求过于频繁，请稍后再试。" },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(rateLimit.retryAfterSeconds),
+          "X-RateLimit-Remaining": "0",
+        },
+      },
+    );
+  }
+
+  let body: Record<string, unknown>;
+  try {
+    body = (await req.json()) as Record<string, unknown>;
+  } catch {
+    return NextResponse.json({ error: "请求格式不正确。" }, { status: 400 });
+  }
+
+  const topic = typeof body.topic === "string"
+    ? body.topic.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").trim()
+    : "";
+  if (topic.length < 2) {
+    return NextResponse.json({ error: "请输入至少 2 个字的主题。" }, { status: 400 });
+  }
+  if (topic.length > MAX_FLOW_TOPIC_CHARS) {
+    return NextResponse.json({ error: `主题请保持在 ${MAX_FLOW_TOPIC_CHARS} 个字以内。` }, { status: 413 });
+  }
+
+  const input = {
+    topic,
+    preferredPattern: normalizePreferredPattern(body.preferredPattern),
+    preferredStructure: normalizePreferredStructure(body.preferredStructure),
+  };
 
   try {
-    const body = (await req.json()) as Record<string, unknown>;
-    const topic = typeof body.topic === "string" ? body.topic.trim() : "";
-    if (topic.length < 2) {
-      return NextResponse.json({ error: "请输入至少 2 个字的主题。" }, { status: 400 });
-    }
-
-    const input = {
-      topic: topic.slice(0, 80),
-      preferredPattern: normalizePreferredPattern(body.preferredPattern),
-      preferredStructure: normalizePreferredStructure(body.preferredStructure),
-    };
-
     if (body.stream === true) {
-      return createDynamicFlowStream(input, exposeDebug);
+      const response = createDynamicFlowStream(input, exposeDebug);
+      response.headers.set("X-RateLimit-Remaining", String(rateLimit.remaining));
+      return response;
     }
 
     const result = await generateDynamicFlow(input, { includeRaw: exposeDebug });
-
     return NextResponse.json(makeDynamicFlowPayload(result, exposeDebug), {
-      headers: { "Cache-Control": "no-store" },
+      headers: {
+        "Cache-Control": "no-store",
+        "X-RateLimit-Remaining": String(rateLimit.remaining),
+      },
     });
   } catch (error) {
     return NextResponse.json(
-      {
-        error: `动态 Flow 请求失败: ${error instanceof Error ? error.message : String(error)}`,
-      },
+      { error: `动态 Flow 请求失败: ${error instanceof Error ? error.message : String(error)}` },
       { status: 500, headers: { "Cache-Control": "no-store" } },
     );
   }

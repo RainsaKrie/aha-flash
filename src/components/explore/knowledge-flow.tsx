@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, CheckCircle2, GitBranch, Home, Loader2, RotateCcw, Sparkles, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { renderBySchema } from "@/components/generative-ui/registry";
 import { SpiritHint } from "@/components/spirit-hint";
 import { getFlowFollowUps, type FollowUpTopic, type KnowledgeFlow } from "@/lib/content/mock-flows";
@@ -46,7 +46,7 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
       ? (debug.quality_gate as { ok?: boolean; score?: number })
       : null;
 
-  function persistCompletion() {
+  const persistCompletion = useCallback(() => {
     recordCompletedFlow({
       flow_id: flow.id,
       title: flow.title,
@@ -57,12 +57,12 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
       completed_play_count: flow.plays.length,
       source: flow.source || (flow.id.startsWith("custom-") ? "generated" : "curated"),
     });
-  }
+  }, [flow]);
 
   useEffect(() => {
     if (!showBranches) return;
     persistCompletion();
-  }, [showBranches]);
+  }, [persistCompletion, showBranches]);
 
   function touchStage() {
     setTouchedPlayIds((ids) => (ids.includes(activePlay.id) ? ids : [...ids, activePlay.id]));
@@ -113,7 +113,7 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
         blueprint: payload.blueprint,
         quality_gate: payload.quality_gate,
       };
-      writeFlowDraft(draftId, nextFlow, debug);
+      if (!writeFlowDraft(draftId, nextFlow, debug)) throw new Error("无法保存下一段学习路径，请允许浏览器会话存储后重试。");
       router.push(`/flow/custom?draftId=${encodeURIComponent(draftId)}`);
     } catch (error) {
       setBranchError(error instanceof Error ? error.message : String(error));

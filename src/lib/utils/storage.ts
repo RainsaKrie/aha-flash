@@ -66,12 +66,17 @@ export function readCompletedFlows() {
 }
 
 export function recordCompletedFlow(record: Omit<CompletedFlowRecord, "completed_at"> & { completed_at?: string }) {
-  if (typeof window === "undefined") return;
-  const completed_at = record.completed_at || new Date().toISOString();
-  const nextRecord: CompletedFlowRecord = { ...record, completed_at };
-  const records = readCompletedFlows();
-  const next = [nextRecord, ...records.filter((item) => item.flow_id !== record.flow_id)].slice(0, 30);
-  window.localStorage.setItem(COMPLETED_FLOWS_KEY, JSON.stringify(next));
+  if (typeof window === "undefined") return false;
+  try {
+    const completed_at = record.completed_at || new Date().toISOString();
+    const nextRecord: CompletedFlowRecord = { ...record, completed_at };
+    const records = readCompletedFlows();
+    const next = [nextRecord, ...records.filter((item) => item.flow_id !== record.flow_id)].slice(0, 30);
+    window.localStorage.setItem(COMPLETED_FLOWS_KEY, JSON.stringify(next));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function isKnowledgeFlow(value: unknown): value is KnowledgeFlow {
@@ -84,9 +89,14 @@ function isKnowledgeFlow(value: unknown): value is KnowledgeFlow {
 }
 
 export function writeFlowDraft(draftId: string, flow: KnowledgeFlow, debug?: FlowDraftDebug) {
-  if (typeof window === "undefined") return;
-  const value = debug ? ({ flow, debug } satisfies FlowDraftRecord) : flow;
-  window.sessionStorage.setItem(`${FLOW_DRAFT_PREFIX}${draftId}`, JSON.stringify(value));
+  if (typeof window === "undefined") return false;
+  try {
+    const value = debug ? ({ flow, debug } satisfies FlowDraftRecord) : flow;
+    window.sessionStorage.setItem(`${FLOW_DRAFT_PREFIX}${draftId}`, JSON.stringify(value));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function readFlowDraftRecord(draftId: string | null): FlowDraftRecord | null {

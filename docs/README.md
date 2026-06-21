@@ -51,22 +51,25 @@ http://localhost:3000
 常用验证：
 
 ```bash
+npm run lint
 npm run typecheck
 npm run build
 npm run eval:score
+npm run eval:flow
 npm run eval:blueprint
 npm run eval:flow-dynamic
 npm run eval:skills
-npm run eval:flow-live -- --limit=8 --runs=3
+npm run eval:showcase
+npm run eval:flow-live -- --limit=8 --runs=3 --strict --threshold=1
 ```
 
 没有配置 `DEEPSEEK_API_KEY` 时，应用会使用 mock fallback：动态输入会生成按用户 topic 包装的通用三关 Flow，五条精选示例也仍可完整走完。
 <!-- DOCS_STATUS_START -->
-## 当前状态速览（2026-06-20）
+## 当前状态速览（2026-06-21）
 - V6 已完成“自由输入 -> ConceptPlan -> KnowledgeBlueprint -> 三关 Flow -> QualityGate -> 后续分支”的工程闭环；首页不再要求用户手选 Pattern，由 AI 根据知识结构自动选择。
 - `/api/flow` 支持普通 JSON 与 `stream: true` SSE 两种响应；Explore 消费真实的 `concept_plan -> blueprint -> flow -> quality_gate` 阶段，而不是前端计时器。
 - 生成成功后，用户先查看拆解预览，再自行进入三关或重新拆解；失败时提供重试、换概念、换拆解方式与精选示例逃逸路径。
-- 质量基线：80 个 Blueprint 固定用例通过；2026-06-20 的 8 结构 x 3 次 live smoke 为 24/24 通过，LLM 成功率 1，repair 指标均为 0。
-- 动态 Flow 只保存在当前浏览器会话，Hub 完成记录写入本机 localStorage。
+- 质量基线：80 个 Blueprint 固定用例通过；2026-06-21 的 8 结构 x 3 次严格 live smoke 为 24/24 通过，LLM 成功率 1，所有 repair 指标均为 0。
+- 动态 Flow 只保存在当前浏览器会话，Hub 完成记录写入本机 localStorage；草稿存储不可用时会明确提示，不会跳转到空 Flow。
 - 当前不做：账号、数据库、多设备同步、社区发布、生产级埋点、检索/RAG 和内部 Wiki；这些是 V6.5/V7 的后续范围。
 <!-- DOCS_STATUS_END -->

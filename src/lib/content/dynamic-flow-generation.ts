@@ -1,4 +1,4 @@
-import { generateText } from "ai";
+import { retryGenerateText } from "../llm/retry-generate-text.ts";
 import { getLLMProvider } from "../llm/provider.ts";
 import { PATTERN_LABELS, type FlowPatternPreference } from "./flow-pattern-options.ts";
 import { validateSchema } from "../llm/schema-validator.ts";
@@ -115,7 +115,7 @@ const FLOW_SCHEMA_PAYLOAD_GUIDE = [
   "- parameter_explore/single_slider: payload.title; variable_label; min number; max number; default_value number; explanation_template must be one fixed complete natural sentence, not a template; never include braces, {value}, {result}, or value-substitution slots; optional scenarios [{label,value}], outputs [{label, model one of linear/quadratic/exponential/inverse/logarithmic, multiplier number, offset number}]",
   "- concept_memory/term_cards: payload.title; cards [{front, back}]",
   "- process_timeline/horizontal_timeline: payload.title; events [{label, description}]",
-  "- comparison/split_panel: payload.title; left {label, content}; right {label, content}; optional dimensions [{label,a,b,insight}]",
+  "- comparison/split_panel: payload.title; left {label, content}; right {label, content}; optional dimensions [{label,a,b,insight}]. Every dimensions item must use the field name label exactly; never use name, title, or dimension for that field.",
   "- knowledge_check/single_question: payload.title; question; options [{label, correct boolean, explanation}]",
   "- system_builder/module_sandbox: payload.title; target; modules [{id,label,description,role}]; optional required_module_ids, connections [{from,to,label}]",
   "- narrative_branch/branch_story: payload.title; opening; branches [{choice_label,outcome_description,insight}]",
@@ -1701,20 +1701,6 @@ function normalizeGeneratedFlow(
     groundingTerms,
     repair_actions: repairActions,
   };
-}
-async function retryGenerateText(options: Parameters<typeof generateText>[0], maxRetries = 1) {
-  const timeout = options.timeout ?? 45_000;
-  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
-    try {
-      return await generateText({ ...options, timeout });
-    } catch (error) {
-      if (attempt === maxRetries) throw error;
-      const message = error instanceof Error ? error.message : String(error);
-      if (!/(500|502|503|timeout|timed out|aborted|ECONNRESET|ETIMEDOUT|fetch failed)/i.test(message)) throw error;
-      await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
-    }
-  }
-  throw new Error("unreachable");
 }
 function buildDynamicSystemPrompt(
   topic: string,

@@ -5,6 +5,15 @@
 ---
 
 
+## 2026-06-21
+
+### V6 project audit and reliability hardening
+- Consolidated the three divergent `generateText` retry loops into `src/lib/llm/retry-generate-text.ts`: one transient-error policy, exponential backoff, and a 45-second request timeout shared by Studio chat, curated Flow, and dynamic Flow generation.
+- Hardened `POST /api/flow`: per-client in-memory limit of 8 Flow requests per 10 minutes, `429`/`Retry-After`/remaining-budget headers, explicit malformed-JSON `400`, control-character cleanup, and an explicit 80-character topic limit instead of silent truncation.
+- Made browser persistence failure explicit: completed-flow writes are nonfatal; dynamic draft writes return success/failure so Explore and continuation branches never navigate to an unreadable empty draft.
+- Removed the custom Flow page's cascading render (`setState` inside `useEffect`) and stabilized the Flow completion callback dependencies; `npm run lint` is clean.
+- Diagnosed an intermittent comparison payload drift (`dimensions[].name/title` instead of `label`) and tightened the generation contract rather than masking it in fallback repair.
+- Final regression: lint, typecheck, production build, Schema 32/32, local Flow 15/15, Blueprint 80/80, dynamic fallback 9/9, Skill Packs 8/8, showcase 10/10 Pattern coverage, comparison strict 5/5, and full 8 structures x 3 strict live runs 24/24 with every repair metric at `0`.
 ## 2026-06-20
 
 ### V6 engineering milestone

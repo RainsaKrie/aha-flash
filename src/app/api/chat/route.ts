@@ -1,4 +1,4 @@
-import { generateText } from "ai";
+import { retryGenerateText } from "@/lib/llm/retry-generate-text";
 import { NextResponse } from "next/server";
 import {
   classifyConversationByRules,
@@ -6,7 +6,7 @@ import {
   inferTopic,
 } from "@/lib/harness/conversation-router";
 import { buildJsonSystemPrompt, buildToolSystemPrompt } from "@/lib/harness/prompt-composer";
-import { checkRateLimit } from "@/lib/harness/rate-limit";
+import { checkRateLimit, getRequestRateLimitKey } from "@/lib/harness/rate-limit";
 import { reflectTurnByRules } from "@/lib/harness/state-reflection";
 import { initUserState } from "@/lib/harness/state-machine";
 import { stateStore } from "@/lib/harness/state-store";
@@ -55,17 +55,6 @@ function sanitizeMessage(value: unknown) {
   return String(value || "")
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
     .trim();
-}
-
-function sanitizeRateLimitKey(value: string) {
-  return value.replace(/[^a-zA-Z0-9:._-]/g, "").slice(0, 96);
-}
-
-function getChatRateLimitKey(req: Request, userId?: string | null) {
-  if (userId) return `user:${sanitizeRateLimitKey(userId)}`;
-  const forwardedFor = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  const realIp = req.headers.get("x-real-ip")?.trim();
-  return `ip:${sanitizeRateLimitKey(forwardedFor || realIp || "local")}`;
 }
 
 function inferConcept(input: string) {
@@ -232,23 +221,6 @@ function logSchemaParseFailure(label: string, text: string, reason: string) {
     reason,
     raw_output: text,
   });
-}
-
-async function retryGenerateText(
-  options: Parameters<typeof generateText>[0],
-  maxRetries = 1,
-): Promise<Awaited<ReturnType<typeof generateText>>> {
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      return await generateText(options);
-    } catch (error) {
-      if (attempt === maxRetries) throw error;
-      const msg = error instanceof Error ? error.message : String(error);
-      if (!/(500|502|503|timeout|ECONNRESET|ETIMEDOUT|fetch failed)/i.test(msg)) throw error;
-      await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
-    }
-  }
-  throw new Error("unreachable");
 }
 
 async function generateSchemaWithTools({
@@ -558,7 +530,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "message is too long" }, { status: 413 });
   }
 
-  const rateLimit = checkRateLimit(getChatRateLimitKey(req, normalizedUserId));
+  const rateLimit = checkRateLimit(getRequestRateLimitKey(req, "chat", normalizedUserId));
   if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: "too many requests, please retry later" },

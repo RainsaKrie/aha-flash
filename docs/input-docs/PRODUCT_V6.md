@@ -129,7 +129,7 @@ Current V6 reliability work is partially implemented and verified:
 - Expanded `eval:blueprint` to the Stage C target: 80 fixed cases, 10 topics per supported knowledge structure, with `overall: 1`. The expansion keeps existing Chinese hints and adds broader English topic coverage such as diet problem, TCP handshake, hypothesis testing, Renaissance, SQL vs NoSQL, HTTP status codes, greenhouse effect, and dynamic programming.
 - Added natural-language anchor synonyms for comparison and causal Skill Packs, so QualityGate recognizes user-facing teaching phrases such as signal, indicator, transmission mechanism, result, effect, and final value instead of overfitting to internal terms like dimension/outcome. Latest full 8x3 live baseline remains below the V6 repair threshold with `repair_reliance_rate: 0.083`.
 
-Remaining V6 work:
+Historical remaining V6 work (resolved by later milestones):
 
 - Keep using `eval:flow-live -- --limit=8 --runs=3` as the release smoke test for future prompt or Skill Pack changes.
 - Keep `repair_reliance_rate <= 0.2` as the release smoke-test threshold while expanding Skill Pack skeleton coverage; current post-Skill-Contract 8x3 baseline is `0.083`, with repairs concentrated in causal/compound-interest flow repair.
@@ -897,7 +897,7 @@ Implemented V6 reliability slices:
 - Explore now shows a compact pre-flow decomposition preview from the production-safe Flow preview payload: knowledge structure, core terms, and the three-step interaction path appear before entering the generated Flow.
 - Internal Aha Skill Pack skeletons now cover 8 representative families and feed deterministic Blueprint/QualityGate checks for required terms, forbidden framings, and unsuitable Patterns. The Stage C expansion also narrowed the `system_process` HTTP hint to `http request`, so `HTTP status codes` correctly remains a `classification_rule` topic.
 
-Remaining V6 work:
+Historical remaining V6 work (resolved by later milestones):
 
 - Full 8-structure `eval:flow-live -- --limit=8 --runs=3` baseline was rerun after runtime Skill Contract injection: 24/24 LLM runs passed with `repair_reliance_rate: 0.083`. Future work should keep the rate <= 0.2 and reduce the remaining causal/compound-interest flow repair cases.
 
@@ -1000,3 +1000,16 @@ Release baseline:
 - Live evaluation records the required visible lifecycle: `concept_plan -> blueprint -> flow -> quality_gate`.
 
 The remaining work is not unfinished V6 plumbing: the manual 30-second first-time-user test is product validation, while retrieval grounding and an internal Wiki / Skill Memory move to V6.5 and V7 respectively.
+## 19. V6 Final Project Audit - 2026-06-21
+
+V6 is complete for its defined engineering scope and has been revalidated after a project-wide reliability audit.
+
+- Shared generation reliability: the three previous retry implementations now use one `retry-generate-text` utility with the same transient-error policy, backoff, and 45-second timeout.
+- Public Flow protection: `POST /api/flow` has a per-client 8 requests / 10 minutes in-memory guard, `429` retry hints, malformed-body handling, control-character cleanup, and a visible 80-character topic boundary.
+- Browser failure behavior: draft persistence is acknowledged before navigation, so storage permission or quota failures remain an actionable Explore/branch error instead of becoming an empty custom Flow page.
+- React cleanup: Custom Flow derives its draft from the URL without effect-driven synchronous state, and Flow completion uses a stable callback dependency.
+- Prompt repair reduction: comparison dimensions now explicitly require `label` and prohibit `name/title/dimension`; a strict 5-run comparison sample and a full strict 24-run release smoke both recorded zero repair actions.
+
+Final verification: lint and typecheck passed; production build passed; Schema 32/32, local Flow 15/15, Blueprint 80/80, dynamic fallback 9/9, Skill Packs 8/8, showcase 10/10 Pattern coverage, and strict live Flow 24/24 all passed.
+
+The remaining work is outside V6: V6.5 optional retrieval grounding for low-confidence topics, and V7 internal Wiki / Skill Memory. The manual 30-second first-time-user test remains product validation, not unfinished reliability plumbing.

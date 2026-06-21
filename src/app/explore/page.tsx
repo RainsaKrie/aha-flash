@@ -205,7 +205,7 @@ export default function ExplorePage() {
         blueprint: payload.blueprint,
         quality_gate: payload.quality_gate,
       };
-      writeFlowDraft(draftId, flow, debug);
+      if (!writeFlowDraft(draftId, flow, debug)) throw new Error("无法保存本次学习路径，请允许浏览器会话存储后重试。");
       setPendingDraftId(draftId);
     } catch (error) {
       setGenerationPreview(null);

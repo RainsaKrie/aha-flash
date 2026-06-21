@@ -550,7 +550,7 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 - V5 Explore 已升级为自由生成入口；动态 Flow 通过 `POST /api/flow` 接入 LLM 并保留按用户 topic 包装的 fallback，showcase Flow 继续通过 `GET /api/flow` 保留稳定示例；Hub 使用本地完成记录和 `/api/state`。真实埋点、账号系统、生产级持久化仍未实现。
 
 <!-- AI_CHAIN_STATUS_START -->
-## 21. 当前 AI 链路与 mock 边界（2026-06-20）
+## 21. 当前 AI 链路与 mock 边界（2026-06-21）
 
 ### 已打通的真实 AI 链路
 
@@ -706,3 +706,10 @@ This change reduces avoidable `flow_repair` without weakening schema validation 
 V6 当前工程范围已完成并复验：`eval:blueprint` 的 80 个固定用例为 `overall: 1`；`npm run eval:flow-live -- --limit=8 --runs=3` 的 24 次真实 LLM 运行全部通过，`overall: 1`、`llm_success_rate: 1`、`schema_repair_rate: 0`、`flow_repair_rate: 0`、`repair_reliance_rate: 0`。该 live Eval 还校验真实阶段顺序：`concept_plan -> blueprint -> flow -> quality_gate`。
 
 V6 之外的准确性增强仍按既定边界推进：V6.5 考虑低置信度 topic 的可选检索 grounding，V7 再考虑可审计的内部 Wiki / Skill Memory；这些能力不作为当前自由生成链路的硬依赖。
+### V6 Project Audit - 2026-06-21
+
+- `retry-generate-text.ts` is the only `generateText` retry implementation. It retries transient provider failures once with exponential backoff and defaults to a 45-second request timeout; chat, curated Flow, and dynamic Flow all use it.
+- `POST /api/flow` now protects the public cost boundary with an in-memory per-client limit of 8 requests per 10 minutes. It returns `429` with `Retry-After` and `X-RateLimit-Remaining`, rejects malformed JSON with `400`, strips control characters, and returns `413` for topics longer than 80 characters.
+- `writeFlowDraft()` returns a boolean. Explore and generated follow-up branches surface a storage-permission/quota error instead of navigating to `/flow/custom` without a readable draft. `recordCompletedFlow()` remains nonfatal so a blocked localStorage write cannot break the completed Flow UI.
+- The 2026-06-21 strict release smoke passed: `npm run lint`, `npm run typecheck`, `npm run build`, `eval:score` 32/32, local `eval:flow` 15/15, `eval:blueprint` 80/80, `eval:flow-dynamic` 9/9, `eval:skills` 8/8, `eval:showcase` 10/10 Pattern coverage, and `eval:flow-live -- --limit=8 --runs=3 --strict --threshold=1` 24/24 with all repair action rates at 0.
+- A diagnosed comparison drift (`dimensions[].name/title` instead of `label`) is addressed in the generation contract, not hidden by a fallback field rewrite. A targeted strict comparison sample passed 5/5 before the full smoke.

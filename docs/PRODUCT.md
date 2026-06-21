@@ -413,7 +413,7 @@ V5 取代旧版 PRODUCT.md 的产品定位、页面体验、V1 范围和成功�
 Hub 的路径节点不按列表顺序轮换颜色，而是复用 V5 既有四个语义角色色：技术/系统使用主蓝，数理/概率使用辅助紫，历史/时间线使用行动橙，经济/金融使用完成绿。无法归类时默认使用主蓝，避免引入新的 Hub 专属配色体系。
 
 <!-- CURRENT_STATUS_START -->
-## 13. 当前完成度快照（2026-06-20）
+## 13. 当前完成度快照（2026-06-21）
 
 当前口径：V6 已完成“可靠的自由生成知识路径”工程闭环。用户输入任意知识点后，系统先生成 `ConceptPlan` 与 `KnowledgeBlueprint`，再组装三关互动 Flow；通过确定性 QualityGate 后才允许进入体验。
 
@@ -426,8 +426,8 @@ Hub 的路径节点不按列表顺序轮换颜色，而是复用 V5 既有四个
 **真实 AI 与质量链路**：
 - `POST /api/flow`：`topic -> ConceptPlan -> KnowledgeBlueprint -> 三关 Flow -> QualityGate`；流式请求通过 SSE 返回真实阶段与最终结果。
 - 8 类知识结构、80 个 Blueprint 固定用例、10 类 Pattern 约束、Skill Pack 合约和确定性 QualityGate 已接入。
-- 2026-06-20 完整 live smoke：8 类结构 x 3 次，共 24/24 LLM runs 通过，`overall=1`、`llm_success_rate=1`、所有 repair 指标为 `0`。
-- 无 API Key、provider 异常或质量闸门失败时，系统展示诚实失败态，提供重试、换概念、换拆解方式和精选示例逃逸路径；不会伪装成 AI 成功。
+- 2026-06-21 严格 live smoke：8 类结构 x 3 次，共 24/24 LLM runs 通过，`overall=1`、`llm_success_rate=1`、所有 repair 指标为 `0`；任何 repair 都会使严格回归失败。
+- 无 API Key、provider 异常或质量闸门失败时，系统展示诚实失败态，提供重试、换概念、换拆解方式和精选示例逃逸路径；不会伪装成 AI 成功。公开 Flow 接口还有限流、输入长度与请求格式保护。
 
 **仍为本地或下一阶段能力**：Explore 示例起点、Hub 本机记录、视觉资源 registry；账号登录、多设备同步、社区发布、生产数据库、埋点分析、检索/RAG 与内部 Wiki 不属于 V6 当前范围。
 <!-- CURRENT_STATUS_END -->

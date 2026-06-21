@@ -1,4 +1,4 @@
-import { generateText } from "ai";
+import { retryGenerateText } from "@/lib/llm/retry-generate-text";
 import { getLLMProvider } from "@/lib/llm/provider";
 import { getSchemaErrors, validateSchema } from "@/lib/llm/schema-validator";
 import {
@@ -179,20 +179,6 @@ ${spec.contentConstraints}`;
 
 function fallbackFlow(spec: FlowTopicSpec) {
   return findFlowById(spec.id) || findFlowById(BAYES_FLOW_ID);
-}
-
-async function retryGenerateText(options: Parameters<typeof generateText>[0], maxRetries = 1) {
-  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
-    try {
-      return await generateText(options);
-    } catch (error) {
-      if (attempt === maxRetries) throw error;
-      const message = error instanceof Error ? error.message : String(error);
-      if (!/(500|502|503|timeout|ECONNRESET|ETIMEDOUT|fetch failed)/i.test(message)) throw error;
-      await new Promise((resolve) => setTimeout(resolve, 800 * (attempt + 1)));
-    }
-  }
-  throw new Error("unreachable");
 }
 
 function extractJsonObjects(text: string) {

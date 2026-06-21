@@ -48,3 +48,15 @@ export function checkRateLimit(key: string, options: RateLimitOptions = {}): Rat
     retryAfterSeconds,
   };
 }
+
+function sanitizeRateLimitKey(value: string) {
+  return value.replace(/[^a-zA-Z0-9:._-]/g, "").slice(0, 96);
+}
+
+export function getRequestRateLimitKey(req: Request, scope: string, userId?: string | null) {
+  const safeScope = sanitizeRateLimitKey(scope) || "request";
+  if (userId) return `${safeScope}:user:${sanitizeRateLimitKey(userId)}`;
+  const forwardedFor = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const realIp = req.headers.get("x-real-ip")?.trim();
+  return `${safeScope}:ip:${sanitizeRateLimitKey(forwardedFor || realIp || "local")}`;
+}
