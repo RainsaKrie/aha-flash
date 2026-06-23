@@ -1,5 +1,6 @@
 # 趣灵 aha-flash — 产品与路线
 
+> 前台文案边界：用户只应看到学习动作、概念解释和下一步选择；Blueprint、Pattern/template、source、schema、grounding terms 及协议兼容字段均属于内部实现，不得直接作为产品文案或标签展示。概率类互动必须先让用户做出判断，再揭示结果并解释判断如何更新；二元结果是合法教学结构。
 > 文档定位：记录当前产品真相、体验原则、互动组件质量标准和 V1 路线。临时输入文档放入 `docs/input-docs/`，完成整合后归档或删除。
 
 > 当前版本：V5。V5 将趣灵从“AI 生成互动组件工具”收束为“知识版休闲游戏 / 不内疚的知识消遣”。
@@ -46,12 +47,12 @@
 ```
 打开趣灵 → 看到感兴趣的话题 → 进入微挑战流
 → 第1关：试一下 → ✓/✗ 反馈 → 第2关：再试试
-→ 第3关：好像懂了 → ✨ 小成就 → 想看下一个话题
+→ 第3关：拆开边界 → 第4关：做一次判断 → ✨ 小成就 → 想看下一个话题
 ```
 
 **与旧版的根本区别**：
 - 旧版：用户**输入**概念 → LLM 生成单个组件 → 用户**学习**
-- 新版：用户**输入或选择**起点 → AI 生成三关 Flow → 用户**闯关并继续探索分支**
+- 新版：用户**输入或选择**起点 → AI 生成四步 Flow → 用户**闯关并继续探索分支**
 
 ---
 
@@ -64,8 +65,8 @@
 **用户来到这做什么**：输入一个想理解的知识点，或从示例起点里挑一个开始。
 
 **公开入口包含**：
-- 自由输入框：用户输入任意 topic 后，默认由 AI 推荐 Pattern 并生成三关 Flow。
-- AI 自动选型：系统根据 KnowledgeBlueprint 自动选择三关的 Pattern；仅当生成失败时，用户可以选择另一种知识拆解方式重试。
+- 自由输入框：用户输入任意 topic 后，默认由 AI 推荐 Pattern 并生成四步 Flow。
+- AI 自动选型：系统根据 KnowledgeBlueprint 自动选择四步路径的 Pattern；仅当生成失败时，用户可以选择另一种知识拆解方式重试。
 - 5 个精选 topic 卡片：`bayes-starter`、`dns-router`、`options-risk`、`industrial-revolution`、`inflation-deflation`，作为低风险示例起点，并覆盖全部 10 类 Pattern。
 - Hub 入口：用户走完任一 Flow 后能看到本机完成记录。
 
@@ -133,7 +134,7 @@
 
 趣灵选知识的标准 — 不是"有深度"，是"有顿悟感"：
 
-- ✅ 一句话说不清，但三关互动能让人"啊哈"一下的概念
+- ✅ 一句话说不清，但四步互动能让人"啊哈"一下的概念
 - ✅ 日常生活中可能碰到，大概知道但说不清楚的东西（贝叶斯、边际效应、复利）
 - ✅ 有机制可拆解——可以被映射到 probability/timeline/comparison 等 Pattern
 - ❌ 纯记忆性知识（历史年份、化学式）
@@ -413,20 +414,22 @@ V5 取代旧版 PRODUCT.md 的产品定位、页面体验、V1 范围和成功�
 Hub 的路径节点不按列表顺序轮换颜色，而是复用 V5 既有四个语义角色色：技术/系统使用主蓝，数理/概率使用辅助紫，历史/时间线使用行动橙，经济/金融使用完成绿。无法归类时默认使用主蓝，避免引入新的 Hub 专属配色体系。
 
 <!-- CURRENT_STATUS_START -->
-## 13. 当前完成度快照（2026-06-21）
+## 13. 当前完成度快照（2026-06-22）
 
-当前口径：V6 已完成“可靠的自由生成知识路径”工程闭环。用户输入任意知识点后，系统先生成 `ConceptPlan` 与 `KnowledgeBlueprint`，再组装三关互动 Flow；通过确定性 QualityGate 后才允许进入体验。
+当前口径：V6 已完成“可靠的自由生成知识路径”工程闭环。用户输入任意知识点后，系统先生成 `ConceptPlan` 与 `KnowledgeBlueprint`，再组装四步互动 Flow；通过确定性 QualityGate 后才允许进入体验。
 
 **用户可感知的主路径**：
 - `/explore` 以自由输入为第一入口；互动 Pattern 由 AI 按知识结构自动选择，不再要求用户在十类 Pattern 中做冗长选择。
 - 生成过程展示服务端真实阶段：识别知识结构 -> 生成教学蓝图 -> 组装互动关卡 -> 检查是否教清楚；不是前端计时器模拟。
-- 生成成功后先展示知识结构、核心词和三关路径，用户确认“进入三关”或“重新拆一次”。
+- 生成成功后先展示知识结构和四个面向学习者的关卡目标；Blueprint 核心词、Pattern 与 trace 只服务于生成和质量校验，不作为前台 tag。用户确认“进入路径”或“重新拆一次”。
 - 完成 Flow 后展示 Blueprint 驱动的后续知识分支，而非默认回到首页；Hub 继续记录本机的完成足迹。
 
 **真实 AI 与质量链路**：
-- `POST /api/flow`：`topic -> ConceptPlan -> KnowledgeBlueprint -> 三关 Flow -> QualityGate`；流式请求通过 SSE 返回真实阶段与最终结果。
+- `POST /api/flow`：`topic -> ConceptPlan -> KnowledgeBlueprint -> 四步 Flow -> QualityGate`；流式请求通过 SSE 返回真实阶段与最终结果。
 - 8 类知识结构、80 个 Blueprint 固定用例、10 类 Pattern 约束、Skill Pack 合约和确定性 QualityGate 已接入。
-- 2026-06-21 严格 live smoke：8 类结构 x 3 次，共 24/24 LLM runs 通过，`overall=1`、`llm_success_rate=1`、所有 repair 指标为 `0`；任何 repair 都会使严格回归失败。
+- QualityGate 不只检查 JSON 可渲染：四步中的每一步都必须把本关动作术语与用户 topic 的 grounding 术语放进可见主体内容；“排序”必须落到可排序模板，选择题必须有唯一正确项与逐项解释。
+- 2026-06-21 严格 live smoke 是发布历史基线：8 类结构 x 3 次，共 24/24 LLM runs 通过，`overall=1`、`llm_success_rate=1`、所有 repair 指标为 `0`；任何 repair 都会使严格回归失败。2026-06-22 新增“关卡标题必须具体”QualityGate 后，复利单例真实调用通过，首轮泛称标题触发一次可追踪 LLM repair。
+- 数值互动不再只展示“变化后的数字”：复利类 Pattern 必须把公式、参数代入与逐期结果公开给学习者；无可验证公式的交互只能作为趋势示意，不得表示为真实预测或计算。
 - 无 API Key、provider 异常或质量闸门失败时，系统展示诚实失败态，提供重试、换概念、换拆解方式和精选示例逃逸路径；不会伪装成 AI 成功。公开 Flow 接口还有限流、输入长度与请求格式保护。
 
 **仍为本地或下一阶段能力**：Explore 示例起点、Hub 本机记录、视觉资源 registry；账号登录、多设备同步、社区发布、生产数据库、埋点分析、检索/RAG 与内部 Wiki 不属于 V6 当前范围。
@@ -434,7 +437,7 @@ Hub 的路径节点不按列表顺序轮换颜色，而是复用 V5 既有四个
 
 ## Dynamic Free Generation Current Contract
 
-- The visible promise is user topic -> ConceptPlan -> three-step Flow -> follow-up branch, not a finite list of prewritten topics.
+- The visible promise is user topic -> ConceptPlan -> four-step Flow -> follow-up branch, not a finite list of prewritten topics.
 - ConceptPlan makes free generation auditable: every generated Flow must first decide what the concept really is, what terms anchor it, and which patterns should or should not be used.
 - This is the key difference from static authored content: adding or entering a new topic should not require prebuilt content, but it must pass grounding and pattern-fit checks before it is shown as LLM output.
 - Manual local checks now pass for Agent and linear programming with source=llm and topic-specific pattern chains.

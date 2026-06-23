@@ -4300,8 +4300,12 @@ button:disabled {
   text-align: left;
 }
 
+.v5-flow-branch-panel {
+  --branch-accent: #4a6fa5;
+}
+
 .v5-flow-branch-panel > svg {
-  color: var(--flow-accent);
+  color: var(--branch-accent);
 }
 
 .v5-flow-branch-panel h2 {
@@ -4325,13 +4329,13 @@ button:disabled {
   min-height: 190px;
   align-content: space-between;
   gap: 12px;
-  border: 1px solid color-mix(in srgb, var(--flow-accent), white 66%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 24px;
-  background: color-mix(in srgb, var(--flow-accent), white 88%);
+  background: #ffffff;
   padding: 22px;
   color: #1a1a1a;
   text-decoration: none;
-  box-shadow: 0 12px 28px rgba(31, 41, 55, 0.08);
+  box-shadow: 0 8px 22px rgba(31, 41, 55, 0.06);
   transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
@@ -4347,9 +4351,9 @@ button:disabled {
   align-items: center;
   gap: 7px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
+  background: #f3f6fb;
   padding: 0 11px;
-  color: #2d2d2d;
+  color: var(--branch-accent);
   font-size: 12px;
   font-weight: 900;
 }
@@ -4770,6 +4774,11 @@ button.v5-flow-branch-card {
   transform: none;
 }
 
+.v5-flow-actionbar__hint {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 700;
+}
 .v5-flow-branch-card em {
   display: inline-flex;
   align-items: center;
@@ -5093,21 +5102,6 @@ button.v5-flow-branch-card {
   font-weight: 950;
 }
 
-.v6-decomposition-preview__terms {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.v6-decomposition-preview__terms span {
-  border-radius: 999px;
-  background: rgba(74, 111, 165, 0.09);
-  padding: 6px 10px;
-  color: var(--v5-play-blue-dark);
-  font-size: 12px;
-  font-weight: 850;
-}
-
 .v6-decomposition-preview__steps {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -5148,23 +5142,14 @@ button.v5-flow-branch-card {
   gap: 3px;
 }
 
-.v6-decomposition-preview__steps strong,
-.v6-decomposition-preview__steps small {
+.v6-decomposition-preview__steps strong {
   overflow: hidden;
+  color: #1a1a1a;
+  font-size: 14px;
+  font-weight: 950;
+  line-height: 1.45;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.v6-decomposition-preview__steps strong {
-  color: #1a1a1a;
-  font-size: 13px;
-  font-weight: 950;
-}
-
-.v6-decomposition-preview__steps small {
-  color: #7c7c7c;
-  font-size: 11px;
-  font-weight: 850;
 }
 
 .v6-decomposition-preview__actions {

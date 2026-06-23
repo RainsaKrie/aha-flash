@@ -53,7 +53,7 @@ export function VerticalTimeline({
               active={active}
               className="grid gap-2 border-l-2"
             >
-              <span className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">step {index + 1}</span>
+              <span className="text-xs font-semibold text-[var(--muted)]">第 {index + 1} 步</span>
               <strong className={active ? "text-[var(--accent-2)]" : ""}>{event.label}</strong>
               {active && <span className="ui-result text-sm leading-relaxed text-[var(--muted)]">{event.description}</span>}
             </ChoiceButton>

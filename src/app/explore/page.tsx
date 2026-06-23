@@ -5,7 +5,7 @@ import { ArrowRight, BrainCircuit, Gauge, Home, LibraryBig, Loader2, Sparkles, T
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { PATTERN_LABELS } from "@/lib/content/flow-pattern-options";
+
 import { getShowcaseFlows, type KnowledgeFlow } from "@/lib/content/mock-flows";
 import { writeFlowDraft, type FlowDraftDebug } from "@/lib/utils/storage";
 
@@ -30,15 +30,11 @@ interface FlowFailureResponse {
 
 interface GenerationPreviewStep {
   label: string;
-  pattern: string;
-  terms?: string[];
-  title?: string;
 }
 
 interface GenerationPreview {
   topic: string;
   structure: string;
-  terms: string[];
   steps: GenerationPreviewStep[];
   gate: "pass" | "warn" | "unknown";
   source: "llm" | "mock";
@@ -59,10 +55,10 @@ interface FlowApiResponse {
 
 const INPUT_EXAMPLES = ["\u7ebf\u6027\u89c4\u5212", "DNS \u89e3\u6790", "\u8d1d\u53f6\u65af\u5b9a\u7406", "\u590d\u5229\u6548\u5e94"];
 const GENERATION_STEPS = [
-  { id: "concept_plan", label: "识别知识结构" },
-  { id: "blueprint", label: "生成教学蓝图" },
-  { id: "flow", label: "组装互动关卡" },
-  { id: "quality_gate", label: "检查是否真的教清楚" },
+  { id: "concept_plan", label: "先找一个好入口" },
+  { id: "blueprint", label: "把它拆成几步" },
+  { id: "flow", label: "准备动手试试" },
+  { id: "quality_gate", label: "确认这条路讲得通" },
 ] as const;
 
 type GenerationStage = (typeof GENERATION_STEPS)[number]["id"] | "repair" | "fallback";
@@ -128,27 +124,25 @@ const STRUCTURE_CHOICES = [
   { id: "optimization_model", label: "\u770b\u5efa\u6a21", hint: "\u76ee\u6807 / \u7ea6\u675f / \u6700\u4f18" },
 ] as const;
 
-function patternLabel(value: unknown) {
-  if (typeof value === "string" && value in PATTERN_LABELS) return PATTERN_LABELS[value as keyof typeof PATTERN_LABELS];
-  return typeof value === "string" && value.trim() ? value : "互动组件";
+function makePreviewStepLabel(title: unknown, topic: string, index: number) {
+  const value = typeof title === "string" ? title.trim() : "";
+  const fallback = ["先抓住关键条件", "试着改变一个因素", "看看会发生什么", "用一道题确认理解"][index] || "继续往下走";
+  if (value) return value;
+  return `${topic}：${fallback}`;
 }
 
 function makeFallbackPreview(flow: KnowledgeFlow, source: "llm" | "mock"): GenerationPreview {
+  const topic = flow.concept || flow.title;
   return {
-    topic: flow.concept || flow.title,
+    topic,
     structure: "AI 推荐",
-    terms: flow.concepts.slice(0, 5),
-    steps: flow.plays.slice(0, 3).map((play) => ({
-      label: play.teaching_trace?.blueprint_step_goal || play.title,
-      pattern: patternLabel(play.schema.pattern),
-      terms: play.teaching_trace?.covered_terms?.slice(0, 3),
-      title: play.title,
+    steps: flow.plays.slice(0, 4).map((play, index) => ({
+      label: makePreviewStepLabel(play.title, topic, index),
     })),
     gate: "unknown",
     source,
   };
 }
-
 export default function ExplorePage() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -227,9 +221,9 @@ export default function ExplorePage() {
     ? GENERATION_STEPS.length - 1
     : GENERATION_STEPS.findIndex((step) => step.id === generationStage);
   const generationNotice = generationStage === "repair"
-    ? "发现一处不匹配，正在调整这条路径。"
+    ? "有一处没对上，我再整理一下。"
     : generationStage === "fallback"
-      ? "这次没有走通生成链路，正在整理可解释的结果。"
+      ? "这次暂时没法讲清楚，正在收尾。"
       : null;
 
   return (
@@ -253,7 +247,7 @@ export default function ExplorePage() {
 
       <section className="v5-explore-hero v5-showcase-hero v5-ai-hero" aria-labelledby="explore-title">
         <p className="v5-eyebrow">自由生成 · AI 原生交互学习</p>
-        <h1 id="explore-title">想学什么，玩三关。</h1>
+        <h1 id="explore-title">想学什么，走一条互动路径。</h1>
         <p>输入概念，趣灵自动生成互动路径。</p>
 
         <div className="v5-flow-generator">
@@ -324,24 +318,16 @@ export default function ExplorePage() {
         {generationPreview && (
           <div className="v6-decomposition-preview" aria-live="polite">
             <div className="v6-decomposition-preview__summary">
-              <span>拆解好了</span>
-              <strong>{generationPreview.structure}</strong>
-              <small>{generationPreview.source === "llm" ? "AI 现场生成" : "兜底路径"}</small>
+              <span>学习路线准备好了</span>
+              <strong>从「{generationPreview.topic}」开始</strong>
+              <small>一共 {generationPreview.steps.slice(0, 4).length} 关，边做边把它想明白。</small>
             </div>
-            {generationPreview.terms.length > 0 && (
-              <div className="v6-decomposition-preview__terms" aria-label="核心词">
-                {generationPreview.terms.slice(0, 5).map((term) => (
-                  <span key={term}>{term}</span>
-                ))}
-              </div>
-            )}
-            <ol className="v6-decomposition-preview__steps" aria-label="三关路径">
-              {generationPreview.steps.slice(0, 3).map((step, index) => (
+            <ol className="v6-decomposition-preview__steps" aria-label="互动路径">
+              {generationPreview.steps.slice(0, 4).map((step, index) => (
                 <li key={`${index}-${step.label}`}>
                   <span>{index + 1}</span>
                   <div>
-                    <strong>{step.title || step.label}</strong>
-                    <small>{step.pattern}</small>
+                    <strong>{step.label}</strong>
                   </div>
                 </li>
               ))}
@@ -353,10 +339,10 @@ export default function ExplorePage() {
                   className="v6-decomposition-preview__start"
                   onClick={() => router.push(`/flow/custom?draftId=${encodeURIComponent(pendingDraftId)}`)}
                 >
-                  进入三关 <ArrowRight size={16} />
+                  开始第一关 <ArrowRight size={16} />
                 </button>
                 <button type="button" className="v6-decomposition-preview__retry" onClick={() => void startGeneratedFlow()}>
-                  重新拆一次
+                  换个方式试试
                 </button>
               </div>
             )}

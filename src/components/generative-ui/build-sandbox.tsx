@@ -93,7 +93,6 @@ export function BuildSandbox({
                   <strong className="text-base font-medium">{module.label}</strong>
                   {active && (required ? <Check size={18} className="text-[var(--accent)]" /> : <X size={18} className="text-[var(--danger)]" />)}
                 </span>
-                {module.role && <span className="mt-2 block text-xs uppercase tracking-[0.16em] text-[var(--accent)]">{module.role}</span>}
                 <span className="mt-3 block text-sm leading-relaxed text-[var(--muted)]">{module.description}</span>
               </ChoiceButton>
             );
@@ -105,7 +104,7 @@ export function BuildSandbox({
 
       {pathNodes.length > 1 && (
         <Panel className="mt-4 p-5">
-          <div className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">协作路径</div>
+          <div className="text-xs font-semibold text-[var(--muted)]">协作路径</div>
           <div className="system-path-track mt-4" role="list" aria-label="模块协作路径">
             <div className="system-path-track__rail" style={trackGridStyle}>
               {trackCells.map((cell) =>

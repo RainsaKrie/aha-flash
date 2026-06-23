@@ -5,6 +5,48 @@
 ---
 
 
+## 2026-06-23
+
+### Classification completion and progress correctness
+- Reworked `classification_sort/category_buckets` into its actual learner interaction: one item at a time, then click a category card. Public copy no longer claims drag-and-drop or exposes the internal “bucket” name.
+- Wrong category clicks now provide feedback but do not consume the item, add progress, trigger completion, or unlock the next Flow stage. Only a correct classification advances to the next item; all items must be correctly classified before completion.
+- The Flow action bar now treats classification as an internally completed interaction, so a single click cannot bypass it with “检查这一关”.
+- Classification feedback now uses one progress measure, `已分对 x / total`; the duplicate attempted-count versus correct-count display and noisy per-item technical recap were removed.
+### Learner-facing copy and probability interaction
+- Public Flow preview no longer exposes Blueprint structure names, source labels, raw English grounding terms, or internal generation states. It now presents a short learner-facing route with plain-language steps and actions.
+- Shared Generative UI headers translate internal Pattern/template labels into learner actions, so labels such as `GACHA SIMULATOR` no longer appear in the product surface.
+- Reworked the probability card component from an options/finance dashboard into a learning interaction: choose a possible outcome first, reveal the actual result second, then compare the two with a contextual explanation. Hidden compatibility fields such as option cost and strike price are no longer rendered.
+- QualityGate now accepts a valid two-outcome probability choice (for example, health / infection) instead of wrongly requiring three options. Flow normalization also recovers common LLM aliases such as `options`, `outcomes`, `results`, and `cards` into the protocol `pool` field, recording the repair explicitly.
+- Updated probability Flow prompting to require at least two meaningful outcomes and to keep non-financial topics free of card-pool, option, balance, and return jargon.
+- Verified with a real `Bayes theorem` generation: LLM source, 4/4 trace coverage, 4/4 visible-term coverage, 4/4 action contracts, and 4/4 template affordances.
+
+---
+## 2026-06-22
+
+### Deterministic teaching QualityGate
+- Extended `QualityGateResult` with per-run teaching metrics: trace coverage, visible primary-content grounding, action-contract coverage, and template-affordance coverage across all four Blueprint steps.
+- Added deterministic action/template contracts so a sorting lesson must render an orderable UI, a classification lesson must expose named buckets and items, and a quiz cannot pass without exactly one correct answer plus per-option explanations.
+- Excluded `reward_copy` from visible-term evaluation: post-action encouragement can no longer make an otherwise generic card look grounded. Teaching traces now retain both step action terms and topic grounding terms without truncating the latter.
+- Added `npm run eval:teaching` for deterministic negative cases (generic grounding, browse-only timeline for a sort goal, and missing quiz explanations). Added `npm run eval:teaching-manual` to output a four-step human review rubric.
+- Extended `eval:flow-live` with repair-tag distributions by knowledge structure and four teaching coverage rates. Focused live checks passed for linear programming and DNS with LLM source, zero repair actions, and all teaching metrics at 4/4.
+### Verifiable numerical interactions
+- Extended the V2 payload contract with optional compound_interest formulas for parameter_explore outputs and simulation_play parameters.
+- Compound-interest sliders now display the formula, the current substitution, and the calculated result. A 5% annual rate on a 100-unit principal for 10 periods now shows 100 × (1 + 5%)^10 = 162.89, instead of a generic multiplier result.
+- simulation_play now detects explicit principal and annual-rate parameters, computes each period as 本金 × (1 + 年利率)^期数, and never treats the principal as a percentage rate. Unverifiable models are labelled as qualitative trend indices rather than factual predictions.
+- Dynamic compound-interest Flow prompts require formula bindings; normalization can add the same deterministic binding only when both parameter labels are explicit. QualityGate rejects a compound-interest Flow without that binding.
+- Added npm run eval:math as a deterministic regression check. The targeted real LLM compound-interest run passed with LLM source, zero repair actions, and the correct parameter-bound simulation formula.
+### Four-step Flow interaction contract
+- Dynamic free-generation Flow now follows a four-step KnowledgeBlueprint contract instead of stopping after three generic interactions. The system-process route is: identify modules -> order the request path -> separate normal and failure paths -> diagnose with feedback.
+- Added `process_timeline/sequence_order`, a real click-to-order template. Browse-only timelines may no longer promise sorting; QualityGate rejects that affordance mismatch and normalizes Blueprint sorting steps to the orderable template.
+- Quiz choices now lock after selection, show correctness and the explanation in place, and require an explicit learner acknowledgement before a Flow may advance. The generic bottom action no longer skips quiz or sequence-order feedback.
+- Completion follow-up cards use a neutral branch accent rather than inheriting the final Pattern color, preventing a knowledge-check red state from making all next-step cards look like errors.
+- Dynamic Flow fallback, generation prompts, preview, and deterministic evaluation now use four plays. `eval:flow-dynamic` includes a DNS regression asserting that the request-order step renders as `sequence_order`.
+- Aligned ConceptPlan learning paths with the same four-step contract and tightened compound-interest slider outputs: every formula-backed terminal value must also declare `model: "exponential"`. The final focused DeepSeek compound-interest run passed with four plays and zero repair actions.
+### V6 generation preview clarity
+- Removed Blueprint `core_terms` and Pattern/template labels from the public Explore generation preview. They remain in the generation contract, debug payload, and QualityGate, but are no longer presented as learner-facing tags.
+- Preview cards now show only the detected knowledge structure and three concise, topic-anchored learning stages. Empty titles use a topic-prefixed fallback rather than exposing Blueprint step goals.
+- Added a deterministic QualityGate rule for play titles: each title must name the topic or a concrete term that appears in the component payload. Generic steps such as “识别输入与机制” or “观察最终结果与反馈” now trigger the existing one-pass LLM repair.
+- Extended `eval:flow-live` to fail when a generated play title is generic. A 2026-06-22 compound-interest live run passed after repair with `连接本金输入与复利机制 -> 调整利率因素观察影响 -> 模拟观察复利终值结果`.
 ## 2026-06-21
 
 ### V6 project audit and reliability hardening

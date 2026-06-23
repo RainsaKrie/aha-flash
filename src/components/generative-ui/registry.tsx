@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { ComponentType, CSSProperties } from "react";
 import type {
@@ -27,6 +27,7 @@ import { SimulationPlay } from "./simulation-play";
 import { SliderExplorer } from "./slider-explorer";
 import { GenerativeUIErrorBoundary, StateTransition, patternStyle } from "./shared";
 import { TimelineScrubber } from "./timeline-scrubber";
+import { TimelineSequenceOrder } from "./timeline-sequence-order";
 import { VerticalTimeline } from "./vertical-timeline";
 
 type RegistryComponent = ComponentType<GenerativeUIComponentProps<never>>;
@@ -54,6 +55,7 @@ const patternRegistry: Record<PatternType, PatternRegistry> = {
     default: "horizontal_timeline",
     horizontal_timeline: TimelineScrubber as RegistryComponent,
     vertical_scroll: VerticalTimeline as RegistryComponent,
+    sequence_order: TimelineSequenceOrder as RegistryComponent,
   },
   comparison: {
     default: "split_panel",

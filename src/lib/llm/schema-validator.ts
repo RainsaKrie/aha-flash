@@ -1,4 +1,4 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 import {
   SCHEMA_CATALOG,
   V1_TO_V2_SCHEMA_MAP,
@@ -84,6 +84,20 @@ const GachaConfigZod = payloadObject({
   }),
 });
 
+const CompoundInterestFormulaZod = z.object({
+  kind: z.literal("compound_interest"),
+  principal: z.number().positive(),
+  periods: z.number().int().positive(),
+  rate_unit: z.enum(["percent", "decimal"]).optional(),
+  output: z.enum(["future_value", "interest_earned"]).optional(),
+});
+
+const SimulationFormulaZod = z.object({
+  kind: z.literal("compound_interest"),
+  principal_param: z.string().min(1),
+  rate_param: z.string().min(1),
+  rate_unit: z.enum(["percent", "decimal"]).optional(),
+});
 const SliderConfigZod = payloadObject({
   title: z.string(),
   variable_label: z.string(),
@@ -103,6 +117,7 @@ const SliderConfigZod = payloadObject({
         offset: z.number().optional(),
         unit: z.string().optional(),
         description: z.string().optional(),
+        formula: CompoundInterestFormulaZod.optional(),
       }),
     )
     .optional(),
@@ -119,6 +134,8 @@ const CardFlipConfigZod = payloadObject({
 const TimelineConfigZod = payloadObject({
   title: z.string(),
   events: z.array(z.object({ label: z.string(), description: z.string() })),
+  mode: z.enum(["explore", "sequence_order"]).optional(),
+  correct_order: z.array(z.string()).min(3).optional(),
 });
 
 const ComparisonConfigZod = payloadObject({
@@ -206,6 +223,7 @@ const SimulationPlayConfigZod = payloadObject({
   ).min(2),
   compute_formula_description: z.string(),
   steps: z.number(),
+  formula: SimulationFormulaZod.optional(),
 });
 
 export const V1UISchemaZod = z.discriminatedUnion("type", [
@@ -311,6 +329,12 @@ export const V2UISchemaZod = z.union([
     payload: TimelineConfigZod,
   }),
   schemaObject({
+    pattern: z.literal("process_timeline"),
+    template: z.literal("sequence_order"),
+    version: z.string(),
+    payload: TimelineConfigZod,
+  }),
+  schemaObject({
     pattern: z.literal("comparison"),
     template: z.literal("split_panel"),
     version: z.string(),
@@ -384,6 +408,7 @@ const V2PayloadSchemas: Record<string, Record<string, z.ZodType>> = {
   process_timeline: {
     horizontal_timeline: TimelineConfigZod,
     vertical_scroll: TimelineConfigZod,
+    sequence_order: TimelineConfigZod,
   },
   comparison: {
     split_panel: ComparisonConfigZod,

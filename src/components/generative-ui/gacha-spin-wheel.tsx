@@ -73,7 +73,7 @@ export function GachaSpinWheel({
   return (
     <ComponentFrame
       icon={Sparkles}
-      label="spin wheel"
+      label="转一次看看"
       title={config.title}
       depth={config.depth}
       description={config.quote}
@@ -86,7 +86,7 @@ export function GachaSpinWheel({
                   .replace("{{market_price}}", String(result.value))
                   .replace("{{strike_price}}", String(config.strike_price))
               : config.explanation_map.lose.replace("{{option_cost}}", String(config.option_cost))
-            : "转盘让你先感受“付费保留机会”的动作，再看结果是否值得执行。"}
+            : "先选一种你认为更可能的结果，再看看实际翻到哪一张。"}
         </FeedbackPanel>
       }
     >
@@ -99,7 +99,7 @@ export function GachaSpinWheel({
             />
             <div className="relative grid h-32 w-32 place-items-center rounded-full border border-[var(--line)] bg-[var(--pattern-surface)] p-5 text-center">
               <span>
-                <strong className="block text-sm leading-5">{spinning ? "转动中" : result ? tierLabel(result) : topPrize ? tierLabel(topPrize) : "暂无奖池"}</strong>
+                <strong className="block text-sm leading-5">{spinning ? "转动中" : result ? tierLabel(result) : topPrize ? tierLabel(topPrize) : "暂无结果"}</strong>
                 {!spinning && result && flavorLabel(result) && (
                   <span className="mt-1 block text-xs text-[var(--muted)]">{flavorLabel(result)}</span>
                 )}
@@ -109,24 +109,20 @@ export function GachaSpinWheel({
         </div>
 
         <Panel className="grid gap-4 p-5">
-          <div className="flex justify-between gap-4 text-sm text-[var(--muted)]">
-            <span>期权费</span>
-            <strong className="text-[var(--accent)]">{config.option_cost}</strong>
+          <div>
+            <p className="text-base font-medium">先猜一猜</p>
+            <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">转一次，看看哪种可能情况真的出现。</p>
           </div>
-          <div className="flex justify-between gap-4 text-sm text-[var(--muted)]">
-            <span>锁定价</span>
-            <strong className="text-[var(--accent)]">{config.strike_price}</strong>
-          </div>
-          <Button onClick={spin} disabled={spinning || pool.length === 0} title="转动" className={`${!result && pool.length > 0 ? "ui-breathe " : ""}transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]`}>
+          <Button onClick={spin} disabled={spinning || pool.length === 0} title="转一次看看" className={`${!result && pool.length > 0 ? "ui-breathe " : ""}transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]`}>
             <Sparkles size={16} />
-            {spinning ? <InlineSpinner label="结算中" /> : "转动一次"}
+            {spinning ? <InlineSpinner label="正在转动" /> : "转一次看看"}
           </Button>
-          <Button onClick={() => setResult(null)} className="bg-transparent transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]" title="重置">
+          <Button onClick={() => setResult(null)} className="bg-transparent transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]" title="再试一次">
             <RotateCcw size={16} />
-            重置
+            再试一次
           </Button>
         </Panel>
-        {pool.length === 0 && <EmptyState detail="模型没有给出概率奖池，重新生成后应至少包含 3 个结果。" />}
+        {pool.length === 0 && <EmptyState detail="还没有可转的结果，重新生成后再试一次。" />}
       </div>
     </ComponentFrame>
   );

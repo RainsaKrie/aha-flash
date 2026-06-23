@@ -12,6 +12,7 @@ import {
 import { SCHEMA_CATALOG, type NextConcept, type PatternType, type TemplateId, type UISchema, type VisualAssetHint, type VisualAssetMood } from "../../types/schema.ts";
 import {
   buildKnowledgeBlueprint,
+  DYNAMIC_FLOW_STEP_COUNT,
   evaluateFlowAgainstBlueprint,
   normalizeKnowledgeStructure,
   makeFlowFailure,
@@ -50,7 +51,8 @@ export type RepairActionTag =
   | "placeholder_clean"
   | "schema_repair"
   | "schema_fallback"
-  | "flow_repair";
+  | "flow_repair"
+  | "template_normalize";
 
 export interface RepairAction {
   tag: RepairActionTag;
@@ -111,16 +113,18 @@ const VISUAL_TAGS: Record<PatternType, string> = {
 
 const FLOW_SCHEMA_PAYLOAD_GUIDE = [
   "Payload required fields. Use the template after each slash as the default. Do not choose alternate templates unless all fields still match this contract:",
-  "- probability/card_flip_reveal: payload.title; payload.pool [{name, rarity, probability, value}]; option_cost number; strike_price number; pulls_per_try number; explanation_map {win, lose}",
-  "- parameter_explore/single_slider: payload.title; variable_label; min number; max number; default_value number; explanation_template must be one fixed complete natural sentence, not a template; never include braces, {value}, {result}, or value-substitution slots; optional scenarios [{label,value}], outputs [{label, model one of linear/quadratic/exponential/inverse/logarithmic, multiplier number, offset number}]",
+  "- probability/card_flip_reveal: payload.title; payload.pool [{name, rarity, probability, value}] with at least two meaningful outcomes; option_cost number; strike_price number; pulls_per_try number; explanation_map {win, lose}. Treat cards as hypotheses or possible outcomes. For non-option topics, do not mention 抽卡、奖池、期权、余额、锁定价 or investment returns in learner-facing title, quote, pool labels, or explanations; the numeric compatibility fields stay internal.",
+  "- parameter_explore/single_slider: payload.title; variable_label; min number; max number; default_value number; explanation_template must be one fixed complete natural sentence, not a template; never include braces, {value}, {result}, or value-substitution slots; optional scenarios [{label,value}], outputs [{label, model one of linear/quadratic/exponential/inverse/logarithmic, multiplier number, offset number, formula?}]. For a real compound-interest amount, formula must be {kind:\"compound_interest\",principal:number,periods:number,rate_unit:\"percent\",output:\"future_value\"|\"interest_earned\"}; do not invent a monetary result from arbitrary multiplier/offset values.",
   "- concept_memory/term_cards: payload.title; cards [{front, back}]",
-  "- process_timeline/horizontal_timeline: payload.title; events [{label, description}]",
+  "- process_timeline/horizontal_timeline or vertical_scroll: payload.title; events [{label, description}]. These are browse-only and must never ask the user to sort or rearrange.",
+  "- process_timeline/sequence_order: payload.title; mode exactly sequence_order; events [{label,description}] in their factual order; correct_order containing every event label exactly once. Use this template only when the learner must arrange a process or request path.",
   "- comparison/split_panel: payload.title; left {label, content}; right {label, content}; optional dimensions [{label,a,b,insight}]. Every dimensions item must use the field name label exactly; never use name, title, or dimension for that field.",
   "- knowledge_check/single_question: payload.title; question; options [{label, correct boolean, explanation}]",
   "- system_builder/module_sandbox: payload.title; target; modules [{id,label,description,role}]; optional required_module_ids, connections [{from,to,label}]",
   "- narrative_branch/branch_story: payload.title; opening; branches [{choice_label,outcome_description,insight}]",
-  "- classification_sort/category_buckets: payload.title; categories [{id,name}]; items [{label,correct_category,explanation}]",
-  "- simulation_play/parameter_simulation: payload.title; params at least 2 items [{label,min,max,default,unit}]; compute_formula_description; steps number",
+  "- classification_sort/category_buckets: payload.title; categories [{id,name}]; items [{label,correct_category,explanation}]. This internal template renders one item at a time with clickable category cards. Learner-facing copy must say 点击类别卡/选择类别, never 拖入、拖到、拖拽 or 类别桶.",
+  "- simulation_play/parameter_simulation: payload.title; params at least 2 items [{label,min,max,default,unit}]; compute_formula_description; steps number; optional formula. For compound interest formula is mandatory: {kind:\"compound_interest\",principal_param:\"exact principal label\",rate_param:\"exact rate label\",rate_unit:\"percent\"}; steps then means compounding periods. Never claim arbitrary display numbers are real calculations.",
+  "- For every parameter_explore output, model is required even when formula is present. Compound-interest terminal value must use model:\"exponential\" and formula.kind:\"compound_interest\".",
 ].join("\n");
 const CATEGORIES: TopicCategory[] = ["科技", "经济", "哲学", "心理", "历史", "数理"];
 const DIFFICULTIES: TopicDifficulty[] = ["轻松", "进阶", "烧脑一点"];
@@ -545,20 +549,20 @@ function baseOptimizationSchema(
 }
 
 function makeFallbackPlay(topic: string, pattern: PatternType, index: number, groundingTerms: string[] = []): KnowledgePlay {
-  const titles = ["先猜一下", "看见机制", "动手验证"];
+  const titles = ["先抓住入口", "沿着路径走", "拆开边界", "做一次判断"];
   return {
     id: `dynamic-${index + 1}`,
     title: titles[index] || "继续探索",
     concept: topic,
     schema: baseSchema(pattern, topic, groundingTerms),
     estimated_minutes: index === 1 ? 2 : 1,
-    reward_copy: ["你先抓住了问题的入口。", "你看见机制开始动起来了。", "这一关把线索连起来了。"][index] || "你又想通了一层。",
+    reward_copy: ["你先抓住了问题的入口。", "你沿着关键路径往前走了一步。", "你把容易混淆的边界拆开了。", "你已经能用这组线索做判断了。"][index] || "你又想通了一层。",
   };
 }
 
 function fallbackPatternChain(preferredPattern: FlowPatternPreference): PatternType[] {
-  if (preferredPattern !== "auto") return ["knowledge_check", preferredPattern, "parameter_explore"];
-  return ["knowledge_check", "concept_memory", "parameter_explore"];
+  if (preferredPattern !== "auto") return ["concept_memory", preferredPattern, "parameter_explore", "knowledge_check"];
+  return ["knowledge_check", "concept_memory", "parameter_explore", "narrative_branch"];
 }
 
 
@@ -760,7 +764,7 @@ function evaluateFlowGrounding(flow: KnowledgeFlow, topic: string, groundingTerm
 }
 
 function heuristicPatternChain(topic: string, preferredPattern: FlowPatternPreference): PatternType[] {
-  if (preferredPattern !== "auto") return ["knowledge_check", preferredPattern, "parameter_explore"];
+  if (preferredPattern !== "auto") return ["concept_memory", preferredPattern, "parameter_explore", "knowledge_check"];
   if (hasAnyHint(topic, DETERMINISTIC_MODELING_HINTS)) return ["knowledge_check", "parameter_explore", "simulation_play"];
   if (hasAnyHint(topic, PROBABILITY_HINTS)) return ["probability", "parameter_explore", "knowledge_check"];
   return fallbackPatternChain(preferredPattern);
@@ -806,7 +810,7 @@ function makeFallbackConceptPlan(
     knowledge_structure: knowledgeStructure,
     recommended_patterns: recommended,
     avoid_patterns: hasAnyHint(topic, DETERMINISTIC_MODELING_HINTS) ? ["probability"] : [],
-    learning_path: ["先判断入口", "再看关键机制", "最后动手验证"],
+    learning_path: ["先判断入口", "沿着关键路径", "拆开边界条件", "最后动手验证"],
     category: "数理",
     topic_area: "自由生成",
     difficulty: "轻松",
@@ -849,7 +853,7 @@ function evaluateConceptPlan(plan: ConceptPlan, preferredPattern: FlowPatternPre
   const cleanTerms = normalizeGroundingTerms(plan.grounding_terms, plan.topic, []);
   if (!plan.topic) failures.push("plan.topic 缺失");
   if (cleanTerms.length < 3) failures.push("ConceptPlan 缺少至少 3 个专业锚点");
-  if (plan.learning_path.length < 3) failures.push("ConceptPlan 缺少三步学习路径");
+  if (plan.learning_path.length < DYNAMIC_FLOW_STEP_COUNT) failures.push("ConceptPlan 缺少四步学习路径");
   if (plan.recommended_patterns.length < 2) failures.push("ConceptPlan 缺少推荐 Pattern 链");
   if (preferredPattern !== "auto" && !plan.recommended_patterns.includes(preferredPattern)) {
     failures.push(`ConceptPlan 未包含用户指定 Pattern: ${preferredPattern}`);
@@ -876,7 +880,7 @@ function patternChainFromPlan(
 
   const optimizationEvidence = [plan.topic, plan.knowledge_structure, ...plan.grounding_terms].join(" ");
   if (plan.knowledge_structure === "optimization_model" || hasAnyHint(optimizationEvidence, DETERMINISTIC_MODELING_HINTS)) {
-    const chain: PatternType[] = ["system_builder", "parameter_explore", "simulation_play"];
+    const chain: PatternType[] = ["system_builder", "parameter_explore", "simulation_play", "knowledge_check"];
     if (preferredPattern !== "auto" && !chain.includes(preferredPattern)) chain[1] = preferredPattern;
     return chain;
   }
@@ -893,35 +897,38 @@ function patternChainFromPlan(
   for (const pattern of candidates) {
     if (result.includes(pattern)) continue;
     result.push(pattern);
-    if (result.length === 3) break;
+    if (result.length === DYNAMIC_FLOW_STEP_COUNT) break;
   }
-  while (result.length < 3) result.push("knowledge_check");
+  while (result.length < DYNAMIC_FLOW_STEP_COUNT) result.push("knowledge_check");
   if (preferredPattern !== "auto" && !result.includes(preferredPattern)) result[1] = preferredPattern;
-  return result.slice(0, 3);
+  return result.slice(0, DYNAMIC_FLOW_STEP_COUNT);
 }
 
 
-function pickTraceTerms(step?: BlueprintStep) {
+function pickTraceTerms(step?: BlueprintStep, groundingTerms: string[] = []) {
   if (!step) return [];
-  return Array.from(new Set(step.must_explain.map((term) => String(term || "").trim()).filter(Boolean))).slice(0, 8);
+  return Array.from(new Set([
+    ...step.must_explain.slice(0, 3),
+    ...groundingTerms.slice(0, 3),
+  ].map((term) => String(term || "").trim()).filter(Boolean))).slice(0, 8);
 }
 
-function makeTeachingTrace(step?: BlueprintStep): KnowledgePlay["teaching_trace"] | undefined {
+function makeTeachingTrace(step?: BlueprintStep, groundingTerms: string[] = []): KnowledgePlay["teaching_trace"] | undefined {
   if (!step) return undefined;
   return {
     blueprint_step_goal: step.goal,
-    covered_terms: pickTraceTerms(step),
+    covered_terms: pickTraceTerms(step, groundingTerms),
     intended_user_action: step.user_action,
     success_criteria: step.success_criteria,
     recommended_pattern: step.recommended_pattern,
   };
 }
 
-function attachBlueprintStepCue(play: KnowledgePlay, step?: BlueprintStep): KnowledgePlay {
-  const teaching_trace = makeTeachingTrace(step);
+function attachBlueprintStepCue(play: KnowledgePlay, step?: BlueprintStep, groundingTerms: string[] = []): KnowledgePlay {
+  const teaching_trace = makeTeachingTrace(step, groundingTerms);
   if (!teaching_trace || !step) return play;
 
-  const visibleTerms = Array.from(new Set(step.must_explain)).slice(0, 3).join("、");
+  const visibleTerms = Array.from(new Set([...step.must_explain.slice(0, 2), ...groundingTerms.slice(0, 2)])).join("、");
   const reward_copy = visibleTerms
     ? `${play.reward_copy} 这一关会用到：${visibleTerms}。`
     : play.reward_copy;
@@ -940,14 +947,18 @@ function makeFallbackFlowFromPlan(
     title: `${plan.topic}入门`,
     concept: plan.topic,
     hook: plan.core_question,
-    description: `${plan.learning_path.slice(0, 3).join("，")}。`,
+    description: `${plan.learning_path.slice(0, DYNAMIC_FLOW_STEP_COUNT).join("，")}。`,
     category: plan.category,
     topic_area: plan.topic_area,
     difficulty: plan.difficulty,
     estimated_minutes: 4,
     summary: `你已经把${plan.topic}拆成了可以继续探索的理解路径。`,
     concepts: plan.grounding_terms.slice(0, 5),
-    plays: patterns.map((pattern, index) => attachBlueprintStepCue(makeFallbackPlay(plan.topic, pattern, index, plan.grounding_terms), blueprint.teaching_sequence[index])),
+    plays: patterns.map((pattern, index) => {
+      const play = makeFallbackPlay(plan.topic, pattern, index, plan.grounding_terms);
+      const schema = attachTimelineOrderTemplate(play.schema, blueprint.teaching_sequence[index], [], index + 1);
+      return attachBlueprintStepCue({ ...play, schema }, blueprint.teaching_sequence[index], blueprint.core_terms);
+    }),
     follow_ups: makeBlueprintFollowUps(blueprint),
     source: "generated",
   };
@@ -991,7 +1002,7 @@ function buildConceptPlanSystemPrompt(
   const patternPreference = preferredPattern === "auto" ? "AI recommended" : `User selected core Pattern: ${preferredPattern}`;
   const structurePreference = preferredStructure === "auto" ? "auto" : `User selected knowledge_structure: ${preferredStructure}; use this exact value.`;
   const preferred = `${patternPreference}; Knowledge structure preference: ${structurePreference}`;
-  return `你是趣灵的知识结构规划器。先不要生成 UI，也不要生成三关 payload。
+  return `你是趣灵的知识结构规划器。先不要生成 UI，也不要生成四步 payload。
 你的任务是把用户输入的概念转成一个可校验的 ConceptPlan，后续 UI 只能根据这个计划生成。
 只输出合法 JSON，不要 Markdown。
 
@@ -1010,7 +1021,7 @@ ${patternList}
   "knowledge_structure": "optimization_model|system_process|probabilistic_reasoning|comparison_frame|timeline_change|concept_mechanism|classification_rule|simulation_model",
   "recommended_patterns": ["3个最适合的 Pattern"],
   "avoid_patterns": ["不适合的 Pattern"],
-  "learning_path": ["第1关学习目标", "第2关学习目标", "第3关学习目标"],
+  "learning_path": ["第1关学习目标", "第2关学习目标", "第3关学习目标", "第4关学习目标"],
   "category": "科技|经济|哲学|心理|历史|数理",
   "topic_area": "短领域名",
   "difficulty": "轻松|进阶|烧脑一点"
@@ -1021,7 +1032,7 @@ ${patternList}
 - grounding_terms 必须是专业锚点，不能写“概念/机制/变量/关键/结果”这类空词。
 - recommended_patterns 必须解释知识结构：优化/规划/约束/目标函数/可行域/算法类优先 parameter_explore、simulation_play、system_builder、knowledge_check；概率/随机/风险/贝叶斯/预测类才用 probability。
 - avoid_patterns 明确写出不适合的模式，例如确定性优化问题通常避免 probability。
-- learning_path 必须形成递进：先判断入口，再建立结构，最后动手验证。`;
+- learning_path 必须形成四步递进：先判断入口，再沿路径观察，接着拆开边界，最后动手验证。`;
 }
 
 function buildConceptPlanRepairPrompt(
@@ -1038,16 +1049,18 @@ Knowledge structure preference: ${preferredStructure}
 失败原因：${reason}
 
 请重新输出完整 ConceptPlan JSON。不要生成 UI。不要解释。
-要求：保留 topic 原词，给出 3-5 个专业锚点，推荐 Pattern 与知识结构匹配，避免不适合的 Pattern。
+要求：保留 topic 原词，给出 3-5 个专业锚点、四个递进学习目标；推荐 Pattern 与知识结构匹配，避免不适合的 Pattern。
 
 上一次输出：
 ${previousOutput.slice(0, 3000)}`;
 }
 
 function patternOrderInstruction(blueprint: KnowledgeBlueprint | undefined, preferredPattern: FlowPatternPreference) {
-  const sequence = blueprint ? selectBlueprintPatternStrategy(blueprint, preferredPattern).slice(0, 3) : [];
-  if (sequence.length !== 3) return "";
-  return `plays[0].schema.pattern="${sequence[0]}", plays[1].schema.pattern="${sequence[1]}", plays[2].schema.pattern="${sequence[2]}". Do not substitute another pattern.`;
+  const sequence = blueprint ? selectBlueprintPatternStrategy(blueprint, preferredPattern).slice(0, DYNAMIC_FLOW_STEP_COUNT) : [];
+  if (sequence.length !== DYNAMIC_FLOW_STEP_COUNT) return "";
+  return sequence
+    .map((pattern, index) => "plays[" + index + "].schema.pattern=\"" + pattern + "\"")
+    .join(", ") + ". Do not substitute another pattern.";
 }
 
 function buildSkillContractBlock(blueprint?: KnowledgeBlueprint) {
@@ -1069,7 +1082,7 @@ function buildSkillContractBlock(blueprint?: KnowledgeBlueprint) {
 
 function buildVisibleStepCoverageBlock(blueprint?: KnowledgeBlueprint) {
   if (!blueprint || blueprint.structure_type === "unclassified") return "";
-  const lines = blueprint.teaching_sequence.slice(0, 3).map((step, index) => {
+  const lines = blueprint.teaching_sequence.slice(0, DYNAMIC_FLOW_STEP_COUNT).map((step, index) => {
     const terms = step.must_explain.slice(0, 6).join(", ");
     return `- step-${index + 1} (${step.goal}) visible copy must include at least one of: ${terms}`;
   });
@@ -1091,7 +1104,7 @@ function buildFlowUserPrompt(
   const visibleStepCoverage = buildVisibleStepCoverageBlock(blueprint);
   const structureRules = buildStructureSpecificPromptRules(blueprint);
   return [
-    "Generate exactly 3 interactive Flow plays from the ConceptPlan and KnowledgeBlueprint. Output JSON only.",
+    "Generate exactly " + DYNAMIC_FLOW_STEP_COUNT + " interactive Flow plays from the ConceptPlan and KnowledgeBlueprint. Output JSON only.",
     "Topic: " + topic,
     "ConceptPlan:",
     JSON.stringify(plan, null, 2),
@@ -1179,7 +1192,7 @@ function buildRepairUserPrompt(
     orderRule ? "Exact pattern order: " + orderRule : "",
     "Rules:",
     "- Keep flow.concept equal to the user topic.",
-    "- Generate exactly 3 plays.",
+    "- Generate exactly " + DYNAMIC_FLOW_STEP_COUNT + " plays.",
     "- Every play must use concrete terms from grounding_terms.",
     "- Every play must satisfy the matching KnowledgeBlueprint teaching_sequence goal.",
     "- Use the exact payload fields required by the selected pattern/template; do not place payload under config, data, fields, steps_data, nodes, or questions.",
@@ -1403,22 +1416,40 @@ function coercePayloadNumber(value: unknown, fallback: number) {
   return fallback;
 }
 
-function normalizeProbabilityPayload(payload: unknown, topic: string) {
+function normalizeProbabilityPayload(
+  payload: unknown,
+  topic: string,
+  repairActions?: RepairAction[],
+  step?: number,
+) {
   const record = asRecord(normalizePayloadTitle(payload, topic));
-  if (!record || !Array.isArray(record.pool)) return record || payload;
+  if (!record) return payload;
+
+  const sourceField = ["pool", "options", "outcomes", "results", "cards"].find((field) => Array.isArray(record[field]));
+  const sourcePool = sourceField ? record[sourceField] : undefined;
+  if (!Array.isArray(sourcePool)) return record;
+
   const fallbackValues = [90, 55, 20];
-  const pool = record.pool.map((item, index) => {
+  const pool = sourcePool.map((item, index) => {
     const itemRecord = asRecord(item) || {};
     return {
       ...itemRecord,
-      probability: coercePayloadNumber(itemRecord.probability, 0),
-      value: coercePayloadNumber(itemRecord.value, fallbackValues[index] ?? Math.max(10, 90 - index * 20)),
+      name: cleanText(itemRecord.name ?? itemRecord.label ?? itemRecord.title ?? itemRecord.text, `可能性 ${index + 1}`, 36),
+      flavor_label: cleanText(itemRecord.flavor_label ?? itemRecord.description, "", 72) || undefined,
+      rarity: cleanText(itemRecord.rarity, String(Math.max(3, 5 - index)), 12),
+      probability: coercePayloadNumber(itemRecord.probability ?? itemRecord.chance ?? itemRecord.rate ?? itemRecord.weight, 0),
+      value: coercePayloadNumber(itemRecord.value ?? itemRecord.score ?? itemRecord.weight, fallbackValues[index] ?? Math.max(10, 90 - index * 20)),
     };
   });
   const total = pool.reduce((sum, item) => sum + Math.max(0, item.probability), 0);
   const normalizedPool = total > 1.5
     ? pool.map((item) => ({ ...item, probability: total > 0 ? Math.max(0, item.probability) / total : 0 }))
     : pool;
+
+  if (sourceField !== "pool") {
+    addRepairAction(repairActions, "field_fix", `Normalized probability ${sourceField} into pool`, { step, pattern: "probability" });
+  }
+
   return {
     ...record,
     option_cost: coercePayloadNumber(record.option_cost, 10),
@@ -1438,6 +1469,27 @@ function addRepairAction(
   actions.push({ tag, message, ...details });
 }
 
+function normalizeParameterExplorePayload(
+  payload: unknown,
+  repairActions?: RepairAction[],
+  step?: number,
+) {
+  const record = asRecord(payload);
+  if (!record || !Array.isArray(record.outputs)) return payload;
+
+  let changed = false;
+  const outputs = record.outputs.map((value) => {
+    const output = asRecord(value);
+    if (!output || asRecord(output.formula)?.kind !== "compound_interest" || typeof output.model === "string") return value;
+    changed = true;
+    return { ...output, model: "exponential" };
+  });
+  if (changed) {
+    addRepairAction(repairActions, "field_fix", "Added required exponential model to compound-interest slider output", { step, pattern: "parameter_explore" });
+    return { ...record, outputs };
+  }
+  return payload;
+}
 function normalizeSchemaPayload(
   pattern: PatternType,
   payload: unknown,
@@ -1445,7 +1497,8 @@ function normalizeSchemaPayload(
   repairActions?: RepairAction[],
   step?: number,
 ) {
-  const normalized = pattern === "probability" ? normalizeProbabilityPayload(payload, topic) : normalizePayloadTitle(payload, topic);
+  const titled = pattern === "probability" ? normalizeProbabilityPayload(payload, topic, repairActions, step) : normalizePayloadTitle(payload, topic);
+  const normalized = pattern === "parameter_explore" ? normalizeParameterExplorePayload(titled, repairActions, step) : titled;
   const sanitized = sanitizeGeneratedValue(normalized, topic);
   if (JSON.stringify(sanitized) !== JSON.stringify(normalized)) {
     addRepairAction(repairActions, "placeholder_clean", "Removed unreplaced placeholder text from schema payload", { step, pattern });
@@ -1570,6 +1623,83 @@ function repairSchema(
 
   return validated;
 }
+function attachTimelineOrderTemplate(
+  schema: UISchema,
+  step: BlueprintStep | undefined,
+  repairActions: RepairAction[],
+  index: number,
+): UISchema {
+  if (schema.pattern !== "process_timeline" || step?.user_action !== "sort") return schema;
+
+  const payload = asRecord(schema.payload);
+  const events = Array.isArray(payload?.events) ? payload.events : [];
+  const labels = events
+    .map((event) => asRecord(event)?.label)
+    .filter((label): label is string => typeof label === "string" && label.trim().length > 0);
+  const hasOrder = Array.isArray(payload?.correct_order)
+    && payload.correct_order.length === labels.length
+    && payload.correct_order.every((label) => typeof label === "string" && labels.includes(label));
+
+  if (schema.template === "sequence_order" && payload?.mode === "sequence_order" && hasOrder) return schema;
+  if (labels.length < 3) return schema;
+
+  addRepairAction(
+    repairActions,
+    "template_normalize",
+    "Bound a timeline sorting step to the sequence_order interaction template",
+    { step: index, pattern: "process_timeline" },
+  );
+  return {
+    ...schema,
+    template: "sequence_order",
+    payload: {
+      ...payload,
+      mode: "sequence_order",
+      correct_order: labels,
+    },
+  } as UISchema;
+}
+
+function attachDeterministicCompoundInterestFormula(
+  schema: UISchema,
+  topic: string,
+  repairActions: RepairAction[],
+  index: number,
+): UISchema {
+  if (!/(compound\s*interest|复利)/i.test(topic)) return schema;
+  const payload = asRecord(schema.payload);
+  if (!payload) return schema;
+
+  if (schema.pattern === "parameter_explore" && Array.isArray(payload.outputs) && payload.outputs.length > 0) {
+    const outputs = payload.outputs.map((output) => ({ ...(asRecord(output) || {}) }));
+    const targetIndex = Math.max(0, outputs.findIndex((output) => /终值|最终值|未来值|年后|future\s*value/i.test(String(output.label || ""))));
+    const target = outputs[targetIndex];
+    if (asRecord(target.formula)?.kind === "compound_interest") return schema;
+    outputs[targetIndex] = {
+      ...target,
+      formula: { kind: "compound_interest", principal: 100, periods: 10, rate_unit: "percent", output: "future_value" },
+    };
+    addRepairAction(repairActions, "field_fix", "Attached deterministic compound-interest formula to slider output", { step: index, pattern: schema.pattern });
+    return { ...schema, payload: { ...payload, outputs } } as UISchema;
+  }
+
+  if (schema.pattern === "simulation_play" && Array.isArray(payload.params)) {
+    const params = payload.params.map((param) => asRecord(param) || {});
+    const principal = params.find((param) => /本金|principal|initial\s*(capital|principal)/i.test(String(param.label || "")));
+    const rate = params.find((param) => /年利率|利率|annual\s*rate|interest\s*rate/i.test(String(param.label || "")));
+    if (!principal || !rate || asRecord(payload.formula)?.kind === "compound_interest") return schema;
+    addRepairAction(repairActions, "field_fix", "Attached deterministic compound-interest formula to simulation", { step: index, pattern: schema.pattern });
+    return {
+      ...schema,
+      payload: {
+        ...payload,
+        formula: { kind: "compound_interest", principal_param: String(principal.label), rate_param: String(rate.label), rate_unit: "percent" },
+      },
+    } as UISchema;
+  }
+
+  return schema;
+}
 function normalizeFollowUps(value: unknown, topic: string, blueprint?: KnowledgeBlueprint): FollowUpTopic[] {
   const fallback = blueprint ? makeBlueprintFollowUps(blueprint) : makeFallbackFollowUps(topic);
   if (!Array.isArray(value)) return fallback;
@@ -1646,9 +1776,9 @@ function normalizeGeneratedFlow(
   const avoidSource: PatternType[] = blueprint?.avoid_patterns ?? [];
   const avoid = new Set(preferredPattern === "auto" ? avoidSource : avoidSource.filter((pattern) => pattern !== preferredPattern));
   const allowedPatterns = new Set(patternChain);
-  const rawPlays = Array.isArray(candidate.plays) ? candidate.plays.slice(0, 3) : [];
+  const rawPlays = Array.isArray(candidate.plays) ? candidate.plays.slice(0, DYNAMIC_FLOW_STEP_COUNT) : [];
   if (!Array.isArray(candidate.plays)) addRepairAction(repairActions, "flow_repair", "Filled missing plays from fallback chain");
-  if (Array.isArray(candidate.plays) && candidate.plays.length !== 3) addRepairAction(repairActions, "flow_repair", `Normalized play count from ${candidate.plays.length} to 3`);
+  if (Array.isArray(candidate.plays) && candidate.plays.length !== DYNAMIC_FLOW_STEP_COUNT) addRepairAction(repairActions, "flow_repair", "Normalized play count to " + DYNAMIC_FLOW_STEP_COUNT);
 
   const plays = rawPlays.map((rawPlay, index) => {
     const record = asRecord(rawPlay) || {};
@@ -1658,6 +1788,8 @@ function normalizeGeneratedFlow(
       addRepairAction(repairActions, "pattern_normalize", `Forced step ${index + 1} pattern to Blueprint pattern ${fallbackPattern}`, { step: index + 1, pattern: fallbackPattern });
       schema = baseSchema(fallbackPattern, topic, groundingTerms);
     }
+    schema = attachDeterministicCompoundInterestFormula(schema, topic, repairActions, index + 1);
+    schema = attachTimelineOrderTemplate(schema, blueprint?.teaching_sequence[index], repairActions, index + 1);
     const play = {
       id: cleanText(record.id, "dynamic-" + (index + 1), 48),
       title: cleanText(record.title, fallback.plays[index]?.title || "Step " + (index + 1), 18),
@@ -1666,19 +1798,22 @@ function normalizeGeneratedFlow(
       estimated_minutes: typeof record.estimated_minutes === "number" ? Math.max(1, Math.min(3, Math.round(record.estimated_minutes))) : 1,
       reward_copy: cleanText(record.reward_copy, fallback.plays[index]?.reward_copy || "Nice, this step is clearer.", 48),
     } satisfies KnowledgePlay;
-    return attachBlueprintStepCue(play, blueprint?.teaching_sequence[index]);
+    return attachBlueprintStepCue(play, blueprint?.teaching_sequence[index], blueprint?.core_terms || groundingTerms);
   });
 
-  while (plays.length < 3) {
+  while (plays.length < DYNAMIC_FLOW_STEP_COUNT) {
     const fallbackPattern: PatternType = patternChain[plays.length] ?? "knowledge_check";
     addRepairAction(repairActions, "flow_repair", `Added missing step ${plays.length + 1} from fallback chain`, { step: plays.length + 1, pattern: fallbackPattern });
-    plays.push(attachBlueprintStepCue(makeFallbackPlay(topic, fallbackPattern, plays.length, groundingTerms), blueprint?.teaching_sequence[plays.length]));
+    const fallbackPlay = makeFallbackPlay(topic, fallbackPattern, plays.length, groundingTerms);
+    const fallbackSchema = attachTimelineOrderTemplate(fallbackPlay.schema, blueprint?.teaching_sequence[plays.length], repairActions, plays.length + 1);
+    plays.push(attachBlueprintStepCue({ ...fallbackPlay, schema: fallbackSchema }, blueprint?.teaching_sequence[plays.length], blueprint?.core_terms || groundingTerms));
   }
 
   const selectedPattern: PatternType | null = preferredPattern === "auto" ? null : preferredPattern;
   if (selectedPattern && !plays.some((play) => play.schema.pattern === selectedPattern)) {
     addRepairAction(repairActions, "pattern_normalize", `Inserted user-selected pattern ${selectedPattern}`, { step: 2, pattern: selectedPattern });
-    plays[1] = attachBlueprintStepCue(makeFallbackPlay(topic, selectedPattern, 1, groundingTerms), blueprint?.teaching_sequence[1]);
+    const selectedPlay = makeFallbackPlay(topic, selectedPattern, 1, groundingTerms);
+    plays[1] = attachBlueprintStepCue({ ...selectedPlay, schema: attachTimelineOrderTemplate(selectedPlay.schema, blueprint?.teaching_sequence[1], repairActions, 2) }, blueprint?.teaching_sequence[1], blueprint?.core_terms || groundingTerms);
   }
 
   return {
@@ -1719,13 +1854,13 @@ function buildDynamicSystemPrompt(
   const skillContractBlock = buildSkillContractBlock(blueprint);
   const visibleStepCoverageBlock = buildVisibleStepCoverageBlock(blueprint);
   const structureRulesBlock = buildStructureSpecificPromptRules(blueprint);
-  const requiredPatternSequence = blueprint ? selectBlueprintPatternStrategy(blueprint, preferredPattern).slice(0, 3) : [];
-  const requiredPatternRule = requiredPatternSequence.length === 3
-    ? "Required play pattern order: step-1 must use " + requiredPatternSequence[0] + ", step-2 must use " + requiredPatternSequence[1] + ", step-3 must use " + requiredPatternSequence[2] + ". Do not substitute another pattern."
+  const requiredPatternSequence = blueprint ? selectBlueprintPatternStrategy(blueprint, preferredPattern).slice(0, DYNAMIC_FLOW_STEP_COUNT) : [];
+  const requiredPatternRule = requiredPatternSequence.length === DYNAMIC_FLOW_STEP_COUNT
+    ? "Required play pattern order: " + requiredPatternSequence.map((pattern, index) => "step-" + (index + 1) + " must use " + pattern).join(", ") + ". Do not substitute another pattern."
     : "";
 
   return [
-    "You are the Flow designer for aha-flash. Generate a 3-step interactive learning Flow from the ConceptPlan. Output valid JSON only, no Markdown.",
+    "You are the Flow designer for aha-flash. Generate a " + DYNAMIC_FLOW_STEP_COUNT + "-step interactive learning Flow from the ConceptPlan. Output valid JSON only, no Markdown.",
     "Topic: " + topic,
     preferenceRule,
     planBlock,
@@ -1755,7 +1890,7 @@ function buildDynamicSystemPrompt(
     "}",
     "",
     "Hard rules:",
-    "- plays must contain exactly 3 items.",
+    "- plays must contain exactly " + DYNAMIC_FLOW_STEP_COUNT + " items.",
     requiredPatternRule,
     "- flow.concept must equal ConceptPlan.topic.",
     "- Use ConceptPlan.grounding_terms in visible titles, questions, options, labels, modules, slider outputs, or explanations. Listing terms only in arrays is not enough.",
@@ -1765,9 +1900,10 @@ function buildDynamicSystemPrompt(
     "- follow_ups must extend the KnowledgeBlueprint: connect to a next concept, boundary case, method, or prerequisite from the same knowledge structure; avoid generic branches like real application / key mechanism unless they name the specific relation.",
     "- Pattern choice must match knowledge structure: deterministic optimization/planning/constraints should avoid probability unless the topic itself is about uncertainty.",
     "- Each step should ask the user to do something: guess, choose, sort, connect, slide, compare, or simulate.",
+    "- For probability lessons, use plain learning language such as 先猜猜哪种情况更可能 / 看看新证据如何改变判断. Only use option-trading or game metaphors when the user topic itself is about options or games.",
     "- Do not hide Blueprint terms only in teaching_trace; QualityGate checks visible user-facing text.",
     "- Do not invent payload field names. Use only the required fields listed above for the selected pattern/template.",
-    "- Prefer default templates from FLOW_SCHEMA_PAYLOAD_GUIDE: parameter_explore uses single_slider; knowledge_check uses single_question; system_builder uses module_sandbox.",
+    "- Prefer default templates from FLOW_SCHEMA_PAYLOAD_GUIDE: parameter_explore uses single_slider; knowledge_check uses single_question; system_builder uses module_sandbox. Use sequence_order when the instruction asks the learner to sort or arrange a process.",
     "- visual_asset.mood must be one of: idle, loading, success, error, reward. Use idle for generated steps unless the step is explicitly a result or reward state.",
     "- simulation_play.params must contain at least 2 parameter objects. outputs[].model must be one of linear, quadratic, exponential, inverse, logarithmic.",
   ].filter(Boolean).join("\n");

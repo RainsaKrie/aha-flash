@@ -2,7 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { generateDynamicFlow, type DynamicFlowGenerationStage, type RepairAction, type RepairActionTag } from "../../src/lib/content/dynamic-flow-generation.ts";
 import type { FlowPatternPreference } from "../../src/lib/content/flow-pattern-options.ts";
-import type { KnowledgeStructurePreference, KnowledgeStructureType } from "../../src/lib/content/knowledge-blueprint.ts";
+import type { KnowledgeStructurePreference, KnowledgeStructureType, TeachingMetrics } from "../../src/lib/content/knowledge-blueprint.ts";
+import { hasSpecificPlayTitle } from "../../src/lib/content/knowledge-blueprint.ts";
 import { normalizeUISchema, type PatternType } from "../../src/types/schema.ts";
 
 interface LiveFlowEvalCase {
@@ -24,7 +25,7 @@ interface RunResult {
   patterns: PatternType[];
   structure?: KnowledgeStructureType;
   validation_error?: string;
-  quality_gate?: { ok: boolean; reason?: string; failures: string[] };
+  quality_gate?: { ok: boolean; reason?: string; failures: string[]; teaching_metrics?: TeachingMetrics };
   repair_warnings: string[];
   repair_actions: RepairAction[];
   repair_action_counts: Partial<Record<RepairActionTag, number>>;
@@ -107,9 +108,10 @@ const REPAIR_ACTION_TAGS: RepairActionTag[] = [
   "schema_repair",
   "schema_fallback",
   "flow_repair",
+  "template_normalize",
 ];
 const SCHEMA_REPAIR_TAGS = new Set<RepairActionTag>(["field_fix", "placeholder_clean", "schema_repair", "schema_fallback"]);
-const FLOW_REPAIR_TAGS = new Set<RepairActionTag>(["flow_repair", "pattern_normalize"]);
+const FLOW_REPAIR_TAGS = new Set<RepairActionTag>(["flow_repair", "pattern_normalize", "template_normalize"]);
 
 function countRepairActions(actions: RepairAction[]) {
   return actions.reduce<Partial<Record<RepairActionTag, number>>>((counts, action) => {
@@ -138,6 +140,62 @@ function aggregateRepairActionCounts(results: RunResult[]) {
 
 function repairActionRate(results: RunResult[], tag: RepairActionTag) {
   return Number(average(results.map((result) => result.repair_action_counts[tag] ? 1 : 0)).toFixed(3));
+}
+
+const TEACHING_METRIC_KEYS: Array<Exclude<keyof TeachingMetrics, "expected_steps">> = [
+  "trace_covered_steps",
+  "visible_term_steps",
+  "action_contract_steps",
+  "template_affordance_steps",
+];
+
+function teachingMetricRate(results: RunResult[], key: Exclude<keyof TeachingMetrics, "expected_steps">) {
+  return Number(average(results.map((result) => {
+    const metrics = result.quality_gate?.teaching_metrics;
+    if (!metrics?.expected_steps) return 0;
+    return metrics[key] / metrics.expected_steps;
+  })).toFixed(3));
+}
+
+function aggregateQualityByStructure(results: RunResult[]) {
+  return results.reduce<Record<string, {
+    runs: number;
+    repair_reliance_rate: number;
+    repair_action_counts: Partial<Record<RepairActionTag, number>>;
+    teaching_metrics: Record<Exclude<keyof TeachingMetrics, "expected_steps">, number>;
+  }>>((summary, result) => {
+    const key = result.structure || "unclassified";
+    const current = summary[key] || {
+      runs: 0,
+      repair_reliance_rate: 0,
+      repair_action_counts: {},
+      teaching_metrics: {
+        trace_covered_steps: 0,
+        visible_term_steps: 0,
+        action_contract_steps: 0,
+        template_affordance_steps: 0,
+      },
+    };
+    current.runs += 1;
+    current.repair_reliance_rate += result.repaired ? 1 : 0;
+    for (const tag of REPAIR_ACTION_TAGS) {
+      current.repair_action_counts[tag] = (current.repair_action_counts[tag] || 0) + (result.repair_action_counts[tag] || 0);
+    }
+    const metrics = result.quality_gate?.teaching_metrics;
+    if (metrics?.expected_steps) {
+      for (const metric of TEACHING_METRIC_KEYS) current.teaching_metrics[metric] += metrics[metric] / metrics.expected_steps;
+    }
+    summary[key] = current;
+    return summary;
+  }, {});
+}
+
+function finalizeQualityByStructure(summary: ReturnType<typeof aggregateQualityByStructure>) {
+  return Object.fromEntries(Object.entries(summary).map(([structure, value]) => [structure, {
+    ...value,
+    repair_reliance_rate: Number((value.repair_reliance_rate / value.runs).toFixed(3)),
+    teaching_metrics: Object.fromEntries(TEACHING_METRIC_KEYS.map((metric) => [metric, Number((value.teaching_metrics[metric] / value.runs).toFixed(3))])),
+  }]));
 }
 async function scoreRun(testCase: LiveFlowEvalCase, run: number): Promise<RunResult> {
   const repairWarnings: string[] = [];
@@ -174,12 +232,25 @@ async function scoreRun(testCase: LiveFlowEvalCase, run: number): Promise<RunRes
   if (result.source !== "llm") reasons.push(`expected llm source, got ${result.source}`);
   if (result.failure) reasons.push(`unexpected failure state: ${result.failure.code}`);
   if (!result.quality_gate?.ok) reasons.push(`quality gate failed: ${result.quality_gate?.reason || "missing quality gate"}`);
+  const teachingMetrics = result.quality_gate?.teaching_metrics;
+  if (!teachingMetrics) {
+    reasons.push("missing teaching metrics");
+  } else {
+    for (const metric of TEACHING_METRIC_KEYS) {
+      if (teachingMetrics[metric] !== teachingMetrics.expected_steps) {
+        reasons.push(`${metric} ${teachingMetrics[metric]}/${teachingMetrics.expected_steps}`);
+      }
+    }
+  }
   if (result.blueprint?.structure_type !== testCase.expectedStructure) reasons.push(`structure ${result.blueprint?.structure_type || "missing"} != ${testCase.expectedStructure}`);
   for (const pattern of testCase.expectedPatterns) {
     if (!patterns.includes(pattern)) reasons.push(`missing pattern ${pattern}; got ${patterns.join(" -> ")}`);
   }
   if (hasFlag("strict") && repaired) reasons.push(`repair relied on ${repairActionSummary(repairActionCounts) || `schema=${repairWarnings.length}, flow=${flowRepaired}`}`);
-  if (result.flow.plays.length !== 3) reasons.push(`plays ${result.flow.plays.length}/3`);
+    if (result.flow.plays.length !== 4) reasons.push("plays " + result.flow.plays.length + "/4");
+  result.flow.plays.forEach((play, index) => {
+    if (!hasSpecificPlayTitle(play)) reasons.push(`step ${index + 1} title is too generic: ${play.title}`);
+  });
   if (!result.flow.plays.every((play) => play.teaching_trace)) reasons.push("missing teaching_trace");
   if (!textIncludesTopic(result.flow.concept, testCase.topic)) reasons.push(`concept ${result.flow.concept} is not anchored to ${testCase.topic}`);
   if (!result.flow.follow_ups || result.flow.follow_ups.length < 2) reasons.push("missing follow_ups");
@@ -204,7 +275,7 @@ async function scoreRun(testCase: LiveFlowEvalCase, run: number): Promise<RunRes
     patterns,
     structure: result.blueprint?.structure_type,
     validation_error: result.validation_error,
-    quality_gate: result.quality_gate ? { ok: result.quality_gate.ok, reason: result.quality_gate.reason, failures: result.quality_gate.failures } : undefined,
+    quality_gate: result.quality_gate ? { ok: result.quality_gate.ok, reason: result.quality_gate.reason, failures: result.quality_gate.failures, teaching_metrics: result.quality_gate.teaching_metrics } : undefined,
     repair_warnings: repairWarnings,
     repair_actions: repairActions,
     repair_action_counts: repairActionCounts,
@@ -273,6 +344,7 @@ async function main() {
   const repairRate = Number(average(results.map((result) => (result.repaired ? 1 : 0))).toFixed(3));
   const failed = results.filter((result) => result.score < 1);
   const repairActionTotals = aggregateRepairActionCounts(results);
+  const qualityByStructure = finalizeQualityByStructure(aggregateQualityByStructure(results));
   const reportPath = writeReport(results);
 
   console.log(`cases: ${selectedCases.length}`);
@@ -285,6 +357,8 @@ async function main() {
   console.log(`repair_reliance_rate: ${repairRate}`);
   console.log(`repair_action_counts: ${JSON.stringify(repairActionTotals)}`);
   for (const tag of REPAIR_ACTION_TAGS) console.log(`repair_action_${tag}_rate: ${repairActionRate(results, tag)}`);
+  for (const metric of TEACHING_METRIC_KEYS) console.log(`teaching_${metric}_rate: ${teachingMetricRate(results, metric)}`);
+  console.log(`quality_by_structure: ${JSON.stringify(qualityByStructure)}`);
   console.log(`threshold: ${threshold}`);
   console.log(`failed_runs: ${failed.length ? failed.map((result) => `${result.id}#${result.run}`).join(", ") : "none"}`);
   console.log(`report: ${reportPath}`);

@@ -302,7 +302,7 @@ export function createMockSchema(input: string, depth: LearningDepth = "rapid"):
       template: "category_buckets",
       version: "2.0",
       payload: {
-        title: "投资风格 · 分类桶",
+        title: "试着把投资风格分一分",
         categories: [
           { id: "value", name: "价值投资" },
           { id: "growth", name: "成长投资" },

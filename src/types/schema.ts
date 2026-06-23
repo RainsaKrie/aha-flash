@@ -1,4 +1,4 @@
-﻿export type UISchemaType =
+export type UISchemaType =
   | "gacha_simulator"
   | "slider_explorer"
   | "card_flip"
@@ -31,6 +31,7 @@ export type TemplateId =
   | "grid_match"
   | "horizontal_timeline"
   | "vertical_scroll"
+  | "sequence_order"
   | "split_panel"
   | "overlay_fade"
   | "single_question"
@@ -119,7 +120,7 @@ export const SCHEMA_CATALOG: Record<
   probability: { type: "gacha_simulator", defaultTemplate: "card_flip_reveal", templates: ["card_flip_reveal", "spin_wheel"] },
   parameter_explore: { type: "slider_explorer", defaultTemplate: "single_slider", templates: ["single_slider", "dual_slider"] },
   concept_memory: { type: "card_flip", defaultTemplate: "term_cards", templates: ["term_cards", "grid_match"] },
-  process_timeline: { type: "timeline_scrubber", defaultTemplate: "horizontal_timeline", templates: ["horizontal_timeline", "vertical_scroll"] },
+  process_timeline: { type: "timeline_scrubber", defaultTemplate: "horizontal_timeline", templates: ["horizontal_timeline", "vertical_scroll", "sequence_order"] },
   comparison: { type: "comparison_split", defaultTemplate: "split_panel", templates: ["split_panel", "overlay_fade"] },
   knowledge_check: { type: "quiz_battle", defaultTemplate: "single_question", templates: ["single_question", "combo_chain"] },
   system_builder: { type: "build_sandbox", defaultTemplate: "module_sandbox", templates: ["module_sandbox", "flow_connect"] },
@@ -221,6 +222,24 @@ export interface GachaSimulatorConfig extends ComponentDepthConfig {
   };
 }
 
+export type CompoundInterestOutput = "future_value" | "interest_earned";
+export type CompoundInterestRateUnit = "percent" | "decimal";
+
+export interface CompoundInterestFormula {
+  kind: "compound_interest";
+  principal: number;
+  periods: number;
+  rate_unit?: CompoundInterestRateUnit;
+  output?: CompoundInterestOutput;
+}
+
+export interface SimulationFormula {
+  kind: "compound_interest";
+  principal_param: string;
+  rate_param: string;
+  rate_unit?: CompoundInterestRateUnit;
+}
+
 export interface SliderExplorerConfig extends ComponentDepthConfig {
   title: string;
   variable_label: string;
@@ -238,6 +257,7 @@ export interface SliderExplorerConfig extends ComponentDepthConfig {
     offset?: number;
     unit?: string;
     description?: string;
+    formula?: CompoundInterestFormula;
   }>;
   insight_rules?: Array<{ when: "low" | "mid" | "high"; text: string }>;
 }
@@ -265,6 +285,8 @@ export interface ComparisonSplitConfig extends ComponentDepthConfig {
 export interface TimelineScrubberConfig extends ComponentDepthConfig {
   title: string;
   events: Array<{ label: string; description: string }>;
+  mode?: "explore" | "sequence_order";
+  correct_order?: string[];
 }
 
 export interface QuizBattleConfig extends ComponentDepthConfig {
@@ -314,6 +336,7 @@ export interface SimulationPlayConfig extends ComponentDepthConfig {
   }>;
   compute_formula_description: string;
   steps: number;
+  formula?: SimulationFormula;
 }
 
 

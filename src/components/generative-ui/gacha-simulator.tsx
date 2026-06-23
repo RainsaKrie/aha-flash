@@ -1,7 +1,7 @@
 "use client";
 
-import { RotateCcw, Sparkles, Ticket } from "lucide-react";
-import { useMemo, useState } from "react";
+import { RotateCcw, Sparkles } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_LEARNING_DEPTH, LEARNING_DEPTH_LABELS } from "@/types/schema";
 import type { GachaPoolItem, GachaSimulatorConfig, InteractionEvent, LearningDepth } from "@/types/schema";
@@ -10,9 +10,9 @@ import { EmptyState, InlineSpinner } from "./shared";
 type Phase = "idle" | "pulling" | "result";
 
 const depthGoals: Record<LearningDepth, string> = {
-  rapid: "目标：用一次抽取抓住“选择权 + 有限损失”。",
-  scenario: "目标：在未来结果揭晓后判断是否行权。",
-  mapping: "目标：把抽卡动作逐项对应到期权原理。",
+  rapid: "先做个判断，再看看新信息会把判断推向哪里。",
+  scenario: "比较不同结果出现时，原先的判断会怎样变化。",
+  mapping: "把翻卡过程对应到概念里的不同可能性与证据。",
 };
 
 function probabilityValue(item: GachaPoolItem) {
@@ -39,6 +39,14 @@ function flavorLabel(item: GachaPoolItem) {
   return item.flavor_label && item.flavor_label !== tierLabel(item) ? item.flavor_label : "";
 }
 
+
+function safeExplanation(config: GachaSimulatorConfig, guessedRight: boolean) {
+  const raw = guessedRight ? config.explanation_map.win : config.explanation_map.lose;
+  const cleaned = raw.replace(/\{\{[^}]+\}\}/g, "").trim();
+  return /(期权|行权|锁定价|期权费|标的|收益|市场价|余额)/.test(cleaned)
+    ? "新的信息出现后，原先的判断可以跟着更新；关键是比较它和其他可能性之间的差别。"
+    : cleaned || "新的信息出现后，原先的判断可以跟着更新；关键是比较它和其他可能性之间的差别。";
+}
 export function GachaSimulator({
   config,
   onComplete,
@@ -47,38 +55,30 @@ export function GachaSimulator({
   onComplete?: (result: InteractionEvent) => void;
 }) {
   const [phase, setPhase] = useState<Phase>("idle");
-  const [results, setResults] = useState<GachaPoolItem[]>([]);
-  const [balance, setBalance] = useState(3000);
+  const [result, setResult] = useState<GachaPoolItem | null>(null);
+  const [selectedName, setSelectedName] = useState<string | null>(null);
   const depth = config.depth || DEFAULT_LEARNING_DEPTH;
-
-  const best = useMemo(() => results.reduce<GachaPoolItem | null>((acc, item) => (!acc || item.value > acc.value ? item : acc), null), [results]);
-  const profit = best ? Math.max(best.value - config.strike_price - config.option_cost, -config.option_cost) : 0;
-  const won = Boolean(best && best.value > config.strike_price);
   const pool = config.pool || [];
+  const hasSelection = Boolean(selectedName);
+  const guessedRight = Boolean(result && selectedName === result.name);
 
   function pull() {
-    setPhase("pulling");
-    setBalance((value) => value - config.option_cost);
-    window.setTimeout(() => {
-      const next = Array.from({ length: config.pulls_per_try }, () => draw(pool));
-      const bestItem = next.reduce<GachaPoolItem | null>(
-        (acc, item) => (!acc || item.value > acc.value ? item : acc),
-        null,
-      );
-      const didWin = Boolean(bestItem && bestItem.value > config.strike_price);
-      const nextProfit = bestItem
-        ? Math.max(bestItem.value - config.strike_price - config.option_cost, -config.option_cost)
-        : -config.option_cost;
+    if (!hasSelection || pool.length === 0) return;
 
-      setResults(next);
+    setPhase("pulling");
+    window.setTimeout(() => {
+      const next = draw(pool);
+      const didGuessRight = selectedName === next.name;
+
+      setResult(next);
       setPhase("result");
       onComplete?.({
         type: "gacha_completed",
         payload: {
-          won: didWin,
-          profit: nextProfit,
-          best_item: bestItem ? tierLabel(bestItem) : undefined,
-          flavor_label: bestItem ? flavorLabel(bestItem) || undefined : undefined,
+          won: didGuessRight,
+          profit: didGuessRight ? 1 : 0,
+          best_item: tierLabel(next),
+          flavor_label: flavorLabel(next) || undefined,
         },
       });
     }, 620);
@@ -86,146 +86,101 @@ export function GachaSimulator({
 
   function reset() {
     setPhase("idle");
-    setResults([]);
+    setResult(null);
+    setSelectedName(null);
   }
 
-  const displayItems = results.length ? results : pool.slice(0, Math.max(3, Math.min(pool.length, 6)));
+  const displayedItems = phase === "result" && result ? [result] : pool;
+  const learnerExplanation = result
+    ? `${guessedRight ? "这次结果和你的判断一致。" : `这次出现的是「${tierLabel(result)}」，和刚才的判断不同。`} ${safeExplanation(config, guessedRight)}`
+    : depthGoals[depth];
 
   return (
     <section className="grid min-h-[520px] gap-6 p-5">
-      <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--line)] pb-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-[var(--accent)]">gacha simulator</p>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <h2 className="text-2xl font-semibold">{config.title}</h2>
-            <span className="rounded-md border border-[var(--line)] bg-[var(--pattern-raised)] px-2 py-1 text-xs text-[var(--muted)]">
-              {LEARNING_DEPTH_LABELS[depth]}
-            </span>
-          </div>
-          {config.quote && <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">{config.quote}</p>}
-          <p className="mt-2 text-xs text-[var(--accent)]">{depthGoals[depth]}</p>
+      <header className="border-b border-[var(--line)] pb-4">
+        <p className="text-xs font-semibold text-[var(--accent)]">概率判断</p>
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <h2 className="text-2xl font-semibold">{config.title.replace(/^(抽卡|抽取|概率抽卡)\s*[:：]\s*/, "") || "先猜猜哪种情况更可能"}</h2>
+          <span className="rounded-md border border-[var(--line)] bg-[var(--pattern-raised)] px-2 py-1 text-xs text-[var(--muted)]">
+            {LEARNING_DEPTH_LABELS[depth]}
+          </span>
         </div>
-        <div className="rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] px-4 py-3 text-right">
-          <div className="text-xs text-[var(--muted)]">余额</div>
-          <div key={balance} className="animate-value-pop text-3xl font-bold text-[var(--accent)]">{balance}</div>
-        </div>
+        {config.quote && <p className="mt-2 max-w-2xl text-sm text-[var(--muted)]">{config.quote}</p>}
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-        <aside className={["rounded-xl border bg-[var(--pattern-panel)] p-5 transition-all duration-200", phase === "pulling" ? "border-[var(--accent)]" : "border-[var(--line)]"].join(" ")}>
-          <div className="mb-4 flex items-center gap-2 text-sm font-medium">
-            <Ticket size={16} />
-            看涨期权券
-          </div>
-          <dl className="grid gap-4 text-sm">
-            <div className="flex justify-between gap-4">
-              <dt className="text-[var(--muted)]">期权费</dt>
-              <dd>{config.option_cost}</dd>
-            </div>
-            <div className="flex justify-between gap-4">
-              <dt className="text-[var(--muted)]">锁定价</dt>
-              <dd>{config.strike_price}</dd>
-            </div>
-            <div className="flex justify-between gap-4">
-              <dt className="text-[var(--muted)]">次数</dt>
-              <dd>{config.pulls_per_try}</dd>
-            </div>
-          </dl>
-          <div className="mt-4 grid gap-2">
-            <Button onClick={pull} disabled={phase === "pulling" || pool.length === 0} title="抽取" className={`${phase === "idle" && pool.length > 0 ? "ui-breathe " : ""}transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]`}>
+        <aside className={[
+          "rounded-xl border bg-[var(--pattern-panel)] p-5 transition-all duration-200",
+          phase === "pulling" ? "border-[var(--accent)]" : "border-[var(--line)]",
+        ].join(" ")}>
+          <p className="text-base font-medium">先做个判断</p>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
+            先选一种你认为更可能的情况，再揭开实际结果。
+          </p>
+          <div className="mt-5 grid gap-2">
+            <Button
+              onClick={pull}
+              disabled={phase === "pulling" || pool.length === 0 || !hasSelection}
+              title={hasSelection ? "揭开结果" : "先选择一种可能"}
+              className={`${phase === "idle" && hasSelection ? "ui-breathe " : ""}transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]`}
+            >
               <Sparkles size={16} />
-              {phase === "pulling" ? <InlineSpinner label="结算中" /> : "买入并抽取"}
+              {phase === "pulling" ? <InlineSpinner label="正在揭开" /> : hasSelection ? "揭开结果" : "先选一种可能"}
             </Button>
-            <Button onClick={reset} className="bg-transparent transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]" title="重置">
+            <Button onClick={reset} className="bg-transparent transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]" title="重新判断">
               <RotateCcw size={16} />
-              重置
+              重新判断
             </Button>
           </div>
         </aside>
 
         <div className="grid gap-4 rounded-xl border border-[var(--line)] bg-[var(--pattern-surface)] p-5">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <div className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
-                {results.length ? "抽取结果" : "奖池预览"}
-              </div>
-              <div className="mt-1 text-sm text-[var(--muted)]">
-                {results.length ? "结果揭晓后，再判断这张券是否值得执行。" : "先看可能结果，再决定是否付出期权费。"}
-              </div>
-            </div>
-            <div className="rounded-lg border border-[var(--line)] bg-[var(--pattern-raised)] px-3 py-2 text-xs text-[var(--muted)]">
-              最高价值 {pool.length ? Math.max(...pool.map((item) => item.value)) : "-"}
+          <div>
+            <div className="text-sm font-medium">{phase === "result" ? "这次出现的结果" : "你觉得哪种情况更可能？"}</div>
+            <div className="mt-1 text-sm text-[var(--muted)]">
+              {phase === "result" ? "把结果和你刚才的判断放在一起看。" : "点击一张卡做出判断；下一步会揭开实际结果。"}
             </div>
           </div>
 
           {pool.length ? (
-            <div className="grid min-h-52 place-content-center gap-4 [grid-template-columns:repeat(auto-fit,minmax(120px,160px))]">
-              {displayItems.map((item, index) => (
-              <div
-                key={`${item.name}-${index}`}
-                className={[
-                  "grid aspect-[4/5] place-items-center rounded-xl border p-5 text-center text-sm shadow-[0_10px_30px_rgba(0,0,0,0.18)] transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]",
-                  item.rarity === "5"
-                    ? "border-[var(--accent-2)] bg-[rgba(247,201,72,0.14)]"
-                    : item.rarity === "4"
-                      ? "border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent),transparent_88%)]"
-                      : "border-[var(--line)] bg-[var(--pattern-raised)]",
-                  phase === "pulling" ? "ui-breathe border-[var(--accent)]" : "",
-                ].join(" ")}
-              >
-                <span>
-                  <span className="block text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
-                    {phase === "pulling" ? "rolling" : `${Math.round(probabilityValue(item) * 100)}%`}
-                  </span>
-                  <strong className="mt-2 block text-base">{phase === "pulling" ? "..." : tierLabel(item)}</strong>
-                  {phase !== "pulling" && flavorLabel(item) && (
-                    <span className="mt-1 block text-xs text-[var(--muted)]">{flavorLabel(item)}</span>
-                  )}
-                  <span className="mt-2 block text-xs text-[var(--accent-2)]">价值 {item.value}</span>
-                </span>
-              </div>
-              ))}
+            <div className="grid min-h-52 place-content-center gap-4 [grid-template-columns:repeat(auto-fit,minmax(140px,180px))]">
+              {displayedItems.map((item, index) => {
+                const selected = selectedName === item.name;
+                const isResult = phase === "result";
+                return (
+                  <button
+                    key={`${item.name}-${index}`}
+                    type="button"
+                    disabled={phase !== "idle"}
+                    aria-pressed={selected}
+                    onClick={() => setSelectedName(item.name)}
+                    className={[
+                      "grid aspect-[4/5] place-items-center rounded-xl border p-5 text-center text-sm shadow-[0_10px_30px_rgba(0,0,0,0.1)] transition-all duration-200 hover:scale-[1.02] hover:border-[var(--pattern-accent)] active:scale-[0.96] disabled:cursor-default disabled:hover:scale-100",
+                      selected ? "border-[var(--pattern-accent)] bg-[color-mix(in_srgb,var(--pattern-accent),transparent_88%)] ring-2 ring-[color-mix(in_srgb,var(--pattern-accent),transparent_72%)]" : "border-[var(--line)] bg-[var(--pattern-raised)]",
+                      phase === "pulling" ? "ui-breathe border-[var(--accent)]" : "",
+                    ].join(" ")}
+                  >
+                    <span>
+                      <span className="block text-xs font-medium text-[var(--muted)]">
+                        {phase === "pulling" ? "正在揭开" : isResult ? "实际结果" : selected ? "你的判断" : `可能性 ${Math.round(probabilityValue(item) * 100)}%`}
+                      </span>
+                      <strong className="mt-2 block text-base">{phase === "pulling" ? "..." : tierLabel(item)}</strong>
+                      {phase !== "pulling" && flavorLabel(item) && (
+                        <span className="mt-1 block text-xs text-[var(--muted)]">{flavorLabel(item)}</span>
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           ) : (
-            <EmptyState detail="模型没有给出概率奖池，重新生成后应至少包含 3 个结果。" />
-          )}
-
-          {!results.length && pool.length > 0 && (
-            <div className="grid gap-2 sm:grid-cols-3">
-              {pool.slice(0, 3).map((item) => (
-                <div key={`${item.name}-odds`} className="rounded-xl border border-[var(--line)] bg-[var(--pattern-raised)] p-5 text-xs transition-all duration-200 hover:scale-[1.02] hover:border-[var(--pattern-accent)] active:scale-[0.96]">
-                  <div className="flex justify-between gap-4">
-                    <span className="text-[var(--muted)]">
-                      {tierLabel(item)}
-                      {flavorLabel(item) ? ` · ${flavorLabel(item)}` : ""}
-                    </span>
-                    <strong key={probabilityValue(item)} className="animate-value-pop text-3xl font-bold">{Math.round(item.probability * 100)}%</strong>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <EmptyState detail="还没有可判断的结果，重新生成后再试一次。" />
           )}
         </div>
       </div>
 
       <footer className="ui-result rounded-xl border border-[var(--line)] bg-[var(--pattern-panel)] p-5">
-        {phase === "result" && best ? (
-          <div className="grid gap-2 sm:grid-cols-[1fr_auto] sm:items-center">
-            <p className="text-sm text-[var(--muted)]">
-              {won
-                ? config.explanation_map.win
-                    .replace("{{market_price}}", String(best.value))
-                    .replace("{{strike_price}}", String(config.strike_price))
-                : config.explanation_map.lose.replace("{{option_cost}}", String(config.option_cost))}
-            </p>
-            <strong key={profit} className={`animate-value-pop text-3xl font-bold ${won ? "text-[var(--accent)]" : "text-[var(--danger)]"}`}>
-              {profit >= 0 ? "+" : ""}
-              {profit}
-            </strong>
-          </div>
-        ) : (
-          <p className="text-sm text-[var(--muted)]">{depthGoals[depth]}</p>
-        )}
+        <p className="text-sm leading-relaxed text-[var(--muted)]">{learnerExplanation}</p>
       </footer>
     </section>
   );

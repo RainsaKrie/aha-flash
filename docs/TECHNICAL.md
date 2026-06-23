@@ -216,7 +216,7 @@ V5 的主体验从“输入生成组件”改为“浏览话题 -> 全屏 Flow �
 | Route | V5 职责 | 数据来源 | 备注 |
 |---|---|---|---|
 | `/` | 默认跳转 Explore | - | 入口页不承载聊天流 |
-| `/explore` | 自由生成主入口：输入任意 topic，AI 按 KnowledgeBlueprint 自动选择三关 Pattern；展示 SSE 真实阶段与拆解预览，五条精选 Flow 仅作示例起点 | `POST /api/flow` + `getShowcaseFlows()` | 公开链接优先展示“想学什么就生成什么”的核心能力 |
+| `/explore` | 自由生成主入口：输入任意 topic，AI 按 KnowledgeBlueprint 自动选择四步路径 Pattern；展示 SSE 真实阶段、知识结构和四个用户可读的关卡目标，不渲染内部 term/Pattern tag，五条精选 Flow 仅作示例起点 | `POST /api/flow` + `getShowcaseFlows()` | 公开链接优先展示“想学什么就生成什么”的核心能力 |
 | `/flow/[flowId]` | 全屏三段式精选闯关：退出/进度条、单组件舞台、底部操作台 | `KnowledgeFlow` | curated 示例体验 |
 | `/flow/custom` | 播放当前浏览器会话中的动态 Flow | sessionStorage | Explore 写入 draft，Custom Flow 页读取并复用播放器 |
 | `/hub` | 知识路径足迹、节点回看、完成统计 | localStorage + `/api/state` | 轻量图鉴，不做知识管理 |
@@ -257,8 +257,8 @@ interface KnowledgeFlow {
 
 - `src/lib/content/mock-flows.ts` 维护 `SHOWCASE_FLOW_IDS`，当前固定为 `bayes-starter`、`dns-router`、`options-risk`、`industrial-revolution`、`inflation-deflation`。
 - `/explore` 主入口调用 `POST /api/flow` 生成动态 Flow；`getShowcaseFlows()` 只用于“试试这些起点”的稳定示例。
-- 五个示例 topic 共同覆盖全部 10 类 Pattern；每个 topic 都有三关 fallback Flow，LLM 失败时仍可完整体验。
-- 当前公开入口的目标是让用户立即体验能力闭环：自由输入或示例起点 -> 三关互动 -> AI 分支继续 -> 完成记录进入 Hub。
+- 五个示例 topic 共同覆盖全部 10 类 Pattern；每个 topic 都有四步 fallback Flow，LLM 失败时仍可完整体验。
+- 当前公开入口的目标是让用户立即体验能力闭环：自由输入或示例起点 -> 四步互动 -> AI 分支继续 -> 完成记录进入 Hub。
 Flow 渲染规则：
 
 - Explore 只展示话题卡，不内嵌互动组件。
@@ -272,12 +272,13 @@ Flow Steps 生成策略：
 
 - `src/lib/content/mock-flows.ts` 保留一组内部 mock Flow 库；`SHOWCASE_FLOW_IDS` 只作为 `/explore` 的稳定示例起点，不代表系统能力上限。
 - `src/lib/content/flow-generation.ts` 以 topic spec 驱动 Flow Steps 生成，当前 LLM topic 包括 `bayes-starter`、`industrial-revolution`、`inflation-deflation`。
-- Flow 生成先走 LLM；动态自由生成会要求模型输出 `grounding_terms`，服务端校验专业锚点是否实际进入三关内容，不通过时带失败原因自动 repair 一次。
-- repair 后仍不贴题、无 key、网络异常或 JSON 不可解析时，回退按用户 topic 包装的通用三关 Flow，不再依赖单个概念的专用预制兜底。
+- Flow 生成先走 LLM；动态自由生成会要求模型输出 `grounding_terms`，服务端校验专业锚点是否实际进入四步内容，不通过时带失败原因自动 repair 一次。
+- repair 后仍不贴题、无 key、网络异常或 JSON 不可解析时，回退按用户 topic 包装的通用四步 Flow，不再依赖单个概念的专用预制兜底。
 - Flow 生成器会校验每个 step 的 `UISchema`，并对常见字段漂移做轻量修复，例如 `options[].text -> label`、`cards[].term -> front`、`events/stages/milestones -> events`、`comparison_dimensions/rows -> dimensions`、`scenarios[].name -> label`、`insight_rules[].description -> text`。
 - Flow 生成器会修复 DeepSeek 偶发的顶层漂移：`pattern/template` 对调、`template=v1/v2` 等别名、缺失 `version`。
 - `parameter_explore/single_slider` 会额外归一化 3 个 scenarios、2 个 outputs、3 条 low/mid/high insight rules，并移除 `{result}`、`{output1}`、`{calculated}` 等未替换占位符文案。
 - `process_timeline` 会归一化 4-6 个阶段事件，保证每个事件都有短 label 和因果 description。
+- 当 Blueprint 的学习动作是“排序”时，Flow 生成器会将 `process_timeline` 绑定为 `sequence_order`：payload 必须带 `mode: "sequence_order"` 与完整 `correct_order`。浏览型时间线若承诺排序，会被 QualityGate 拒绝。
 - `comparison` 会归一化 left/right、subject_a/subject_b 和 dimensions，保证对比维度平行可切换。
 - `reward_copy` 使用克制型知识反馈，发现“工具箱更新了 / 卡片已入库 / 魔力 / 升级版”等过度游戏化表达时回退为“你又想通了一层”。
 - `npm run eval:flow-manual -- --runs=10 --url=http://127.0.0.1:<port>/api/flow?flowId=<flowId>` 用于手动采样，生成 Markdown 供人工判断 10 次里是否至少 8 次产生“啊哈感”；本阶段稳定性收口目标提高到 9/10 以上。
@@ -556,9 +557,9 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 
 | 链路 | 入口 | 说明 |
 |---|---|---|
-| 动态 Flow 生成 | `/explore` -> `POST /api/flow` | 用户输入任意 topic；服务端先生成 Blueprint，再自动选择 Pattern，返回三关 `KnowledgeFlow`，流式请求同时发送真实阶段事件。 |
+| 动态 Flow 生成 | `/explore` -> `POST /api/flow` | 用户输入任意 topic；服务端先生成 Blueprint，再自动选择 Pattern，返回四步 `KnowledgeFlow`，流式请求同时发送真实阶段事件。 |
 | 动态 Flow 播放 | `/flow/custom?draftId=...` | Explore 将生成结果写入 sessionStorage，Custom Flow 页读取并复用 `KnowledgeFlowPlayer`。 |
-| Follow-up 延伸 | Flow 完成态 -> `POST /api/flow` | 动态 Flow 优先使用 Blueprint-derived `follow_ups`，点击 AI 延伸方向会生成下一组三关。 |
+| Follow-up 延伸 | Flow 完成态 -> `POST /api/flow` | 动态 Flow 优先使用 Blueprint-derived `follow_ups`，点击 AI 延伸方向会生成下一组四步。 |
 | 互动组件生成 | `/studio` -> `/api/chat` | 使用 DeepSeek，经 Tool Calling 优先生成 10 类 Pattern Schema；失败进入 JSON fallback；最终 mock fallback 防崩。 |
 | Showcase Flow 生成 | `/flow/[flowId]` -> `GET /api/flow` | `bayes-starter`、`industrial-revolution`、`inflation-deflation` 会请求 LLM 生成三关 Flow，失败回退本地 Flow。 |
 | 状态更新 | `/api/chat` + `/api/state` | 规则优先更新当前线程、知识资产和轻量状态；不是每一步都调用 LLM。 |
@@ -567,7 +568,7 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 
 | 功能 | 当前实现 | 原因 |
 |---|---|---|
-| 动态 Flow fallback | `dynamic-flow-generation.ts` 按用户 topic 包装通用三关 Flow | 无 key 或 LLM 不稳定时仍保持“输入什么就学什么”的产品承诺。 |
+| 动态 Flow fallback | `dynamic-flow-generation.ts` 按用户 topic 包装通用四步 Flow | 无 key 或 LLM 不稳定时仍保持“输入什么就学什么”的产品承诺。 |
 | Explore 示例卡片 | `getShowcaseFlows()` 静态精选 5 个起点 | 作为低风险示例入口，不再代表系统能力上限。 |
 | 旧 curated follow-up | `getFlowFollowUps()` 静态映射 | 仅作为 curated Flow 或动态 Flow 无可用 Blueprint follow-up 时的 fallback。 |
 | Hub 图鉴 | localStorage + `/api/state` | 记录真实本机完成路径，但不做账号级持久化。 |
@@ -576,13 +577,13 @@ AHA_FLASH_DISABLE_TOOL_CALLING=
 
 动态 Flow fallback 回归：
 
-- `tests/eval/dynamic-flow-score.ts` 会临时移除 `DEEPSEEK_API_KEY`，直接调用 `generateDynamicFlow()`，验证无 key 时仍返回 `source=mock` 的 `custom-*` 三关 Flow。
+- `tests/eval/dynamic-flow-score.ts` 会临时移除 `DEEPSEEK_API_KEY`，直接调用 `generateDynamicFlow()`，验证无 key 时仍返回 `source=mock` 的 `custom-*` 四步 Flow。
 - 覆盖 auto 与 `system_builder`、`process_timeline`、`comparison`、`parameter_explore` 四种 API 级显式 Pattern 约束，确保指定 Pattern 至少出现在一关里。Explore 公开 UI 默认只走自动选型；补充 `Agent` 与 `Kubernetes operator` 等非预制概念，禁止回退到“相近概念”等占位式文案。
 - `tests/eval/showcase-pattern-score.ts` 检查公开精选集是否至少包含 5 条 Flow，并覆盖 `SCHEMA_CATALOG` 中全部 10 类 Pattern。
 
 ### 完成口径
 
-V5 当前已经具备：`Explore 任意输入 -> AI 生成三关 Flow -> /flow/custom 播放 -> AI 分支继续 -> Hub 路径记录`。未实现项集中在生产化能力：账号、数据库、真实社区发布、审核、真实埋点和跨设备同步。
+V6 当前已经具备：`Explore 任意输入 -> AI 生成四步 Flow -> /flow/custom 播放 -> AI 分支继续 -> Hub 路径记录`。未实现项集中在生产化能力：账号、数据库、真实社区发布、审核、真实埋点和跨设备同步。
 <!-- AI_CHAIN_STATUS_END -->
 
 ## Dynamic Flow ConceptPlan Pipeline
@@ -607,6 +608,8 @@ Key implementation points:
 - `KnowledgeBlueprint` is the teaching contract and contains `structure_type`, `core_terms`, `teaching_sequence`, `pattern_strategy`, `avoid_patterns`, and confidence.
 - `TeachingTrace` is attached to each generated `KnowledgePlay` after normalization. It is derived from the Blueprint, not trusted from model output.
 - `QualityGate` remains deterministic-first. It checks visible step content, schema validity, pattern fit, avoided patterns, placeholder terms, Blueprint step coverage, and trace alignment.
+- Teaching metrics are emitted with every QualityGate result: `trace_covered_steps`, `visible_term_steps`, `action_contract_steps`, and `template_affordance_steps`. A step only earns visible coverage when its primary title/payload includes both the Blueprint action terms and topic grounding; reward copy is intentionally excluded.
+- Action contracts are deterministic: `connect -> module_sandbox`, `adjust -> single_slider`, `simulate -> parameter_simulation`, timeline sorting -> `sequence_order`, classification sorting -> `category_buckets`, and knowledge checks -> exactly one correct option plus an explanation for each option.
 - Trace fields are for debugging and eval audit. They must not be used as a substitute for visible user-facing teaching copy.
 - No-key or low-quality dynamic generation returns an honest failure state while still carrying enough draft/debug information for diagnosis.
 - Knowledge structure inference uses deterministic topic hints before trusting LLM-provided `knowledge_structure`; broad terms in LLM explanations should not override the user's original topic. Broad hints are intentionally kept narrow where needed, e.g. `http request` for system flow so `HTTP status codes` can remain a classification task.
@@ -615,6 +618,7 @@ Key implementation points:
 - Dynamic Flow LLM calls use a 45s timeout and one retry for transient provider failures.
 - Dynamic Flow completion branches are generated from `KnowledgeBlueprint.structure_type`, `core_terms`, and `teaching_sequence` before considering model-provided or static follow-ups, so completion continues the same knowledge path instead of falling back to generic branches.
 - `npm run eval:flow-live` samples the real LLM path and separates schema repair from flow/quality repair, so V6 can track both structural validity and teaching reliability.
+- `eval:flow-live` also reports each repair tag by inferred knowledge structure plus the four teaching coverage rates. `eval:teaching` is a deterministic negative-contract suite; `eval:teaching-manual` writes a Markdown rubric with each step's planned goal, actual component, visible payload summary, and 1-5 human ratings.
 ### V6 Skill Pack Direction
 
 The next V6 reliability layer should split the current universal generation prompt into internal Aha Skill Packs. A Skill Pack is a small teaching contract for a knowledge structure or Pattern family, not prebuilt lesson content.
@@ -632,6 +636,15 @@ Implementation principles:
 - First implementation exists in `src/lib/content/skill-packs.ts`: 8 internal skeletons provide required core terms, required teaching steps, forbidden framings, suitable Patterns, and unsuitable Patterns. `KnowledgeBlueprint` carries the selected skeleton id and QualityGate blocks drafts that miss required skeleton terms or hit forbidden framings. `eval:blueprint` now covers the Stage C target of 80 fixed cases: 10 topics for each supported structure, with the current baseline at `overall: 1`. Comparison and causal skeletons include natural-language anchors such as signal, indicator, transmission mechanism, result, effect, and final value so deterministic checks match real teaching copy.
 - `generateDynamicFlow` returns structured `repair_actions` (`field_fix`, `pattern_normalize`, `placeholder_clean`, `schema_repair`, `schema_fallback`, `flow_repair`) so live eval can identify which prompt or Skill Pack needs work.
 - The repair layer remains a safety net. The practical target is keeping repair reliance at or below 0.2 while expanding coverage. After runtime Skill Contract injection, the full 8x3 live baseline on 2026-06-19 reached `overall: 1`, `llm_success_rate: 1`, `schema_repair_rate: 0`, `flow_repair_rate: 0.083`, and `repair_reliance_rate: 0.083`; the remaining repairs are concentrated in causal/compound-interest flow repair.
+### V6 Verifiable Numerical Interaction Contract
+
+parameter_explore output entries may declare formula: kind compound_interest, principal, periods, rate_unit, and output. simulation_play may declare formula: kind compound_interest, principal_param, rate_param, and rate_unit.
+
+For a declared or explicitly inferred compound-interest model, runtime calculation is deterministic: future_value = principal × (1 + annual_rate)^periods.
+
+The UI renders the formula and active substitution next to the result. simulation_play performs the same calculation for each period; it never derives a rate from parameter position. The only automatic inference is narrow: a compound-interest Flow with parameter labels that explicitly identify principal and annual rate. If a model lacks a verifiable formula, its output is labelled as a qualitative trend index rather than a factual number.
+
+QualityGate rejects compound-interest Flows without a simulation_play formula bound to existing principal and rate parameter labels. npm run eval:math covers 100 × (1 + 5%)^10 = 162.89 and 10000 × (1 + 5%)^5 = 12762.82.
 ### V6 Accuracy Grounding Scope
 
 V6 should solve factual reliability with compact Skill Pack knowledge skeletons, not with a full Wiki or always-on web search.
@@ -647,7 +660,7 @@ Network search and a curated Wiki are future layers. They should not be a hard d
 
 ### V6 Generation Visibility
 
-`POST /api/flow` returns a sanitized `preview` payload for production UI: topic, detected knowledge structure, compact core terms, planned three-step path, source, and gate state. Its standard JSON response remains available for non-stream callers. When the client sends `stream: true`, the route emits SSE `stage` events directly from the real `generateDynamicFlow` lifecycle (`concept_plan -> blueprint -> flow -> quality_gate`, with optional `repair` or `fallback`) and then emits the same sanitized `result` payload. `/explore` consumes those events instead of local timers, shows the decomposition as an explicit checkpoint, and lets users click `进入三关` or `重新拆一次`. This makes the live generation pipeline visible without exposing raw model output or internal debug logs.
+`POST /api/flow` returns a sanitized `preview` payload for production UI: topic, detected knowledge structure, compact core terms, planned four-step path, source, and gate state. Its standard JSON response remains available for non-stream callers. When the client sends `stream: true`, the route emits SSE `stage` events directly from the real `generateDynamicFlow` lifecycle (`concept_plan -> blueprint -> flow -> quality_gate`, with optional `repair` or `fallback`) and then emits the same sanitized `result` payload. `/explore` consumes those events instead of local timers, shows the decomposition as an explicit checkpoint, and lets users click `进入路径` or `重新拆一次`. This makes the live generation pipeline visible without exposing raw model output or internal debug logs.
 
 ### V6 Skill-Creator Asset Standard
 
@@ -699,11 +712,11 @@ Supported model response shapes:
 - `{ output: {...} }`
 - Top-level play arrays, converted to `{ plays: [...] }`
 
-This change reduces avoidable `flow_repair` without weakening schema validation or QualityGate. The current full live baseline after this change is 24/24 with repair reliance 0.
+This change reduces avoidable `flow_repair` without weakening schema validation or QualityGate. The 2026-06-21 full live release baseline after this change was 24/24 with repair reliance 0.
 
 ### V6 Release Smoke - 2026-06-20
 
-V6 当前工程范围已完成并复验：`eval:blueprint` 的 80 个固定用例为 `overall: 1`；`npm run eval:flow-live -- --limit=8 --runs=3` 的 24 次真实 LLM 运行全部通过，`overall: 1`、`llm_success_rate: 1`、`schema_repair_rate: 0`、`flow_repair_rate: 0`、`repair_reliance_rate: 0`。该 live Eval 还校验真实阶段顺序：`concept_plan -> blueprint -> flow -> quality_gate`。
+V6 当前工程范围已完成并复验：`eval:blueprint` 的 80 个固定用例为 `overall: 1`；2026-06-21 的 `npm run eval:flow-live -- --limit=8 --runs=3` 24 次真实 LLM 运行全部通过，`overall: 1`、`llm_success_rate: 1`、`schema_repair_rate: 0`、`flow_repair_rate: 0`、`repair_reliance_rate: 0`。该 live Eval 还校验真实阶段顺序：`concept_plan -> blueprint -> flow -> quality_gate`。后续新增的标题具体性闸门沿用同一 live Eval，并允许记录一次受控 repair。
 
 V6 之外的准确性增强仍按既定边界推进：V6.5 考虑低置信度 topic 的可选检索 grounding，V7 再考虑可审计的内部 Wiki / Skill Memory；这些能力不作为当前自由生成链路的硬依赖。
 ### V6 Project Audit - 2026-06-21

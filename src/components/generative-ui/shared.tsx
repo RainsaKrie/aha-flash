@@ -7,6 +7,29 @@ import { Component, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_LEARNING_DEPTH, LEARNING_DEPTH_LABELS, type LearningDepth, type PatternType } from "@/types/schema";
 
+const learnerActionLabels: Record<string, string> = {
+  "comparison split": "放在一起看",
+  "overlay fade": "拖动看看差别",
+  "classification sort": "分一分类",
+  "grid match": "找找对应",
+  "card flip": "翻开看看",
+  "module sandbox": "拼一拼流程",
+  "vertical timeline": "沿着时间看",
+  "combo chain": "连着答一答",
+  "sequence order": "按顺序排一排",
+  "quiz battle": "选一个答案",
+  "timeline": "沿着时间看",
+  "narrative branch": "选一条路",
+  "simulation play": "试着调一调",
+  "spin wheel": "转一次看看",
+  "flow connect": "把它们连起来",
+};
+
+function learnerActionLabel(label: string) {
+  const normalized = label.trim().toLowerCase();
+  if (learnerActionLabels[normalized]) return learnerActionLabels[normalized];
+  return /^[a-z0-9 _-]+$/i.test(normalized) ? "动手试一试" : label;
+}
 export const patternColors: Record<PatternType, string> = {
   probability: "var(--pattern-probability)",
   parameter_explore: "var(--pattern-parameter)",
@@ -161,9 +184,9 @@ export function ComponentFrame({
     <section className={`grid h-full ${minHeight} grid-rows-[auto_1fr_auto] gap-6 p-5`}>
       <header className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--line)] pb-4">
         <div className="min-w-0">
-          <p className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
+          <p className="flex items-center gap-2 text-xs font-semibold text-[var(--muted)]">
             <Icon size={15} />
-            {label}
+            {learnerActionLabel(label)}
           </p>
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <h2 className="text-balance text-2xl font-semibold leading-tight">{title}</h2>
@@ -210,14 +233,14 @@ export function FeedbackPanel({
   return <div className={`ui-result rounded-xl border p-5 text-sm leading-relaxed ${toneClass}`}>{children}</div>;
 }
 
-export function ProgressMeter({ value, total }: { value: number; total: number }) {
+export function ProgressMeter({ value, total, label = "进度" }: { value: number; total: number; label?: string }) {
   const safeTotal = Math.max(total, 1);
   const ratio = Math.min(Math.max(value / safeTotal, 0), 1);
 
   return (
     <div className="grid gap-2">
       <div className="flex items-center justify-between gap-2 text-xs text-[var(--muted)]">
-        <span>进度</span>
+        <span>{label}</span>
         <strong key={`${value}-${safeTotal}`} className="animate-value-pop text-3xl font-bold text-[var(--accent)]">
           {value} / {safeTotal}
         </strong>

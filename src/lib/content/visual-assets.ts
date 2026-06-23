@@ -1,4 +1,4 @@
-﻿import type { PatternType, VisualAssetHint, VisualAssetMood } from "@/types/schema";
+import type { PatternType, VisualAssetHint, VisualAssetMood } from "@/types/schema";
 
 export interface VisualAssetDefinition {
   tag: string;
@@ -86,7 +86,7 @@ const patternDefaults: Record<PatternType, VisualAssetDefinition> = {
   classification_sort: {
     tag: "classification-buckets",
     pattern: "classification_sort",
-    title: "分类桶",
+    title: "分一分类",
     description: "把案例放回正确边界里。",
     emoji: "□",
     tone: "idle",

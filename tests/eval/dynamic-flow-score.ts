@@ -1,7 +1,7 @@
 import { generateDynamicFlow } from "../../src/lib/content/dynamic-flow-generation.ts";
 import type { FlowPatternPreference } from "../../src/lib/content/flow-pattern-options.ts";
 import type { KnowledgeStructurePreference } from "../../src/lib/content/knowledge-blueprint.ts";
-import { normalizeUISchema, type PatternType } from "../../src/types/schema.ts";
+import { normalizeUISchema, type PatternType, type TemplateId } from "../../src/types/schema.ts";
 
 interface DynamicFlowEvalCase {
   id: string;
@@ -10,6 +10,7 @@ interface DynamicFlowEvalCase {
   preferredStructure?: KnowledgeStructurePreference;
   expectedStructure?: KnowledgeStructurePreference;
   expectedPattern?: PatternType;
+  expectedTemplateAt?: { step: number; template: TemplateId };
   expectedConceptIncludes?: string;
   requiredTerms?: string[];
   bannedTerms?: string[];
@@ -27,7 +28,7 @@ interface CaseResult {
 
 const cases: DynamicFlowEvalCase[] = [
   { id: "dynamic-auto-photosynthesis", topic: "photosynthesis", preferredPattern: "auto" },
-  { id: "dynamic-system-dns", topic: "DNS parsing", preferredPattern: "system_builder", expectedPattern: "system_builder" },
+  { id: "dynamic-system-dns", topic: "DNS parsing", preferredPattern: "system_builder", expectedPattern: "system_builder", expectedTemplateAt: { step: 1, template: "sequence_order" } },
   { id: "dynamic-timeline-industrial", topic: "industrial revolution", preferredPattern: "process_timeline", expectedPattern: "process_timeline" },
   { id: "dynamic-comparison-inflation", topic: "inflation vs deflation", preferredPattern: "comparison", expectedPattern: "comparison" },
   { id: "dynamic-parameter-utility", topic: "marginal utility", preferredPattern: "parameter_explore", expectedPattern: "parameter_explore" },
@@ -69,7 +70,7 @@ async function scoreCase(testCase: DynamicFlowEvalCase): Promise<CaseResult> {
   }
   if (!flow.id.startsWith("custom-")) failures.push(`id ${flow.id} does not start with custom-`);
   if (flow.source !== "generated") failures.push(`flow source is ${flow.source || "missing"}`);
-  if (flow.plays.length !== 3) failures.push(`plays ${flow.plays.length}/3`);
+    if (flow.plays.length !== 4) failures.push("plays " + flow.plays.length + "/4");
   if (!flow.plays.every((play) => play.teaching_trace)) failures.push("missing teaching_trace on generated plays");
   if (!flow.concept.toLowerCase().includes(expectedConcept.toLowerCase())) failures.push(`concept ${flow.concept} is not anchored to ${expectedConcept}`);
   if (!flow.title.toLowerCase().includes(expectedConcept.toLowerCase())) failures.push("title is not anchored to topic");
@@ -90,6 +91,14 @@ async function scoreCase(testCase: DynamicFlowEvalCase): Promise<CaseResult> {
 
   for (const bannedPattern of testCase.bannedPatterns || []) {
     if (patterns.includes(bannedPattern)) failures.push(`contains banned pattern ${bannedPattern}; got ${patterns.join(" -> ")}`);
+  }
+
+  if (testCase.expectedTemplateAt) {
+    const step = flow.plays[testCase.expectedTemplateAt.step];
+    const template = step ? normalizeUISchema(step.schema).template : "missing";
+    if (template !== testCase.expectedTemplateAt.template) {
+      failures.push(`step ${testCase.expectedTemplateAt.step + 1} expected template ${testCase.expectedTemplateAt.template}, got ${template}`);
+    }
   }
 
   if (testCase.expectedPattern && !patterns.includes(testCase.expectedPattern)) {

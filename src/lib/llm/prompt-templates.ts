@@ -31,18 +31,15 @@ export const OUTPUT_FORMAT_RULES = `
 
 export const SCHEMA_REFERENCE = `
 Pattern: probability
-- 适用: 概率、期权、保险、投资组合。
-- Template: card_flip_reveal（默认抽卡卡牌）, spin_wheel（转盘概率，适合强调单次随机结果）。
+- 适用: 概率判断、先验与证据、风险、保险、期权、投资组合。
+- Template: card_flip_reveal（翻开一张结果卡，适合比较不同可能性）, spin_wheel（转一次看随机结果）。
 - Payload: { title, quote?, quote_author?, pool:[{name, flavor_label?, rarity, probability, value}], option_cost, strike_price, pulls_per_try, explanation_map:{win, lose} }
 - Payload 可额外包含 metaphor_trace 调试字段；尽量输出，缺失不影响渲染。
-- 正例: 期权用抽卡锁价券表达有限损失和上涨收益。
-- 视觉指导: pool 项目名要短，rarity/概率/value 应形成明显层级；explanation_map.win/lose 必须分别解释“为什么值得行权”和“为什么只损失期权费”。
-- 命名约束: pool.name 使用“5 星结果 / 4 星结果 / 3 星结果”这类机制等级名；flavor_label 可使用用户熟悉领域里的真实短标签，如“限定角色/强力角色/普通素材”。不要把“纠缠卷、魔法券、神秘道具”等没有解释功能的道具名放进 name。
-- 推荐链正例: 期权后推荐期货、保险。
-- 深度变化: rapid 强调“花小钱买未来选择权”；scenario 强调“到期时是否行权”；mapping 强调“期权费/行权价/标的价格/损益边界”的对应关系。
-- 不要这样: 只写“期权是一种金融工具”，没有可操作动作和结果反馈。
-- 不要这样: pool 少于 3 项，或 probability 总体看不出高/中/低稀有度。
-
+- 命名规则: title 要像学习邀请，例如“先猜猜哪种情况更可能”；pool.name 应是具体假设或结果。非期权、非游戏主题不得出现“抽卡、奖池、期权券、余额、锁定价、收益”等文案；option_cost/strike_price/pulls_per_try 仅为协议兼容字段，不应被当作用户可见的业务概念。
+- 正例: 贝叶斯用“健康 / 感染”两张结果卡比较先验和证据；期权主题才可以使用有限损失与行权边界。
+- 视觉指导: 先突出每种结果的可能性，再让用户翻开结果查看解释；不要用价值、星级或虚构道具掩盖知识关系。
+- 不要这样: 只给概率数字，却不解释新证据为什么会改变判断。
+- 不要这样: pool 少于 3 项，或把任意主题硬套成金融交易或游戏抽卡。
 Pattern: parameter_explore
 - 适用: 参数影响、因果变量、算法复杂度、利率变化。
 - Template: single_slider（默认单变量探索）, dual_slider（两个参数/方案并排比较）。
@@ -117,12 +114,12 @@ Pattern: narrative_branch
 
 Pattern: classification_sort
 - 适用: 分类归因、投资风格、生物分类、逻辑谬误分类、概念边界辨析。
-- Template: category_buckets。
+- Template: category_buckets（内部模板名；用户看到的是逐题点选类别卡）。
 - Payload: { title, categories:[{id, name}], items:[{label, correct_category, explanation}] }
-- 正例: 把价值投资、成长投资、指数投资案例放入不同分类桶。
+- 正例: 逐题展示价值投资、成长投资、指数投资案例，让用户点选最贴切的类别卡。
 - 视觉指导: categories 以 3-4 个为宜；items 以 4-8 个为宜；explanation 要能解释为什么属于该类。
 - 不要这样: correct_category 不匹配 categories 里的 id。
-- 不要这样: items 少于 4 个，或 explanation 没有边界判断。
+- 不要这样: items 少于 4 个，explanation 没有边界判断，或用户可见文案出现“拖入”“拖到”“拖拽”“类别桶”。
 
 Pattern: simulation_play
 - 适用: 复利、供需变化、种群演化、网络效应、滚雪球式反馈。

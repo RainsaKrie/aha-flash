@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { generateDynamicFlow, type DynamicFlowGenerationResult } from "@/lib/content/dynamic-flow-generation";
 import { getFlowById } from "@/lib/content/mock-flows";
 import { generateFlowSteps, isLLMFlowSupported } from "@/lib/content/flow-generation";
-import { PATTERN_LABELS } from "@/lib/content/flow-pattern-options";
 import { normalizeKnowledgeStructure, type KnowledgeStructurePreference } from "@/lib/content/knowledge-blueprint";
 import { checkRateLimit, getRequestRateLimitKey } from "@/lib/harness/rate-limit";
 import { SCHEMA_CATALOG, type PatternType } from "@/types/schema";
@@ -40,24 +39,13 @@ const STRUCTURE_LABELS: Record<string, string> = {
   unclassified: "待确认结构",
 };
 
-function compactUnique(values: Array<unknown>, limit: number) {
-  const seen = new Set<string>();
-  const result: string[] = [];
-  for (const value of values) {
-    if (typeof value !== "string") continue;
-    const text = value.trim();
-    const key = text.toLowerCase();
-    if (!text || seen.has(key)) continue;
-    seen.add(key);
-    result.push(text.slice(0, 20));
-    if (result.length >= limit) break;
-  }
-  return result;
-}
+const PREVIEW_STAGE_FALLBACKS = ["先看清关键条件", "动手验证关键变化", "把结果连回概念"];
 
-function patternLabel(value: unknown) {
-  if (typeof value === "string" && value in PATTERN_LABELS) return PATTERN_LABELS[value as keyof typeof PATTERN_LABELS];
-  return typeof value === "string" && value.trim() ? value : "互动组件";
+function makePreviewStepLabel(title: unknown, topic: string, index: number) {
+  const value = typeof title === "string" ? title.trim() : "";
+  const fallback = PREVIEW_STAGE_FALLBACKS[index] || "开始这一关";
+  if (value) return value;
+  return `${topic}：${fallback}`;
 }
 
 function makeFlowPreview(result: DynamicFlowGenerationResult) {
@@ -66,32 +54,18 @@ function makeFlowPreview(result: DynamicFlowGenerationResult) {
   const flow = result.flow;
   const structureKey = blueprint?.structure_type || plan?.knowledge_structure || "";
   const structure = STRUCTURE_LABELS[structureKey] || structureKey || "AI 推荐";
-  const terms = compactUnique([...(blueprint?.core_terms || []), ...(plan?.grounding_terms || []), ...flow.concepts], 5);
-  const blueprintSteps = blueprint?.teaching_sequence?.slice(0, 3).map((step, index) => ({
-    label: step.goal,
-    pattern: patternLabel(step.recommended_pattern),
-    terms: compactUnique(step.must_explain || [], 3),
-    title: flow.plays[index]?.title,
-  })) || [];
-  const steps = blueprintSteps.length > 0
-    ? blueprintSteps
-    : flow.plays.slice(0, 3).map((play) => ({
-        label: play.teaching_trace?.blueprint_step_goal || play.title,
-        pattern: patternLabel(play.schema.pattern),
-        terms: compactUnique(play.teaching_trace?.covered_terms || [], 3),
-        title: play.title,
-      }));
+  const topic = flow.concept || plan?.topic || blueprint?.topic || flow.title;
 
   return {
-    topic: flow.concept || plan?.topic || blueprint?.topic || flow.title,
+    topic,
     structure,
-    terms,
-    steps,
+    steps: flow.plays.slice(0, 4).map((play, index) => ({
+      label: makePreviewStepLabel(play.title, topic, index),
+    })),
     gate: result.quality_gate?.ok === false ? "warn" : "pass",
     source: result.source,
   };
 }
-
 function makeDynamicFlowPayload(result: DynamicFlowGenerationResult, exposeDebug: boolean) {
   return {
     flow: result.flow,

@@ -43,8 +43,8 @@ export function DualSliderExplorer({
   return (
     <section className="grid h-full min-h-[520px] grid-rows-[auto_1fr_auto] gap-6 p-5">
       <header className="border-b border-[var(--line)] pb-4">
-        <p className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-[var(--accent)]">
-          <SlidersHorizontal size={15} /> dual slider
+        <p className="flex items-center gap-2 text-xs font-semibold text-[var(--accent)]">
+          <SlidersHorizontal size={15} /> 左右比一比
         </p>
         <h2 className="mt-1 text-2xl font-semibold">{config.title}</h2>
       </header>

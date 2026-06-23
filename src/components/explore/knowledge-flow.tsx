@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, CheckCircle2, GitBranch, Home, Loader2, RotateCcw, Sparkles, X } from "lucide-react";
@@ -39,6 +39,7 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
   const isCompleted = completedIds.includes(activePlay.id);
   const hasTouchedStage = isCompleted || touchedPlayIds.includes(activePlay.id);
   const hasNext = activeIndex < flow.plays.length - 1;
+  const requiresInternalCompletion = normalized.pattern === "knowledge_check" || normalized.pattern === "classification_sort" || normalized.template === "sequence_order";
   const progress = Math.round(((activeIndex + (isCompleted ? 1 : 0)) / flow.plays.length) * 100);
   const showBranches = isCompleted && !hasNext;
   const debugGate =
@@ -236,10 +237,15 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
         </SpiritHint>
 
         <div className="v5-flow-actionbar__buttons">
-          {!isCompleted && (
+          {!isCompleted && !requiresInternalCompletion && (
             <button type="button" className="v5-flow-main-action" disabled={!hasTouchedStage} onClick={() => markComplete()}>
               <CheckCircle2 size={18} /> {hasTouchedStage ? "检查这一关" : "先互动一下"}
             </button>
+          )}
+          {!isCompleted && requiresInternalCompletion && (
+            <span className="v5-flow-actionbar__hint">
+              {hasTouchedStage ? "先看完卡片内反馈，再继续。" : "先在卡片内完成互动。"}
+            </span>
           )}
           {isCompleted && hasNext && (
             <button type="button" className="v5-flow-main-action" onClick={goNext}>

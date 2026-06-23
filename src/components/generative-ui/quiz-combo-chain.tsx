@@ -36,7 +36,7 @@ export function QuizComboChain({
     >
       <div className="grid content-center gap-6">
         <Panel className="p-5">
-          <div className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">combo</div>
+          <div className="text-xs font-semibold text-[var(--muted)]">连续答对</div>
           <div key={combo} className="animate-value-pop mt-2 text-3xl font-bold text-[var(--accent)]">{combo}</div>
         </Panel>
         <h3 className="text-base font-medium leading-relaxed">{config.question}</h3>
