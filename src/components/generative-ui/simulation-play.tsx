@@ -40,15 +40,20 @@ export function SimulationPlay({
   const currentValue = series[Math.min(step, series.length - 1)];
   const finalValue = series[maxSteps];
   const peak = Math.max(...series, 1);
+  const isSunkCostLesson = /(sunk cost|沉没成本)/i.test(`${config.title} ${config.compute_formula_description}`);
+  const learnerTitle = isSunkCostLesson ? "现在还值得继续吗？" : config.title;
+  const learnerDescription = isSunkCostLesson
+    ? "已经花出去的钱不会回来；现在只比较继续投入后还能得到什么，以及还要付出什么。"
+    : config.compute_formula_description;
   const hasEnoughParams = config.params.length >= 2;
   const valueUnit = compoundState ? config.params.find((param) => /本金|principal|initial\s*(principal|capital)/i.test(param.label))?.unit || "" : "";
-  const currentLabel = compoundState ? `第 ${step} 期终值` : `第 ${step} 步趋势指数`;
+  const currentLabel = compoundState ? `第 ${step} 期终值` : "当前推演";
   const formulaLine = compoundState
     ? `终值 = 本金 × (1 + 年利率)^期数`
-    : "趋势指数由参数相对位置生成，只用于观察方向，不是现实数值预测。";
+    : "这组参数需要明确的计算规则，才能得出可验证的数值结果。";
   const currentFormula = compoundState
     ? `${formatInteractiveNumber(compoundState.principal)} × (1 + ${compoundState.rateUnit === "decimal" ? compoundState.annualRate : `${compoundState.annualRate}%`})^${step} = ${formatInteractiveNumber(currentValue)}${valueUnit}`
-    : "未提供可验证公式，因此不把指数解释为真实结果。";
+    : learnerDescription;
 
   useEffect(() => {
     if (!playing) return;
@@ -84,19 +89,14 @@ export function SimulationPlay({
     <ComponentFrame
       icon={Activity}
       label="simulation play"
-      title={config.title}
+      title={learnerTitle}
       depth={config.depth}
-      description={config.compute_formula_description}
+      description={learnerDescription}
       footer={
         <FeedbackPanel tone={step >= maxSteps ? "success" : playing ? "warning" : "neutral"}>
-          <div className="grid gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <span>{step >= maxSteps ? "模拟完成，回看参数如何改变结果。" : "逐步推进，观察参数如何改变结果。"}</span>
-              <strong key={step} className="animate-value-pop text-3xl font-bold text-[var(--accent)]">
-                {step} / {maxSteps}
-              </strong>
-            </div>
-            <ProgressMeter value={step} total={maxSteps} />
+          <div className="grid gap-3">
+            <span>{step >= maxSteps ? "推演完成。回看每个条件怎样改变了结果。" : "先调整条件，再观察结果怎样变化。"}</span>
+            <ProgressMeter label="推进进度" value={step} total={maxSteps} />
           </div>
         </FeedbackPanel>
       }
@@ -133,11 +133,11 @@ export function SimulationPlay({
               <div className="flex items-end justify-between gap-4">
                 <div>
                   <div className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">{currentLabel}</div>
-                  <div key={currentValue} className="mt-2 animate-value-pop text-3xl font-bold text-[var(--accent)]">
-                    {formatInteractiveNumber(currentValue)}{valueUnit}
+                  <div key={compoundState ? currentValue : step} className="mt-2 animate-value-pop text-3xl font-bold text-[var(--accent)]">
+                    {compoundState ? `${formatInteractiveNumber(currentValue)}${valueUnit}` : `第 ${step + 1} 步`}
                   </div>
                 </div>
-                <div className="text-right text-sm text-[var(--muted)]">{compoundState ? `共 ${maxSteps} 期` : "示意基准 100"}</div>
+                <div className="text-right text-sm text-[var(--muted)]">{compoundState ? `共 ${maxSteps} 期` : "观察条件变化"}</div>
               </div>
               <div className="flex h-40 items-end gap-2">
                 {series.map((item, index) => (
@@ -145,7 +145,7 @@ export function SimulationPlay({
                     key={index}
                     className={`min-w-0 flex-1 rounded-t-lg ${index <= step ? "bg-[var(--accent)]" : "bg-[var(--pattern-raised)]"}`}
                     style={{ height: `${Math.max(8, (item / peak) * 100)}%` }}
-                    title={`${compoundState ? `第 ${index} 期终值` : `第 ${index} 步趋势指数`}: ${formatInteractiveNumber(item)}${valueUnit}`}
+                    title={compoundState ? `第 ${index} 期终值: ${formatInteractiveNumber(item)}${valueUnit}` : `第 ${index} 步`}
                   />
                 ))}
               </div>

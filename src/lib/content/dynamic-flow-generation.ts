@@ -928,12 +928,8 @@ function attachBlueprintStepCue(play: KnowledgePlay, step?: BlueprintStep, groun
   const teaching_trace = makeTeachingTrace(step, groundingTerms);
   if (!teaching_trace || !step) return play;
 
-  const visibleTerms = Array.from(new Set([...step.must_explain.slice(0, 2), ...groundingTerms.slice(0, 2)])).join("、");
-  const reward_copy = visibleTerms
-    ? `${play.reward_copy} 这一关会用到：${visibleTerms}。`
-    : play.reward_copy;
-
-  return { ...play, reward_copy, teaching_trace };
+  // Blueprint terms remain in the internal trace. Do not surface raw taxonomy tokens in learner-facing reward copy.
+  return { ...play, teaching_trace };
 }
 function makeFallbackFlowFromPlan(
   plan: ConceptPlan,
@@ -1090,8 +1086,12 @@ function buildVisibleStepCoverageBlock(blueprint?: KnowledgeBlueprint) {
 }
 
 function buildStructureSpecificPromptRules(blueprint?: KnowledgeBlueprint) {
-  if (!blueprint || blueprint.structure_type !== "causal_mechanism") return "";
-  return "Causal mechanism rule: the final simulation_play step must make the outcome/result/feedback visible in payload.title, compute_formula_description, output labels, result copy, or explanation text; do not leave outcome only implied by a chart.";
+  if (!blueprint) return "";
+  if (/(sunk cost|沉没成本)/i.test(blueprint.topic)) {
+    return "Sunk-cost rule: separate unrecoverable past cost from the next cost and next benefit. Use a concrete choice scenario and comparison, not a trend simulation or a promise of recovering prior spending. Learner-facing Chinese must say what the learner should compare now; do not expose internal labels such as 入口, 决策链, factor, or effect.";
+  }
+  if (blueprint.structure_type !== "causal_mechanism") return "";
+  return "Causal mechanism rule: make the outcome and feedback visible in the learner-facing scenario; do not leave the consequence implied by a chart.";
 }
 
 function buildFlowUserPrompt(
@@ -1796,7 +1796,7 @@ function normalizeGeneratedFlow(
       concept: cleanText(record.concept, topic, 28),
       schema,
       estimated_minutes: typeof record.estimated_minutes === "number" ? Math.max(1, Math.min(3, Math.round(record.estimated_minutes))) : 1,
-      reward_copy: cleanText(record.reward_copy, fallback.plays[index]?.reward_copy || "Nice, this step is clearer.", 48),
+      reward_copy: cleanText(record.reward_copy, fallback.plays[index]?.reward_copy || "这一关已经走通了。", 48),
     } satisfies KnowledgePlay;
     return attachBlueprintStepCue(play, blueprint?.teaching_sequence[index], blueprint?.core_terms || groundingTerms);
   });
@@ -1905,7 +1905,7 @@ function buildDynamicSystemPrompt(
     "- Do not invent payload field names. Use only the required fields listed above for the selected pattern/template.",
     "- Prefer default templates from FLOW_SCHEMA_PAYLOAD_GUIDE: parameter_explore uses single_slider; knowledge_check uses single_question; system_builder uses module_sandbox. Use sequence_order when the instruction asks the learner to sort or arrange a process.",
     "- visual_asset.mood must be one of: idle, loading, success, error, reward. Use idle for generated steps unless the step is explicitly a result or reward state.",
-    "- simulation_play.params must contain at least 2 parameter objects. outputs[].model must be one of linear, quadratic, exponential, inverse, logarithmic.",
+    "- simulation_play is only for a topic with a concrete calculation rule or a discrete state-transition rule. Do not use it for decision biases such as 沉没成本; use comparison and narrative choices instead. Never show a made-up trend index as if it were a teaching result.",
   ].filter(Boolean).join("\n");
 }
 

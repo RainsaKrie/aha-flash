@@ -124,7 +124,7 @@ const HINTS: Record<KnowledgeStructureType, string[]> = {
   system_process: ["dns", "http request", "kubernetes", "operator", "agent", "compiler", "oauth", "message queue", "workflow", "\u89e3\u6790", "\u8c03\u5ea6", "\u7f16\u8bd1\u5668", "\u6d41\u7a0b", "\u7cfb\u7edf", "http request", "tcp handshake", "ci/cd", "pipeline", "payment checkout", "database replication"],
   probabilistic_reasoning: ["bayes", "probability", "distribution", "expected value", "risk", "sampling", "monte carlo", "a/b testing", "ab testing", "\u8d1d\u53f6\u65af", "\u6982\u7387", "\u671f\u671b\u503c", "\u5206\u5e03", "\u98ce\u9669", "\u62bd\u6837", "hypothesis testing", "confidence interval", "markov chain", "risk assessment", "random sampling"],
   historical_change: ["industrial revolution", "cold war", "urbanization", "history", "revolution", "\u5de5\u4e1a\u9769\u547d", "\u519c\u4e1a\u9769\u547d", "\u51b7\u6218", "\u57ce\u5e02\u5316", "\u53d8\u8fc1", "\u5386\u53f2", "renaissance", "meiji restoration", "internet evolution", "electrification", "reform and opening-up"],
-  comparison_frame: [" vs ", " versus ", "difference", "compare", "tcp udp", "inflation deflation", "\u533a\u522b", "\u5bf9\u6bd4", "\u76f8\u6bd4", "\u901a\u80c0", "\u901a\u7f29", "\u80a1\u7968", "\u671f\u6743", "sql nosql", "supervised unsupervised", "cpu gpu", "renewable fossil", "renting buying"],
+  comparison_frame: [" vs ", " versus ", "difference", "compare", "tcp udp", "inflation deflation", "\u533a\u522b", "\u5bf9\u6bd4", "\u76f8\u6bd4", "\u901a\u80c0", "\u901a\u7f29", "\u80a1\u7968", "\u671f\u6743", "sql nosql", "supervised unsupervised", "cpu gpu", "renewable fossil", "renting buying", "sunk cost", "沉没成本", "沉没成本谬误"],
   classification_rule: ["classification", "taxonomy", "category", "legal liability", "biological taxonomy", "email sorting", "sort", "\u5206\u7c7b", "\u5783\u573e\u5206\u7c7b", "\u7c7b\u578b", "\u5f52\u7c7b", "bloom taxonomy", "rock types", "design pattern types", "http status", "customer segmentation"],
   causal_mechanism: ["compound interest", "network effect", "supply demand", "supply and demand", "incentive", "dopamine", "\u590d\u5229", "\u4f9b\u9700", "\u56e0\u679c", "\u673a\u5236", "\u7f51\u7edc\u6548\u5e94", "\u6fc0\u52b1", "inflation spiral", "greenhouse effect", "habit formation", "viral spread", "price elasticity"],
   procedure_algorithm: ["binary search", "gradient descent", "a star", "astar", "dijkstra", "merge sort", "breadth first search", "sorting algorithm", "algorithm", "\u4e8c\u5206\u67e5\u627e", "\u68af\u5ea6\u4e0b\u964d", "\u5355\u7eaf\u5f62\u6cd5", "\u6392\u5e8f\u7b97\u6cd5", "\u7b97\u6cd5", "a* search", "quicksort", "dynamic programming", "topological sort", "backpropagation"],
@@ -329,7 +329,7 @@ export function buildKnowledgeBlueprint(
       confidence: 0.2,
     };
   }
-  const steps = makeSteps(structure);
+  const steps = skeleton?.teaching_sequence || makeSteps(structure);
   const coreTerms = unique([...(skeleton?.required_core_terms || []), ...topicCoreTerms(plan.topic), ...grounding, ...steps.flatMap((step) => step.must_explain)]).slice(0, 14);
   const avoidPatterns = protectBlueprintAvoidPatterns(structure, Array.from(new Set([...(plan.avoid_patterns || []), ...(skeleton?.unsuitable_patterns || [])])));
   const draft: KnowledgeBlueprint = {
@@ -340,7 +340,7 @@ export function buildKnowledgeBlueprint(
     core_terms: coreTerms,
     misconceptions: skeleton?.common_misconceptions || [],
     teaching_sequence: steps,
-    pattern_strategy: STRATEGY[structure],
+    pattern_strategy: skeleton?.pattern_strategy || STRATEGY[structure],
     avoid_patterns: avoidPatterns,
     failure_risks: skeleton?.forbidden_framings || [],
     confidence: Math.min(0.96, 0.72 + Math.min(grounding.length, 5) * 0.04 + (plan.recommended_patterns?.length ? 0.04 : 0) + (skeleton ? 0.04 : 0)),

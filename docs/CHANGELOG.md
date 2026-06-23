@@ -6,6 +6,11 @@
 
 
 ## 2026-06-23
+### 沉没成本专属教学链
+- 新增 `aha-decision-sunk-cost` Knowledge Skill：将“沉没成本”固定为“情境判断 -> 未来成本/收益比较 -> 分类归位 -> 小测验证”四步，不再借用数值模拟、趋势图或抽卡隐喻。
+- QualityGate 将 `simulation_play` 视为该 Skill 的硬性违规；即使模型误选，也会在生成阶段按 Blueprint Pattern 链归正，不能进入学习页面。
+- Flow 底部引导改为按已完成的互动类型生成自然语言提示；Blueprint 术语和内部 grounding terms 不再混入用户可见文案。
+- `simulation_play` 收敛为单一“推进进度”反馈，移除了重复的步数显示；本次真实 LLM 生成“沉没成本”通过 4/4 教学轨迹、可见术语、动作契约和模板可用性检查。
 
 ### Classification completion and progress correctness
 - Reworked `classification_sort/category_buckets` into its actual learner interaction: one item at a time, then click a category card. Public copy no longer claims drag-and-drop or exposes the internal “bucket” name.

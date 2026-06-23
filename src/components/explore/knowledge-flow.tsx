@@ -12,6 +12,22 @@ import { getVisualAsset } from "@/lib/content/visual-assets";
 import { recordCompletedFlow, writeFlowDraft, type FlowDraftDebug } from "@/lib/utils/storage";
 import { normalizeUISchema, type InteractionEvent } from "@/types/schema";
 
+const completionHints: Record<string, string> = {
+  probability: "你已经把自己的判断和出现的结果放在一起看过了。",
+  parameter_explore: "你刚才改了一个条件，也看见它会怎样影响后面的结果。",
+  concept_memory: "你已经把容易混淆的几个概念分开了。",
+  process_timeline: "你已经沿着这条路径走完了一遍。",
+  comparison: "把两边放在同一个问题里看，差别就更清楚了。",
+  knowledge_check: "你已经用自己的判断验证了这一关。",
+  system_builder: "你已经把关键环节连起来了。",
+  narrative_branch: "过去已经付出的成本不会回来，下一步要看未来还值不值得。",
+  classification_sort: "每张卡都按同一条标准分清楚了。",
+  simulation_play: "你已经走完整个推演，可以回头看看是哪一个条件改变了结果。",
+};
+
+function completionHint(pattern: string) {
+  return completionHints[pattern] || "你已经完成这一关，可以带着刚才的判断继续往下走。";
+}
 interface FlowApiResponse {
   flow: KnowledgeFlow;
   source: "llm" | "mock";
@@ -166,11 +182,6 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
               <p>这个节点已点亮</p>
               <h2>现在往哪里走？</h2>
               <strong>{flow.summary}</strong>
-              <div className="v5-flow-summary__chips">
-                {flow.concepts.map((concept) => (
-                  <span key={concept}>{concept}</span>
-                ))}
-              </div>
               <div className="v5-flow-branches" aria-label="下一步知识分支">
                 {followUps.map((topic) => {
                   const content = (
@@ -230,7 +241,7 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
           {showBranches
             ? "选一个分支继续走；只有想换领域时，再回首页。"
             : isCompleted
-              ? activePlay.reward_copy
+              ? completionHint(normalized.pattern)
               : hasTouchedStage
                 ? "准备好了就检查这一关。"
                 : "先和中间的卡片互动一下，再看反馈。"}

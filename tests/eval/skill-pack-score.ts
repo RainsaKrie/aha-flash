@@ -1,4 +1,4 @@
-﻿import fs from "node:fs";
+import fs from "node:fs";
 import path from "node:path";
 import { formatKnowledgeSkillContract, KNOWLEDGE_SKILL_PACKS } from "../../src/lib/content/skill-packs.ts";
 
@@ -7,10 +7,15 @@ interface BlueprintCase {
   topic: string;
   expectedStructure: string;
   expectedPatterns: string[];
+  skill_id?: string;
 }
 
 function slug(structureType: string) {
   return "aha-" + structureType.replaceAll("_", "-");
+}
+
+function skillNameFor(pack: (typeof KNOWLEDGE_SKILL_PACKS)[number]) {
+  return pack.skill_directory || slug(pack.structure_type);
 }
 
 function readJson<T>(filePath: string): T {
@@ -40,7 +45,7 @@ function fail(message: string) {
 }
 
 for (const pack of KNOWLEDGE_SKILL_PACKS) {
-  const skillName = slug(pack.structure_type);
+  const skillName = skillNameFor(pack);
   const skillDir = path.join(skillRoot, skillName);
   const skillPath = path.join(skillDir, "SKILL.md");
   const evalPath = path.join(skillDir, "evals", "evals.json");
@@ -99,7 +104,7 @@ for (const pack of KNOWLEDGE_SKILL_PACKS) {
   }>(evalPath);
   if (evals.skill_name !== skillName) fail(skillName + ": eval skill_name mismatch");
 
-  const expectedCases = cases.filter((item) => item.expectedStructure === pack.structure_type);
+  const expectedCases = cases.filter((item) => item.skill_id ? item.skill_id === pack.id : item.expectedStructure === pack.structure_type && !pack.skill_directory);
   if (evals.evals.length !== expectedCases.length) {
     fail(skillName + ": expected " + expectedCases.length + " evals, got " + evals.evals.length);
   }
@@ -119,7 +124,7 @@ for (const pack of KNOWLEDGE_SKILL_PACKS) {
   console.log(skillName + ": pass (" + expectedCases.length + " evals)");
 }
 
-const expectedSkillNames = new Set(KNOWLEDGE_SKILL_PACKS.map((pack) => slug(pack.structure_type)));
+const expectedSkillNames = new Set(KNOWLEDGE_SKILL_PACKS.map((pack) => skillNameFor(pack)));
 if (fs.existsSync(skillRoot)) {
   for (const entry of fs.readdirSync(skillRoot, { withFileTypes: true })) {
     if (entry.isDirectory() && !expectedSkillNames.has(entry.name)) fail("unexpected skill directory: " + entry.name);

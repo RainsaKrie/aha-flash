@@ -1,4 +1,4 @@
-import type { KnowledgeStructureType } from "./knowledge-blueprint.ts";
+import type { BlueprintStep, KnowledgeStructureType } from "./knowledge-blueprint.ts";
 import type { PatternType } from "../../types/schema.ts";
 
 export interface KnowledgeSkeleton {
@@ -12,6 +12,9 @@ export interface KnowledgeSkeleton {
   suitable_patterns: PatternType[];
   unsuitable_patterns: PatternType[];
   canonical_examples: string[];
+  pattern_strategy?: PatternType[];
+  teaching_sequence?: BlueprintStep[];
+  skill_directory?: string;
 }
 
 export const KNOWLEDGE_SKILL_PACKS: KnowledgeSkeleton[] = [
@@ -86,6 +89,50 @@ export const KNOWLEDGE_SKILL_PACKS: KnowledgeSkeleton[] = [
     suitable_patterns: ["classification_sort", "knowledge_check", "concept_memory"],
     unsuitable_patterns: ["probability"],
     canonical_examples: ["trash sorting", "legal liability", "email classification"],
+  },
+  {
+    id: "decision-sunk-cost",
+    skill_directory: "aha-decision-sunk-cost",
+    structure_type: "comparison_frame",
+    hints: ["sunk cost", "sunk-cost", "沉没成本", "沉没成本谬误"],
+    required_core_terms: ["沉没成本", "已投入成本", "继续投入", "未来收益", "机会成本"],
+    required_teaching_steps: ["separate past cost", "compare future value and future cost", "choose by next outcome", "check decision rule"],
+    common_misconceptions: ["为了回本而继续投入", "把已经花掉的钱算进现在是否继续的比较"],
+    forbidden_framings: ["继续投入一定能回本", "把沉没成本当作未来收益", "趋势指数", "示意基准", "沉没成本入口", "沉没成本决策链", "factor", "effect"],
+    suitable_patterns: ["narrative_branch", "comparison", "classification_sort", "knowledge_check"],
+    unsuitable_patterns: ["simulation_play", "probability", "system_builder"],
+    canonical_examples: ["电影看了一半是否继续", "亏损项目是否追加预算", "排队太久是否继续等待"],
+    pattern_strategy: ["narrative_branch", "comparison", "classification_sort", "knowledge_check"],
+    teaching_sequence: [
+      {
+        goal: "notice the sunk cost pull",
+        must_explain: ["沉没成本", "已投入成本", "未来选择"],
+        user_action: "choose",
+        recommended_pattern: "narrative_branch",
+        success_criteria: "user can say that past spending cannot be recovered",
+      },
+      {
+        goal: "compare future value and future cost",
+        must_explain: ["继续投入", "未来收益", "机会成本"],
+        user_action: "compare",
+        recommended_pattern: "comparison",
+        success_criteria: "user compares only the next cost and next return",
+      },
+      {
+        goal: "separate past cost from future judgment",
+        must_explain: ["沉没成本", "已投入成本", "未来收益", "机会成本"],
+        user_action: "sort",
+        recommended_pattern: "classification_sort",
+        success_criteria: "user separates irrecoverable past cost from reasons that matter now",
+      },
+      {
+        goal: "check the decision rule",
+        must_explain: ["沉没成本", "未来收益", "机会成本"],
+        user_action: "choose",
+        recommended_pattern: "knowledge_check",
+        success_criteria: "user can apply the rule to a new situation",
+      },
+    ],
   },
   {
     id: "causal-compound-interest",

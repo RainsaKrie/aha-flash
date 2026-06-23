@@ -799,4 +799,17 @@
       "knowledge_check"
     ]
   }
+,
+  {
+    "id": "blueprint-decision-sunk-cost",
+    "topic": "沉没成本",
+    "expectedStructure": "comparison_frame",
+    "expectedPatterns": [
+      "narrative_branch",
+      "comparison",
+      "classification_sort",
+      "knowledge_check"
+    ],
+    "skill_id": "decision-sunk-cost"
+  }
 ]
