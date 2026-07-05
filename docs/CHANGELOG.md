@@ -4,6 +4,10 @@
 
 ---
 ## 2026-07-05
+### MVP QualityGate step grounding
+- Tightened step-level visible grounding in knowledge-blueprint.ts: every Blueprint step must now show both a topic/core anchor and a step-specific must_explain term in that step's own learner-facing content.
+- This prevents a generic card from passing QualityGate only because the whole Flow mentions the topic somewhere else.
+- Verified with 	ypecheck, uild, eval:score, eval:flow, eval:flow-dynamic, eval:blueprint, eval:teaching, and eval:math.
 ### V6 visible grounding closeout
 - Fixed learner-facing cue selection in dynamic Flow generation: visible titles/descriptions now prefer concrete ConceptPlan / Blueprint terms over internal teaching-action words such as condition, result, intervention, input, or output.
 - Rewrote the visible cue fallback in `dynamic-flow-generation.ts` with ASCII-safe source strings, fixing a Windows encoding regression that had corrupted fallback copy and the title cue template.

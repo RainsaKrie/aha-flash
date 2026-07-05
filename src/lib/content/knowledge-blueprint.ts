@@ -535,11 +535,12 @@ function getInteractionActionFailure(play: KnowledgeFlow["plays"][number], step:
   return null;
 }
 
-function hasStepTermCoverage(text: string, _step: BlueprintStep, blueprint: KnowledgeBlueprint) {
+function hasStepTermCoverage(text: string, step: BlueprintStep, blueprint: KnowledgeBlueprint) {
   const groundingHits = termHits(text, blueprint.core_terms);
+  const stepHits = termHits(text, step.must_explain);
   return {
-    ok: groundingHits.length > 0,
-    step_hits: [] as string[],
+    ok: groundingHits.length > 0 && stepHits.length > 0,
+    step_hits: stepHits,
     grounding_hits: groundingHits,
   };
 }
