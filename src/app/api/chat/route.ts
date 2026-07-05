@@ -294,7 +294,7 @@ async function generateSchemaWithLLM({
       model,
       system,
       messages: [{ role: "user", content: userContent }],
-    });
+    }, { jsonOutput: true, jsonName: "ui_schema" });
 
     const firstSchema = extractSchemaFromText(first.text);
     if (schemaMatchesIntent(firstSchema, intent)) return { schema: firstSchema };
@@ -321,7 +321,7 @@ async function generateSchemaWithLLM({
           ].join("\n"),
         },
       ],
-    });
+    }, { jsonOutput: true, jsonName: "ui_schema" });
 
     const repairedSchema = extractSchemaFromText(repair.text);
     if (schemaMatchesIntent(repairedSchema, intent)) return { schema: repairedSchema };

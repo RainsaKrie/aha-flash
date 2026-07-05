@@ -1,4 +1,4 @@
-import fs from "node:fs";
+﻿import fs from "node:fs";
 import path from "node:path";
 import { generateDynamicFlow, type DynamicFlowGenerationStage, type RepairAction, type RepairActionTag } from "../../src/lib/content/dynamic-flow-generation.ts";
 import type { FlowPatternPreference } from "../../src/lib/content/flow-pattern-options.ts";
@@ -40,14 +40,14 @@ interface RunResult {
 }
 
 const cases: LiveFlowEvalCase[] = [
-  { id: "live-optimization-linear-programming", topic: "linear programming", preferredPattern: "auto", expectedStructure: "optimization_model", expectedPatterns: ["system_builder", "parameter_explore", "simulation_play"] },
-  { id: "live-system-dns", topic: "DNS resolution", preferredPattern: "auto", expectedStructure: "system_process", expectedPatterns: ["system_builder", "process_timeline", "knowledge_check"] },
-  { id: "live-probability-bayes", topic: "Bayes theorem", preferredPattern: "auto", expectedStructure: "probabilistic_reasoning", expectedPatterns: ["probability", "parameter_explore", "knowledge_check"] },
+  { id: "live-optimization-linear-programming", topic: "linear programming", preferredPattern: "auto", expectedStructure: "optimization_model", expectedPatterns: ["system_builder", "parameter_explore", "comparison", "knowledge_check"] },
+  { id: "live-system-dns", topic: "DNS resolution", preferredPattern: "auto", expectedStructure: "system_process", expectedPatterns: ["system_builder", "process_timeline", "classification_sort", "knowledge_check"] },
+  { id: "live-probability-bayes", topic: "Bayes theorem", preferredPattern: "auto", expectedStructure: "probabilistic_reasoning", expectedPatterns: ["probability", "parameter_explore", "concept_memory", "knowledge_check"] },
   { id: "live-history-industrial-revolution", topic: "industrial revolution", preferredPattern: "auto", expectedStructure: "historical_change", expectedPatterns: ["process_timeline", "classification_sort", "narrative_branch"] },
-  { id: "live-comparison-inflation-deflation", topic: "inflation vs deflation", preferredPattern: "auto", expectedStructure: "comparison_frame", expectedPatterns: ["comparison", "classification_sort", "knowledge_check"] },
-  { id: "live-classification-waste-sorting", topic: "waste classification", preferredPattern: "auto", expectedStructure: "classification_rule", expectedPatterns: ["classification_sort", "knowledge_check", "concept_memory"] },
-  { id: "live-causal-compound-interest", topic: "compound interest", preferredPattern: "auto", expectedStructure: "causal_mechanism", expectedPatterns: ["system_builder", "parameter_explore", "simulation_play"] },
-  { id: "live-procedure-binary-search", topic: "binary search algorithm", preferredPattern: "auto", expectedStructure: "procedure_algorithm", expectedPatterns: ["process_timeline", "simulation_play", "knowledge_check"] },
+  { id: "live-comparison-inflation-deflation", topic: "inflation vs deflation", preferredPattern: "auto", expectedStructure: "comparison_frame", expectedPatterns: ["narrative_branch", "comparison", "classification_sort", "knowledge_check"] },
+  { id: "live-classification-waste-sorting", topic: "waste classification", preferredPattern: "auto", expectedStructure: "classification_rule", expectedPatterns: ["classification_sort", "knowledge_check", "concept_memory", "narrative_branch"] },
+  { id: "live-causal-compound-interest", topic: "compound interest", preferredPattern: "auto", expectedStructure: "causal_mechanism", expectedPatterns: ["system_builder", "parameter_explore", "narrative_branch", "knowledge_check"] },
+  { id: "live-procedure-binary-search", topic: "binary search algorithm", preferredPattern: "auto", expectedStructure: "procedure_algorithm", expectedPatterns: ["process_timeline", "classification_sort", "concept_memory", "knowledge_check"] },
 ];
 
 function getArg(name: string, fallback: string) {

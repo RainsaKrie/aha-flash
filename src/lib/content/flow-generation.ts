@@ -655,7 +655,7 @@ export async function generateFlowSteps(flowId = BAYES_FLOW_ID, { includeRaw = f
       model,
       system: buildSystemPrompt(spec),
       messages: [{ role: "user", content: spec.userPrompt }],
-    });
+    }, { jsonOutput: true, jsonName: "knowledge_flow" });
     const parsed = parseFlowJson(result.text);
     const normalized = normalizeGeneratedFlow(parsed, spec);
 

@@ -1,94 +1,47 @@
 ---
 name: aha-classification-rule
-description: Use this skill when generating, reviewing, or improving Aha Flash learning flows for classification_rule topics such as HTTP status codes, Bloom taxonomy, rock types, customer segmentation, design pattern types. It defines the teaching contract, Pattern recipe, common failure modes, and deterministic quality checks for this knowledge structure.
+description: Use this skill when generating, reviewing, or improving Aha Flash learning flows with classification_rule. It defines a reusable four-step teaching contract, Pattern capability boundary, failure modes, and deterministic checks without carrying a prewritten lesson.
 ---
 
-# Aha Skill: Classification Rule
-
-## Purpose
-
-Use this skill to generate or review a three-step Aha Flash Flow for `classification_rule` topics. Teach concepts where the learner must sort examples by explicit rules, categories, anchors, and boundary cases.
-
-Do not treat this skill as prebuilt lesson content. Treat it as a compact teaching contract that guides Blueprint creation, Pattern selection, and QualityGate checks.
-
-## Trigger Cues
-
-Use this skill when the topic resembles any of these cues:
-
-- classification
-- taxonomy
-- waste sorting
-- legal liability
-- 分类
-- 归类
-- 垃圾分类
-- 责任类型
-- biological taxonomy
-- email sorting
-- bloom taxonomy
-- rock types
-- design pattern types
-- http status codes
-- customer segmentation
-
-## Teaching Contract
+# Aha Structure Skill: Classification Rule
 
 Structure type: `classification_rule`
 
-Required core terms or acceptable anchors:
+## Teaching Contract
 
-- rule
-- category
-- boundary case
-- anchor example
-- 规则
-- 类别
-- 边界样本
-- 典型样本
+- state a sorting rule
+- classify examples
+- test a boundary case
+- apply the rule again
 
-Required teaching steps:
+## Pattern Capability
 
-1. define categories by rule
-2. sort examples
-3. test boundary cases
-4. remember anchors
+Prefer:
+- `classification_sort`
+- `knowledge_check`
+- `concept_memory`
+- `narrative_branch`
 
-Common misconceptions to avoid:
+Avoid:
+- `probability`
 
-- category names are enough without rules
-- borderline examples can be guessed by feeling
+## Guardrails
 
-Forbidden framings:
+Correct these common misconceptions:
+- a category name is a rule
+- borderline cases can be guessed by feel
 
+Do not frame the lesson as:
 - guess by name only
-- 只看名称
+- claim drag-and-drop when the UI uses category choices
 
-## Pattern Recipe
+## Boundary
 
-Preferred Pattern chain: `classification_sort`, `knowledge_check`, `concept_memory`
+- This Skill teaches a reusable knowledge structure; it does not route topics, own topic vocabulary, or contain a prewritten lesson.
+- ConceptPlan supplies topic-specific grounding terms. KnowledgeBlueprint owns the four-step order. Pattern components own their interaction affordance.
+- Keep learner-facing copy natural and specific to the supplied topic. Never expose internal structure labels as lesson content.
 
-Avoid these Patterns unless the user explicitly asks for a safe override: `probability`
+## Evaluation
 
-When generating a Flow, keep the Pattern chain aligned with the teaching steps. A visually valid component is not enough; each step must teach the corresponding part of the structure.
-
-## QualityGate Checks
-
-Before a Flow reaches users, verify these deterministic checks:
-
-- The detected structure is `classification_rule`.
-- The Flow uses the preferred Pattern chain: `classification_sort -> knowledge_check -> concept_memory`.
-- Visible user-facing content covers the required teaching steps.
-- Required core terms or acceptable anchors appear in the Flow content or trace-backed step content.
-- Forbidden framings are absent.
-- Unsuitable Patterns are not used.
-- Placeholder variables such as `{value}`, `{result}`, or generic filler copy are absent.
-
-## Canonical Examples
-
-- trash sorting
-- legal liability
-- email classification
-
-## Eval Set
-
-Use `evals/evals.json` for skill-level test prompts. Keep it synchronized with `tests/fixtures/blueprint-cases.json` and the runtime data in `src/lib/content/skill-packs.ts`.
+- Keep `evals/evals.json` synchronized with `tests/fixtures/blueprint-cases.json`.
+- Deterministic checks verify structure, Pattern order, grounding, affordance, and forbidden framing.

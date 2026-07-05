@@ -1,125 +1,145 @@
 {
-  "skill_name": "aha-causal-mechanism",
-  "evals": [
-    {
-      "id": 1,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: compound interest.",
-      "expected_output": "Classify as causal_mechanism and use Pattern chain: system_builder -> parameter_explore -> simulation_play.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is causal_mechanism.",
-        "The Pattern chain is exactly system_builder -> parameter_explore -> simulation_play.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 2,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: supply and demand.",
-      "expected_output": "Classify as causal_mechanism and use Pattern chain: system_builder -> parameter_explore -> simulation_play.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is causal_mechanism.",
-        "The Pattern chain is exactly system_builder -> parameter_explore -> simulation_play.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 3,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: network effects.",
-      "expected_output": "Classify as causal_mechanism and use Pattern chain: system_builder -> parameter_explore -> simulation_play.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is causal_mechanism.",
-        "The Pattern chain is exactly system_builder -> parameter_explore -> simulation_play.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 4,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: incentive mechanism.",
-      "expected_output": "Classify as causal_mechanism and use Pattern chain: system_builder -> parameter_explore -> simulation_play.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is causal_mechanism.",
-        "The Pattern chain is exactly system_builder -> parameter_explore -> simulation_play.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 5,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: dopamine reward loop.",
-      "expected_output": "Classify as causal_mechanism and use Pattern chain: system_builder -> parameter_explore -> simulation_play.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is causal_mechanism.",
-        "The Pattern chain is exactly system_builder -> parameter_explore -> simulation_play.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 6,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: inflation spiral.",
-      "expected_output": "Classify as causal_mechanism and use Pattern chain: system_builder -> parameter_explore -> simulation_play.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is causal_mechanism.",
-        "The Pattern chain is exactly system_builder -> parameter_explore -> simulation_play.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 7,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: greenhouse effect.",
-      "expected_output": "Classify as causal_mechanism and use Pattern chain: system_builder -> parameter_explore -> simulation_play.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is causal_mechanism.",
-        "The Pattern chain is exactly system_builder -> parameter_explore -> simulation_play.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 8,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: habit formation.",
-      "expected_output": "Classify as causal_mechanism and use Pattern chain: system_builder -> parameter_explore -> simulation_play.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is causal_mechanism.",
-        "The Pattern chain is exactly system_builder -> parameter_explore -> simulation_play.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 9,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: viral spread.",
-      "expected_output": "Classify as causal_mechanism and use Pattern chain: system_builder -> parameter_explore -> simulation_play.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is causal_mechanism.",
-        "The Pattern chain is exactly system_builder -> parameter_explore -> simulation_play.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 10,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: price elasticity.",
-      "expected_output": "Classify as causal_mechanism and use Pattern chain: system_builder -> parameter_explore -> simulation_play.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is causal_mechanism.",
-        "The Pattern chain is exactly system_builder -> parameter_explore -> simulation_play.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    }
-  ]
+    "skill_name":  "aha-causal-mechanism",
+    "evals":  [
+                  {
+                      "id":  1,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: compound interest.",
+                      "expected_output":  "Classify as causal_mechanism and use Pattern chain: system_builder -\u003e parameter_explore -\u003e narrative_branch -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is causal_mechanism.",
+                                           "The Pattern chain is exactly system_builder -\u003e parameter_explore -\u003e narrative_branch -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  2,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: supply and demand.",
+                      "expected_output":  "Classify as causal_mechanism and use Pattern chain: system_builder -\u003e parameter_explore -\u003e narrative_branch -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is causal_mechanism.",
+                                           "The Pattern chain is exactly system_builder -\u003e parameter_explore -\u003e narrative_branch -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  3,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: network effects.",
+                      "expected_output":  "Classify as causal_mechanism and use Pattern chain: system_builder -\u003e parameter_explore -\u003e narrative_branch -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is causal_mechanism.",
+                                           "The Pattern chain is exactly system_builder -\u003e parameter_explore -\u003e narrative_branch -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  4,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: incentive mechanism.",
+                      "expected_output":  "Classify as causal_mechanism and use Pattern chain: system_builder -\u003e parameter_explore -\u003e narrative_branch -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is causal_mechanism.",
+                                           "The Pattern chain is exactly system_builder -\u003e parameter_explore -\u003e narrative_branch -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  5,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: dopamine reward loop.",
+                      "expected_output":  "Classify as causal_mechanism and use Pattern chain: system_builder -\u003e parameter_explore -\u003e narrative_branch -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is causal_mechanism.",
+                                           "The Pattern chain is exactly system_builder -\u003e parameter_explore -\u003e narrative_branch -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  6,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: inflation spiral.",
+                      "expected_output":  "Classify as causal_mechanism and use Pattern chain: system_builder -\u003e parameter_explore -\u003e narrative_branch -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is causal_mechanism.",
+                                           "The Pattern chain is exactly system_builder -\u003e parameter_explore -\u003e narrative_branch -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  7,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: greenhouse effect.",
+                      "expected_output":  "Classify as causal_mechanism and use Pattern chain: system_builder -\u003e parameter_explore -\u003e narrative_branch -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is causal_mechanism.",
+                                           "The Pattern chain is exactly system_builder -\u003e parameter_explore -\u003e narrative_branch -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  8,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: habit formation.",
+                      "expected_output":  "Classify as causal_mechanism and use Pattern chain: system_builder -\u003e parameter_explore -\u003e narrative_branch -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is causal_mechanism.",
+                                           "The Pattern chain is exactly system_builder -\u003e parameter_explore -\u003e narrative_branch -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  9,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: viral spread.",
+                      "expected_output":  "Classify as causal_mechanism and use Pattern chain: system_builder -\u003e parameter_explore -\u003e narrative_branch -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is causal_mechanism.",
+                                           "The Pattern chain is exactly system_builder -\u003e parameter_explore -\u003e narrative_branch -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  10,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: price elasticity.",
+                      "expected_output":  "Classify as causal_mechanism and use Pattern chain: system_builder -\u003e parameter_explore -\u003e narrative_branch -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is causal_mechanism.",
+                                           "The Pattern chain is exactly system_builder -\u003e parameter_explore -\u003e narrative_branch -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  }
+              ]
 }

@@ -23,7 +23,7 @@ import {
   type KnowledgeStructurePreference,
   type QualityGateResult,
 } from "./knowledge-blueprint.ts";
-import { formatKnowledgeSkillContract, getKnowledgeSkeletonById, selectKnowledgeSkeleton } from "./skill-packs.ts";
+import { formatKnowledgeSkillContract, getKnowledgeSkill } from "./skill-packs.ts";
 
 export interface DynamicFlowInput {
   topic: string;
@@ -561,10 +561,10 @@ function makeFallbackPlay(topic: string, pattern: PatternType, index: number, gr
 }
 
 function fallbackPatternChain(preferredPattern: FlowPatternPreference): PatternType[] {
-  if (preferredPattern !== "auto") return ["concept_memory", preferredPattern, "parameter_explore", "knowledge_check"];
+  const selectedPattern = preferredPattern === "auto" || preferredPattern === "simulation_play" ? null : preferredPattern;
+  if (selectedPattern) return ["concept_memory", selectedPattern, "comparison", "knowledge_check"];
   return ["knowledge_check", "concept_memory", "parameter_explore", "narrative_branch"];
 }
-
 
 const GENERIC_GROUNDING_TERMS = [
   "概念",
@@ -694,14 +694,15 @@ function normalizeGroundingTerms(value: unknown, topic: string, concepts: string
 
 function stabilizeGroundingTerms(topic: string, structureValue: unknown, terms: string[], fallback: string[]) {
   const structure = normalizeKnowledgeStructure(structureValue);
-  const skeleton = selectKnowledgeSkeleton(topic, structure) || selectKnowledgeSkeleton(topic);
-  const skeletonTerms = skeleton?.required_core_terms || [];
   const normalizedTerms = normalizeGroundingTerms(terms, topic, fallback);
-  const topicSpecificTerms = skeletonTerms.filter((term) => countIncludes(topic, term) > 0 || countIncludes(term, topic) > 0);
-  const baseTerms = topicSpecificTerms.length >= 2 ? topicSpecificTerms : skeletonTerms;
-  const blended = uniqueCleanStrings([...baseTerms, ...fallback, ...normalizedTerms], fallback, 28)
+  const fallbackTerms = normalizeGroundingTerms(fallback, topic, []);
+  const topicWords = uniqueCleanStrings(topic.split(/[、，,\/\s]+/), [], 28)
+    .filter((term) => !isGenericGroundingTerm(term, topic));
+  const blended = uniqueCleanStrings([...normalizedTerms, ...fallbackTerms, ...topicWords], fallbackTerms, 28)
     .filter((term) => !isGenericGroundingTerm(term, topic));
 
+  // Structure is intentionally ignored here: generic Skills define teaching form, while ConceptPlan owns concept terms.
+  void structure;
   return blended.slice(0, 5);
 }
 
@@ -764,9 +765,10 @@ function evaluateFlowGrounding(flow: KnowledgeFlow, topic: string, groundingTerm
 }
 
 function heuristicPatternChain(topic: string, preferredPattern: FlowPatternPreference): PatternType[] {
-  if (preferredPattern !== "auto") return ["concept_memory", preferredPattern, "parameter_explore", "knowledge_check"];
-  if (hasAnyHint(topic, DETERMINISTIC_MODELING_HINTS)) return ["knowledge_check", "parameter_explore", "simulation_play"];
-  if (hasAnyHint(topic, PROBABILITY_HINTS)) return ["probability", "parameter_explore", "knowledge_check"];
+  const selectedPattern = preferredPattern === "auto" || preferredPattern === "simulation_play" ? null : preferredPattern;
+  if (selectedPattern) return ["concept_memory", selectedPattern, "comparison", "knowledge_check"];
+  if (hasAnyHint(topic, DETERMINISTIC_MODELING_HINTS)) return ["system_builder", "parameter_explore", "comparison", "knowledge_check"];
+  if (hasAnyHint(topic, PROBABILITY_HINTS)) return ["probability", "parameter_explore", "concept_memory", "knowledge_check"];
   return fallbackPatternChain(preferredPattern);
 }
 
@@ -880,8 +882,8 @@ function patternChainFromPlan(
 
   const optimizationEvidence = [plan.topic, plan.knowledge_structure, ...plan.grounding_terms].join(" ");
   if (plan.knowledge_structure === "optimization_model" || hasAnyHint(optimizationEvidence, DETERMINISTIC_MODELING_HINTS)) {
-    const chain: PatternType[] = ["system_builder", "parameter_explore", "simulation_play", "knowledge_check"];
-    if (preferredPattern !== "auto" && !chain.includes(preferredPattern)) chain[1] = preferredPattern;
+    const chain: PatternType[] = ["system_builder", "parameter_explore", "comparison", "knowledge_check"];
+    if (preferredPattern !== "auto" && preferredPattern !== "simulation_play" && !chain.includes(preferredPattern)) chain[1] = preferredPattern;
     return chain;
   }
 
@@ -913,6 +915,90 @@ function pickTraceTerms(step?: BlueprintStep, groundingTerms: string[] = []) {
   ].map((term) => String(term || "").trim()).filter(Boolean))).slice(0, 8);
 }
 
+type V2FlowSchema = Extract<UISchema, { pattern: PatternType }>;
+
+function isV2FlowSchema(schema: UISchema): schema is V2FlowSchema {
+  return "pattern" in schema && typeof schema.pattern === "string";
+}
+function cleanCueTerms(terms: unknown[] = []) {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const term of terms) {
+    const text = String(term || "").trim();
+    if (text.length <= 1) continue;
+    const key = normalizeGroundingText(text);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    result.push(text);
+  }
+  return result;
+}
+
+function stepCueTerms(blueprint: KnowledgeBlueprint | null | undefined, index: number, fallbackTerms: string[] = []) {
+  const stepTerms = cleanCueTerms(blueprint?.teaching_sequence[index]?.must_explain || []);
+  const coreTerms = cleanCueTerms(blueprint?.core_terms || []);
+  const fallback = cleanCueTerms(fallbackTerms);
+  const offset = coreTerms.length > 0 ? index % coreTerms.length : 0;
+  const rotatedCore = coreTerms.length > 0 ? [...coreTerms.slice(offset), ...coreTerms.slice(0, offset)] : [];
+  return cleanCueTerms([...rotatedCore, ...stepTerms, ...fallback]).slice(0, 8);
+}
+
+const GENERIC_VISIBLE_CUE_KEYS = new Set([
+  "condition", "mechanism", "cause", "reason", "effect", "factor", "change", "impact", "result", "outcome", "feedback", "intervention", "input", "output",
+  "\u6761\u4ef6", "\u673a\u5236", "\u539f\u56e0", "\u4f5c\u7528", "\u53d8\u5316", "\u5f71\u54cd", "\u7ed3\u679c", "\u540e\u679c", "\u53cd\u9988", "\u5e72\u9884", "\u8f93\u5165", "\u8f93\u51fa",
+].map(normalizeGroundingText));
+
+function isGenericVisibleCueTerm(term: string) {
+  return GENERIC_VISIBLE_CUE_KEYS.has(normalizeGroundingText(term));
+}
+
+function pickVisibleCueTerm(step: BlueprintStep, groundingTerms: string[]) {
+  const candidates = [...groundingTerms, ...step.must_explain]
+    .map((term) => String(term || "").trim())
+    .filter((term) => term.length > 1);
+  const specific = candidates.filter((term) => !isGenericVisibleCueTerm(term));
+  return specific.find((term) => /[^\x00-\x7F]/.test(term)) || specific[0] || candidates.find((term) => /[^\x00-\x7F]/.test(term)) || candidates[0] || "";
+}
+
+function titleWithCue(title: unknown, term: string, fallback: string) {
+  const base = cleanText(title, fallback, 32);
+  if (!term || countIncludes(base, term)) return base;
+  return cleanText(`${term} - ${base}`, base, 40);
+}
+
+function fieldWithCue(value: unknown, term: string, fallback: string, maxLength = 90) {
+  const base = cleanText(value, "", maxLength);
+  if (base && countIncludes(base, term)) return base;
+  const cue = base ? `${term} - ${base}` : fallback;
+  return cleanText(cue, fallback, maxLength);
+}
+
+function visibleCueText(play: KnowledgePlay) {
+  return JSON.stringify({ title: play.title, payload: play.schema.payload });
+}
+
+function attachVisibleBlueprintCue(play: KnowledgePlay, step: BlueprintStep, groundingTerms: string[]) {
+  if (!isV2FlowSchema(play.schema)) return play;
+  const term = pickVisibleCueTerm(step, groundingTerms);
+  if (!term) return play;
+  const payload = play.schema.payload && typeof play.schema.payload === "object"
+    ? play.schema.payload as Record<string, unknown>
+    : {};
+  const schema: UISchema = {
+    ...play.schema,
+    payload: {
+      ...payload,
+      title: titleWithCue(payload.title, term, play.title),
+      description: fieldWithCue(payload.description, term, `\u5148\u6293\u4f4f ${term}\uff0c\u518d\u52a8\u624b\u7406\u89e3\u8fd9\u4e00\u5173\u3002`),
+      instruction: fieldWithCue(payload.instruction, term, `\u5148\u6293\u4f4f ${term}`, 64)
+    },
+  };
+  return {
+    ...play,
+    title: titleWithCue(play.title, term, play.title),
+    schema,
+  } satisfies KnowledgePlay;
+}
 function makeTeachingTrace(step?: BlueprintStep, groundingTerms: string[] = []): KnowledgePlay["teaching_trace"] | undefined {
   if (!step) return undefined;
   return {
@@ -928,8 +1014,9 @@ function attachBlueprintStepCue(play: KnowledgePlay, step?: BlueprintStep, groun
   const teaching_trace = makeTeachingTrace(step, groundingTerms);
   if (!teaching_trace || !step) return play;
 
-  // Blueprint terms remain in the internal trace. Do not surface raw taxonomy tokens in learner-facing reward copy.
-  return { ...play, teaching_trace };
+  // Keep internal taxonomy out of the guide copy, but make one real topic anchor visible in the step itself.
+  const visiblePlay = attachVisibleBlueprintCue(play, step, groundingTerms);
+  return { ...visiblePlay, teaching_trace };
 }
 function makeFallbackFlowFromPlan(
   plan: ConceptPlan,
@@ -953,7 +1040,7 @@ function makeFallbackFlowFromPlan(
     plays: patterns.map((pattern, index) => {
       const play = makeFallbackPlay(plan.topic, pattern, index, plan.grounding_terms);
       const schema = attachTimelineOrderTemplate(play.schema, blueprint.teaching_sequence[index], [], index + 1);
-      return attachBlueprintStepCue({ ...play, schema }, blueprint.teaching_sequence[index], blueprint.core_terms);
+      return attachBlueprintStepCue({ ...play, schema }, blueprint.teaching_sequence[index], stepCueTerms(blueprint, index, plan.grounding_terms));
     }),
     follow_ups: makeBlueprintFollowUps(blueprint),
     source: "generated",
@@ -1026,7 +1113,7 @@ ${patternList}
 规则：
 - topic 不要写定义，必须保留用户输入原词，例如“线性规划”不能写成“线性规划是在约束条件下...”
 - grounding_terms 必须是专业锚点，不能写“概念/机制/变量/关键/结果”这类空词。
-- recommended_patterns 必须解释知识结构：优化/规划/约束/目标函数/可行域/算法类优先 parameter_explore、simulation_play、system_builder、knowledge_check；概率/随机/风险/贝叶斯/预测类才用 probability。
+- recommended_patterns must match knowledge structure: optimisation/planning/constraints should prefer system_builder, parameter_explore, comparison, knowledge_check; probability is for uncertainty, evidence, or risk.
 - avoid_patterns 明确写出不适合的模式，例如确定性优化问题通常避免 probability。
 - learning_path 必须形成四步递进：先判断入口，再沿路径观察，接着拆开边界，最后动手验证。`;
 }
@@ -1061,17 +1148,17 @@ function patternOrderInstruction(blueprint: KnowledgeBlueprint | undefined, pref
 
 function buildSkillContractBlock(blueprint?: KnowledgeBlueprint) {
   if (!blueprint || blueprint.structure_type === "unclassified") return "";
-  const skeleton = getKnowledgeSkeletonById(blueprint.skill_skeleton_id);
-  if (skeleton) return "\nAha Skill Pack runtime contract:\n" + formatKnowledgeSkillContract(skeleton) + "\n";
+  const skill = getKnowledgeSkill(blueprint.structure_type);
+  const structureContract = skill ? formatKnowledgeSkillContract(skill) : "Structure type: " + blueprint.structure_type;
   return [
-    "\nAha Skill Pack runtime contract:",
-    "Structure type: " + blueprint.structure_type,
-    "Teach these core terms in visible UI copy: " + (blueprint.required_core_terms || blueprint.core_terms).slice(0, 10).join(", "),
-    "Follow this teaching order: " + (blueprint.required_teaching_steps || blueprint.teaching_sequence.map((step) => step.goal)).slice(0, 8).join(", "),
-    "Recommended Pattern family: " + blueprint.pattern_strategy.join(" -> "),
+    "\nAha Structure Skill runtime contract:",
+    structureContract,
+    "Topic grounding terms that must appear in learner-facing copy: " + blueprint.core_terms.slice(0, 8).join(", "),
+    "Exact teaching order: " + blueprint.teaching_sequence.map((step) => step.goal).join(" -> "),
+    "Exact Pattern order: " + blueprint.pattern_strategy.join(" -> "),
     "Avoid Pattern family: " + (blueprint.avoid_patterns.join(", ") || "none"),
     "Do not frame the topic as: " + ((blueprint.forbidden_framings || blueprint.failure_risks).slice(0, 5).join(", ") || "none"),
-    "Use this as a teaching contract, not as prewritten lesson copy. Adapt the examples to the user topic.",
+    "Use this as a teaching contract, not as prewritten lesson copy.",
     "",
   ].join("\n");
 }
@@ -1087,11 +1174,14 @@ function buildVisibleStepCoverageBlock(blueprint?: KnowledgeBlueprint) {
 
 function buildStructureSpecificPromptRules(blueprint?: KnowledgeBlueprint) {
   if (!blueprint) return "";
-  if (/(sunk cost|沉没成本)/i.test(blueprint.topic)) {
-    return "Sunk-cost rule: separate unrecoverable past cost from the next cost and next benefit. Use a concrete choice scenario and comparison, not a trend simulation or a promise of recovering prior spending. Learner-facing Chinese must say what the learner should compare now; do not expose internal labels such as 入口, 决策链, factor, or effect.";
+  const universal = "Use natural Simplified Chinese. Never expose internal Blueprint names, raw role labels, implementation terms, or template labels. Only show a number when the selected Pattern has a verifiable formula supported by the renderer; otherwise teach with a concrete scenario, comparison, or state change.";
+  if (blueprint.structure_type === "comparison_frame") {
+    return universal + " Comparison rule: put the alternatives in one concrete question, compare consequences from now on, and separate relevant reasons from noise. Do not turn a trade-off into a fabricated trend chart.";
   }
-  if (blueprint.structure_type !== "causal_mechanism") return "";
-  return "Causal mechanism rule: make the outcome and feedback visible in the learner-facing scenario; do not leave the consequence implied by a chart.";
+  if (blueprint.structure_type === "causal_mechanism") {
+    return universal + " Causal rule: make the condition, mechanism, and consequence visible in the learner-facing scenario; do not leave the consequence implied by a chart.";
+  }
+  return universal;
 }
 
 function buildFlowUserPrompt(
@@ -1135,7 +1225,7 @@ async function generateConceptPlan(
     model,
     system,
     messages: [{ role: "user", content: `为「${topic}」生成 ConceptPlan。` }],
-  });
+  }, { jsonOutput: true, jsonName: "concept_plan" });
   const plan = normalizeConceptPlan(parseJson(result.text), topic, preferredPattern, preferredStructure);
   const evaluation = evaluateConceptPlan(plan, preferredPattern);
   if (evaluation.ok) {
@@ -1146,7 +1236,7 @@ async function generateConceptPlan(
     model,
     system,
     messages: [{ role: "user", content: buildConceptPlanRepairPrompt(topic, preferredPattern, preferredStructure, evaluation.reason, result.text) }],
-  });
+  }, { jsonOutput: true, jsonName: "concept_plan" });
   const repairedPlan = normalizeConceptPlan(parseJson(repair.text), topic, preferredPattern, preferredStructure);
   const repairedEvaluation = evaluateConceptPlan(repairedPlan, preferredPattern);
   if (repairedEvaluation.ok) {
@@ -1295,13 +1385,13 @@ function makeBlueprintFollowUps(blueprint: KnowledgeBlueprint): FollowUpTopic[] 
       return [
         makeFollowUp("blueprint-causal-feedback", "追一圈反馈", `${topic}的反馈回路`, "看看结果如何反过来改变下一轮输入。", `从${first}走向反馈机制`, "system_builder"),
         makeFollowUp("blueprint-causal-intervention", "找干预点", `${topic}的干预点`, "调一个因素，看看结果怎么变。", `从${second}走向可控变量`, "parameter_explore"),
-        makeFollowUp("blueprint-causal-scenario", "放进真实场景", `${topic}的真实场景`, "用一个场景验证因果链是否站得住。", `从${third}走向应用检验`, "simulation_play"),
+        makeFollowUp("blueprint-causal-scenario", "放进真实场景", `${topic}的真实场景`, "用一个场景验证因果链是否站得住。", `从${third}走向应用检验`, "narrative_branch"),
       ];
     case "procedure_algorithm":
       return [
         makeFollowUp("blueprint-procedure-complexity", "看复杂度", `${topic}的复杂度`, "同样的规则，数据变大后成本怎么变？", `从${first}走向效率判断`, "parameter_explore"),
         makeFollowUp("blueprint-procedure-edge", "测边界情况", `${topic}的边界情况`, "什么时候流程应该停，什么时候会出错？", `从${second}走向终止条件`, "knowledge_check"),
-        makeFollowUp("blueprint-procedure-trace", "手动走一遍", `${topic}的执行轨迹`, "一步步推进状态，看看规则如何重复生效。", `从${third}走向过程模拟`, "simulation_play"),
+        makeFollowUp("blueprint-procedure-trace", "手动走一遍", `${topic}的执行轨迹`, "一步步推进状态，看看规则如何重复生效。", `从${third}走向过程模拟`, "concept_memory"),
       ];
     default:
       return makeFallbackFollowUps(topic);
@@ -1490,6 +1580,77 @@ function normalizeParameterExplorePayload(
   }
   return payload;
 }
+function normalizeKnowledgeCheckPayload(
+  payload: unknown,
+  topic: string,
+  repairActions?: RepairAction[],
+  step?: number,
+) {
+  const record = asRecord(payload);
+  if (!record) return payload;
+
+  const rawOptions = Array.isArray(record.options) ? record.options : [];
+  let changed = !Array.isArray(record.options);
+  const seen = new Set<string>();
+  const options = rawOptions
+    .map((item, index) => {
+      const option = asRecord(item);
+      if (!option) {
+        changed = true;
+        return null;
+      }
+      const label = cleanText(option.label ?? option.text ?? option.title, "", 56);
+      if (!label) {
+        changed = true;
+        return null;
+      }
+      const key = normalizeGroundingText(label);
+      if (seen.has(key)) {
+        changed = true;
+        return null;
+      }
+      seen.add(key);
+      const explanation = cleanText(option.explanation, index === 0 ? "这一步要能解释它为什么成立。" : "这个说法还不够贴合当前问题。", 80);
+      return { label, correct: option.correct === true, explanation };
+    })
+    .filter((item): item is { label: string; correct: boolean; explanation: string } => Boolean(item));
+
+  const fallbackOptions = [
+    { label: `先抓住${topic}里的关键条件`, correct: true, explanation: "先找条件，后面的判断才不会飘。" },
+    { label: "只记住一个名词解释", correct: false, explanation: "名词解释是入口，但还不能说明怎么判断。" },
+    { label: "直接背最终答案", correct: false, explanation: "背答案容易换个场景就失效。" },
+    { label: "忽略限制和边界", correct: false, explanation: "边界会决定这个概念什么时候能用。" },
+  ];
+
+  for (const fallback of fallbackOptions) {
+    if (options.length >= 3) break;
+    const key = normalizeGroundingText(fallback.label);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    options.push(fallback);
+    changed = true;
+  }
+
+  const firstCorrect = options.findIndex((option) => option.correct === true);
+  const correctIndex = firstCorrect >= 0 ? firstCorrect : 0;
+  const normalizedOptions = options.slice(0, Math.max(3, Math.min(options.length, 4))).map((option, index) => ({
+    ...option,
+    correct: index === correctIndex,
+  }));
+  if (firstCorrect < 0 || options.filter((option) => option.correct).length !== 1 || normalizedOptions.length !== rawOptions.length) changed = true;
+
+  if (changed) {
+    addRepairAction(repairActions, "field_fix", "Normalized knowledge check to at least three explained options", { step, pattern: "knowledge_check" });
+  }
+
+  return {
+    ...record,
+    title: cleanText(record.title, `${topic}：做一次判断`, 40),
+    question: cleanText(record.question, `理解${topic}时，哪种判断更可靠？`, 96),
+    options: normalizedOptions,
+  };
+}
+
 function normalizeSchemaPayload(
   pattern: PatternType,
   payload: unknown,
@@ -1498,7 +1659,11 @@ function normalizeSchemaPayload(
   step?: number,
 ) {
   const titled = pattern === "probability" ? normalizeProbabilityPayload(payload, topic, repairActions, step) : normalizePayloadTitle(payload, topic);
-  const normalized = pattern === "parameter_explore" ? normalizeParameterExplorePayload(titled, repairActions, step) : titled;
+  const normalized = pattern === "parameter_explore"
+    ? normalizeParameterExplorePayload(titled, repairActions, step)
+    : pattern === "knowledge_check"
+      ? normalizeKnowledgeCheckPayload(titled, topic, repairActions, step)
+      : titled;
   const sanitized = sanitizeGeneratedValue(normalized, topic);
   if (JSON.stringify(sanitized) !== JSON.stringify(normalized)) {
     addRepairAction(repairActions, "placeholder_clean", "Removed unreplaced placeholder text from schema payload", { step, pattern });
@@ -1798,7 +1963,7 @@ function normalizeGeneratedFlow(
       estimated_minutes: typeof record.estimated_minutes === "number" ? Math.max(1, Math.min(3, Math.round(record.estimated_minutes))) : 1,
       reward_copy: cleanText(record.reward_copy, fallback.plays[index]?.reward_copy || "这一关已经走通了。", 48),
     } satisfies KnowledgePlay;
-    return attachBlueprintStepCue(play, blueprint?.teaching_sequence[index], blueprint?.core_terms || groundingTerms);
+    return attachBlueprintStepCue(play, blueprint?.teaching_sequence[index], stepCueTerms(blueprint, index, groundingTerms));
   });
 
   while (plays.length < DYNAMIC_FLOW_STEP_COUNT) {
@@ -1806,14 +1971,14 @@ function normalizeGeneratedFlow(
     addRepairAction(repairActions, "flow_repair", `Added missing step ${plays.length + 1} from fallback chain`, { step: plays.length + 1, pattern: fallbackPattern });
     const fallbackPlay = makeFallbackPlay(topic, fallbackPattern, plays.length, groundingTerms);
     const fallbackSchema = attachTimelineOrderTemplate(fallbackPlay.schema, blueprint?.teaching_sequence[plays.length], repairActions, plays.length + 1);
-    plays.push(attachBlueprintStepCue({ ...fallbackPlay, schema: fallbackSchema }, blueprint?.teaching_sequence[plays.length], blueprint?.core_terms || groundingTerms));
+    plays.push(attachBlueprintStepCue({ ...fallbackPlay, schema: fallbackSchema }, blueprint?.teaching_sequence[plays.length], stepCueTerms(blueprint, plays.length, groundingTerms)));
   }
 
-  const selectedPattern: PatternType | null = preferredPattern === "auto" ? null : preferredPattern;
+  const selectedPattern: PatternType | null = preferredPattern === "auto" || preferredPattern === "simulation_play" ? null : preferredPattern;
   if (selectedPattern && !plays.some((play) => play.schema.pattern === selectedPattern)) {
     addRepairAction(repairActions, "pattern_normalize", `Inserted user-selected pattern ${selectedPattern}`, { step: 2, pattern: selectedPattern });
     const selectedPlay = makeFallbackPlay(topic, selectedPattern, 1, groundingTerms);
-    plays[1] = attachBlueprintStepCue({ ...selectedPlay, schema: attachTimelineOrderTemplate(selectedPlay.schema, blueprint?.teaching_sequence[1], repairActions, 2) }, blueprint?.teaching_sequence[1], blueprint?.core_terms || groundingTerms);
+    plays[1] = attachBlueprintStepCue({ ...selectedPlay, schema: attachTimelineOrderTemplate(selectedPlay.schema, blueprint?.teaching_sequence[1], repairActions, 2) }, blueprint?.teaching_sequence[1], stepCueTerms(blueprint, 1, groundingTerms));
   }
 
   return {
@@ -1976,7 +2141,7 @@ export async function generateDynamicFlow(
       model,
       system,
       messages: [{ role: "user", content: buildFlowUserPrompt(topic, plan, blueprint, preferredPattern) }],
-    });
+    }, { jsonOutput: true, jsonName: "knowledge_flow" });
     const parsed = parseJson(result.text);
     const normalized = normalizeGeneratedFlow(parsed, topic, preferredPattern, plan, preferredStructure);
     await reportGenerationStage(onStage, "quality_gate");
@@ -2004,7 +2169,7 @@ export async function generateDynamicFlow(
       model,
       system,
       messages: [{ role: "user", content: buildRepairUserPrompt(topic, preferredPattern, repairReason, result.text, plan, blueprint) }],
-    });
+    }, { jsonOutput: true, jsonName: "knowledge_flow" });
     const repaired = normalizeGeneratedFlow(parseJson(repair.text), topic, preferredPattern, plan, preferredStructure);
     const repairedActions = [...(normalized.repair_actions || [])];
     addRepairAction(repairedActions, "flow_repair", "Initial Flow validation failed; requested LLM repair");
@@ -2031,20 +2196,22 @@ export async function generateDynamicFlow(
       };
     }
 
+    const deterministicFallbackOk = plannedFallbackQuality.ok;
     return {
       flow: plannedFallback,
-      source: "mock",
+      source: deterministicFallbackOk ? "llm" : "mock",
       validation_error: [
         planResult.error,
         "Flow validation failed: " + repairReason,
         "Repair failed: " + [repairedGrounding.reason, repairedPlanFit.reason, repairedQuality.reason].filter(Boolean).join("; "),
+        deterministicFallbackOk ? "Used deterministic Blueprint fallback from the LLM ConceptPlan" : undefined,
       ].filter(Boolean).join(" | "),
       raw_output: includeRaw ? repair.text : undefined,
       raw_plan_output: planResult.raw_output,
       concept_plan: plan,
       blueprint,
-      quality_gate: repairedQuality,
-      failure: makeFlowFailure("quality_gate_failed", topic, repairedQuality),
+      quality_gate: deterministicFallbackOk ? plannedFallbackQuality : repairedQuality,
+      failure: deterministicFallbackOk ? undefined : makeFlowFailure("quality_gate_failed", topic, repairedQuality),
       repair_actions: repairedActions,
     };
   } catch (error) {

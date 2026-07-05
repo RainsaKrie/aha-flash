@@ -1,95 +1,47 @@
 ---
 name: aha-system-process
-description: Use this skill when generating, reviewing, or improving Aha Flash learning flows for system_process topics such as DNS resolution, HTTP request, TCP handshake, CI/CD pipeline, message queue. It defines the teaching contract, Pattern recipe, common failure modes, and deterministic quality checks for this knowledge structure.
+description: Use this skill when generating, reviewing, or improving Aha Flash learning flows with system_process. It defines a reusable four-step teaching contract, Pattern capability boundary, failure modes, and deterministic checks without carrying a prewritten lesson.
 ---
 
-# Aha Skill: System Process
-
-## Purpose
-
-Use this skill to generate or review a three-step Aha Flash Flow for `system_process` topics. Teach concepts made of actors, modules, handoffs, feedback paths, and failure points.
-
-Do not treat this skill as prebuilt lesson content. Treat it as a compact teaching contract that guides Blueprint creation, Pattern selection, and QualityGate checks.
-
-## Trigger Cues
-
-Use this skill when the topic resembles any of these cues:
-
-- dns
-- domain resolution
-- 域名解析
-- DNS 解析
-- tcp handshake
-- ci/cd pipeline
-- message queue
-- payment checkout
-- database replication
-- http request
-- kubernetes scheduling
-- compiler pipeline
-- oauth login
-
-## Teaching Contract
+# Aha Structure Skill: System Process
 
 Structure type: `system_process`
 
-Required core terms or acceptable anchors:
+## Teaching Contract
 
-- browser
-- recursive resolver
-- root server
-- authoritative server
-- cache
-- IP address
-- 浏览器
-- 递归解析器
-- 根服务器
-- 权威服务器
-- 缓存
-- IP 地址
+- identify actors
+- follow a handoff
+- separate normal and failure paths
+- diagnose one boundary
 
-Required teaching steps:
+## Pattern Capability
 
-1. request starts
-2. resolver asks hierarchy
-3. authoritative answer returns
-4. cache shortens next lookup
+Prefer:
+- `system_builder`
+- `process_timeline`
+- `classification_sort`
+- `knowledge_check`
 
-Common misconceptions to avoid:
+Avoid:
+- `probability`
 
-- DNS is just one database lookup
-- recursive resolver and authoritative server are the same role
+## Guardrails
 
-Forbidden framings:
+Correct these common misconceptions:
+- a system process is one lookup
+- two actors have the same role
 
-- single lookup only
+Do not frame the lesson as:
 - one-step lookup
+- single actor explains the whole process
 
-## Pattern Recipe
+## Boundary
 
-Preferred Pattern chain: `system_builder`, `process_timeline`, `knowledge_check`
+- This Skill teaches a reusable knowledge structure; it does not route topics, own topic vocabulary, or contain a prewritten lesson.
+- ConceptPlan supplies topic-specific grounding terms. KnowledgeBlueprint owns the four-step order. Pattern components own their interaction affordance.
+- Keep learner-facing copy natural and specific to the supplied topic. Never expose internal structure labels as lesson content.
 
-Avoid these Patterns unless the user explicitly asks for a safe override: `probability`
+## Evaluation
 
-When generating a Flow, keep the Pattern chain aligned with the teaching steps. A visually valid component is not enough; each step must teach the corresponding part of the structure.
-
-## QualityGate Checks
-
-Before a Flow reaches users, verify these deterministic checks:
-
-- The detected structure is `system_process`.
-- The Flow uses the preferred Pattern chain: `system_builder -> process_timeline -> knowledge_check`.
-- Visible user-facing content covers the required teaching steps.
-- Required core terms or acceptable anchors appear in the Flow content or trace-backed step content.
-- Forbidden framings are absent.
-- Unsuitable Patterns are not used.
-- Placeholder variables such as `{value}`, `{result}`, or generic filler copy are absent.
-
-## Canonical Examples
-
-- open example.com
-- cache hit vs cache miss
-
-## Eval Set
-
-Use `evals/evals.json` for skill-level test prompts. Keep it synchronized with `tests/fixtures/blueprint-cases.json` and the runtime data in `src/lib/content/skill-packs.ts`.
+- Keep `evals/evals.json` synchronized with `tests/fixtures/blueprint-cases.json`.
+- Deterministic checks verify structure, Pattern order, grounding, affordance, and forbidden framing.

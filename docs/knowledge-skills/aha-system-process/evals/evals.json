@@ -1,125 +1,145 @@
 {
-  "skill_name": "aha-system-process",
-  "evals": [
-    {
-      "id": 1,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: DNS resolution.",
-      "expected_output": "Classify as system_process and use Pattern chain: system_builder -> process_timeline -> knowledge_check.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is system_process.",
-        "The Pattern chain is exactly system_builder -> process_timeline -> knowledge_check.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 2,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: HTTP request.",
-      "expected_output": "Classify as system_process and use Pattern chain: system_builder -> process_timeline -> knowledge_check.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is system_process.",
-        "The Pattern chain is exactly system_builder -> process_timeline -> knowledge_check.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 3,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: Kubernetes scheduling.",
-      "expected_output": "Classify as system_process and use Pattern chain: system_builder -> process_timeline -> knowledge_check.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is system_process.",
-        "The Pattern chain is exactly system_builder -> process_timeline -> knowledge_check.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 4,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: compiler pipeline.",
-      "expected_output": "Classify as system_process and use Pattern chain: system_builder -> process_timeline -> knowledge_check.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is system_process.",
-        "The Pattern chain is exactly system_builder -> process_timeline -> knowledge_check.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 5,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: OAuth login flow.",
-      "expected_output": "Classify as system_process and use Pattern chain: system_builder -> process_timeline -> knowledge_check.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is system_process.",
-        "The Pattern chain is exactly system_builder -> process_timeline -> knowledge_check.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 6,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: TCP handshake.",
-      "expected_output": "Classify as system_process and use Pattern chain: system_builder -> process_timeline -> knowledge_check.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is system_process.",
-        "The Pattern chain is exactly system_builder -> process_timeline -> knowledge_check.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 7,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: CI/CD pipeline.",
-      "expected_output": "Classify as system_process and use Pattern chain: system_builder -> process_timeline -> knowledge_check.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is system_process.",
-        "The Pattern chain is exactly system_builder -> process_timeline -> knowledge_check.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 8,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: message queue.",
-      "expected_output": "Classify as system_process and use Pattern chain: system_builder -> process_timeline -> knowledge_check.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is system_process.",
-        "The Pattern chain is exactly system_builder -> process_timeline -> knowledge_check.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 9,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: payment checkout flow.",
-      "expected_output": "Classify as system_process and use Pattern chain: system_builder -> process_timeline -> knowledge_check.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is system_process.",
-        "The Pattern chain is exactly system_builder -> process_timeline -> knowledge_check.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 10,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: database replication.",
-      "expected_output": "Classify as system_process and use Pattern chain: system_builder -> process_timeline -> knowledge_check.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is system_process.",
-        "The Pattern chain is exactly system_builder -> process_timeline -> knowledge_check.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    }
-  ]
+    "skill_name":  "aha-system-process",
+    "evals":  [
+                  {
+                      "id":  1,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: DNS resolution.",
+                      "expected_output":  "Classify as system_process and use Pattern chain: system_builder -\u003e process_timeline -\u003e classification_sort -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is system_process.",
+                                           "The Pattern chain is exactly system_builder -\u003e process_timeline -\u003e classification_sort -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  2,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: HTTP request.",
+                      "expected_output":  "Classify as system_process and use Pattern chain: system_builder -\u003e process_timeline -\u003e classification_sort -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is system_process.",
+                                           "The Pattern chain is exactly system_builder -\u003e process_timeline -\u003e classification_sort -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  3,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: Kubernetes scheduling.",
+                      "expected_output":  "Classify as system_process and use Pattern chain: system_builder -\u003e process_timeline -\u003e classification_sort -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is system_process.",
+                                           "The Pattern chain is exactly system_builder -\u003e process_timeline -\u003e classification_sort -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  4,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: compiler pipeline.",
+                      "expected_output":  "Classify as system_process and use Pattern chain: system_builder -\u003e process_timeline -\u003e classification_sort -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is system_process.",
+                                           "The Pattern chain is exactly system_builder -\u003e process_timeline -\u003e classification_sort -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  5,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: OAuth login flow.",
+                      "expected_output":  "Classify as system_process and use Pattern chain: system_builder -\u003e process_timeline -\u003e classification_sort -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is system_process.",
+                                           "The Pattern chain is exactly system_builder -\u003e process_timeline -\u003e classification_sort -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  6,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: TCP handshake.",
+                      "expected_output":  "Classify as system_process and use Pattern chain: system_builder -\u003e process_timeline -\u003e classification_sort -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is system_process.",
+                                           "The Pattern chain is exactly system_builder -\u003e process_timeline -\u003e classification_sort -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  7,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: CI/CD pipeline.",
+                      "expected_output":  "Classify as system_process and use Pattern chain: system_builder -\u003e process_timeline -\u003e classification_sort -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is system_process.",
+                                           "The Pattern chain is exactly system_builder -\u003e process_timeline -\u003e classification_sort -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  8,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: message queue.",
+                      "expected_output":  "Classify as system_process and use Pattern chain: system_builder -\u003e process_timeline -\u003e classification_sort -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is system_process.",
+                                           "The Pattern chain is exactly system_builder -\u003e process_timeline -\u003e classification_sort -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  9,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: payment checkout flow.",
+                      "expected_output":  "Classify as system_process and use Pattern chain: system_builder -\u003e process_timeline -\u003e classification_sort -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is system_process.",
+                                           "The Pattern chain is exactly system_builder -\u003e process_timeline -\u003e classification_sort -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  10,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: database replication.",
+                      "expected_output":  "Classify as system_process and use Pattern chain: system_builder -\u003e process_timeline -\u003e classification_sort -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is system_process.",
+                                           "The Pattern chain is exactly system_builder -\u003e process_timeline -\u003e classification_sort -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  }
+              ]
 }

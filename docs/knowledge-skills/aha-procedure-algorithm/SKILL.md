@@ -1,95 +1,48 @@
 ---
 name: aha-procedure-algorithm
-description: Use this skill when generating, reviewing, or improving Aha Flash learning flows for procedure_algorithm topics such as binary search, quicksort, dynamic programming, A* search, backpropagation. It defines the teaching contract, Pattern recipe, common failure modes, and deterministic quality checks for this knowledge structure.
+description: Use this skill when generating, reviewing, or improving Aha Flash learning flows with procedure_algorithm. It defines a reusable four-step teaching contract, Pattern capability boundary, failure modes, and deterministic checks without carrying a prewritten lesson.
 ---
 
-# Aha Skill: Procedure Algorithm
-
-## Purpose
-
-Use this skill to generate or review a three-step Aha Flash Flow for `procedure_algorithm` topics. Teach concepts where a repeated rule, state transition, stopping condition, and edge cases define a procedure.
-
-Do not treat this skill as prebuilt lesson content. Treat it as a compact teaching contract that guides Blueprint creation, Pattern selection, and QualityGate checks.
-
-## Trigger Cues
-
-Use this skill when the topic resembles any of these cues:
-
-- binary search
-- gradient descent
-- dijkstra
-- merge sort
-- breadth first search
-- 二分查找
-- 梯度下降
-- 归并排序
-- 广度优先搜索
-- quicksort
-- dynamic programming
-- a* search
-- topological sort
-- backpropagation
-
-## Teaching Contract
+# Aha Structure Skill: Procedure Algorithm
 
 Structure type: `procedure_algorithm`
 
-Required core terms or acceptable anchors:
+## Teaching Contract
 
-- state
-- iteration
-- rule
-- termination
-- edge case
-- 状态
-- 迭代
-- 规则
-- 终止条件
-- 边界情况
+- state the repeated rule
+- order a state change
+- retain an invariant
+- test a boundary
 
-Required teaching steps:
+## Pattern Capability
 
-1. state problem and rule
-2. step through process
-3. track state
-4. test edge case
+Prefer:
+- `process_timeline`
+- `classification_sort`
+- `concept_memory`
+- `knowledge_check`
 
-Common misconceptions to avoid:
+Avoid:
+- `probability`
+- `simulation_play`
 
-- algorithm is only code syntax
+## Guardrails
+
+Correct these common misconceptions:
+- an algorithm is only code syntax
 - edge cases do not matter
 
-Forbidden framings:
+Do not frame the lesson as:
+- memorise code only
+- unverifiable numerical simulation
 
-- just memorize code
-- 只背代码
+## Boundary
 
-## Pattern Recipe
+- This Skill teaches a reusable knowledge structure; it does not route topics, own topic vocabulary, or contain a prewritten lesson.
+- ConceptPlan supplies topic-specific grounding terms. KnowledgeBlueprint owns the four-step order. Pattern components own their interaction affordance.
+- Keep learner-facing copy natural and specific to the supplied topic. Never expose internal structure labels as lesson content.
 
-Preferred Pattern chain: `process_timeline`, `simulation_play`, `knowledge_check`
+## Evaluation
 
-Avoid these Patterns unless the user explicitly asks for a safe override: `probability`
-
-When generating a Flow, keep the Pattern chain aligned with the teaching steps. A visually valid component is not enough; each step must teach the corresponding part of the structure.
-
-## QualityGate Checks
-
-Before a Flow reaches users, verify these deterministic checks:
-
-- The detected structure is `procedure_algorithm`.
-- The Flow uses the preferred Pattern chain: `process_timeline -> simulation_play -> knowledge_check`.
-- Visible user-facing content covers the required teaching steps.
-- Required core terms or acceptable anchors appear in the Flow content or trace-backed step content.
-- Forbidden framings are absent.
-- Unsuitable Patterns are not used.
-- Placeholder variables such as `{value}`, `{result}`, or generic filler copy are absent.
-
-## Canonical Examples
-
-- find target in sorted list
-- update gradient step
-- merge two sorted lists
-
-## Eval Set
-
-Use `evals/evals.json` for skill-level test prompts. Keep it synchronized with `tests/fixtures/blueprint-cases.json` and the runtime data in `src/lib/content/skill-packs.ts`.
+- Keep `evals/evals.json` synchronized with `tests/fixtures/blueprint-cases.json`.
+- Deterministic checks verify structure, Pattern order, grounding, affordance, and forbidden framing.

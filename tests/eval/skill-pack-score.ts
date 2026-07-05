@@ -7,15 +7,10 @@ interface BlueprintCase {
   topic: string;
   expectedStructure: string;
   expectedPatterns: string[];
-  skill_id?: string;
 }
 
 function slug(structureType: string) {
   return "aha-" + structureType.replaceAll("_", "-");
-}
-
-function skillNameFor(pack: (typeof KNOWLEDGE_SKILL_PACKS)[number]) {
-  return pack.skill_directory || slug(pack.structure_type);
 }
 
 function readJson<T>(filePath: string): T {
@@ -23,7 +18,7 @@ function readJson<T>(filePath: string): T {
 }
 
 function parseFrontmatter(markdown: string) {
-  const match = markdown.match(/^---\n([\s\S]*?)\n---/);
+  const match = markdown.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!match) return null;
   const fields = new Map<string, string>();
   for (const line of match[1].split("\n")) {
@@ -39,13 +34,14 @@ const skillRoot = path.join(root, "docs", "knowledge-skills");
 const cases = readJson<BlueprintCase[]>(path.join(root, "tests", "fixtures", "blueprint-cases.json"));
 const dynamicFlowSource = fs.readFileSync(path.join(root, "src", "lib", "content", "dynamic-flow-generation.ts"), "utf8");
 const failures: string[] = [];
+const tick = String.fromCharCode(96);
 
 function fail(message: string) {
   failures.push(message);
 }
 
-for (const pack of KNOWLEDGE_SKILL_PACKS) {
-  const skillName = skillNameFor(pack);
+for (const skill of KNOWLEDGE_SKILL_PACKS) {
+  const skillName = slug(skill.structure_type);
   const skillDir = path.join(skillRoot, skillName);
   const skillPath = path.join(skillDir, "SKILL.md");
   const evalPath = path.join(skillDir, "evals", "evals.json");
@@ -72,30 +68,24 @@ for (const pack of KNOWLEDGE_SKILL_PACKS) {
     if (frontmatter.get("name") !== skillName) fail(skillName + ": frontmatter name mismatch");
     const description = frontmatter.get("description") ?? "";
     if (description.length < 80) fail(skillName + ": description is too weak for triggering");
-    if (!description.includes(pack.structure_type)) fail(skillName + ": description does not mention structure type");
+    if (!description.includes(skill.structure_type)) fail(skillName + ": description does not mention structure type");
   }
 
-  if (!markdown.includes("Structure type: `" + pack.structure_type + "`")) fail(skillName + ": missing structure type in body");
-  const runtimeContract = formatKnowledgeSkillContract(pack);
-  if (!runtimeContract.includes(pack.id)) fail(skillName + ": runtime contract missing skill id");
-  if (!runtimeContract.includes(pack.structure_type)) fail(skillName + ": runtime contract missing structure type");
-  for (const term of pack.required_core_terms.slice(0, 5)) {
-    if (!runtimeContract.includes(term)) fail(skillName + ": runtime contract missing core term " + term);
+  if (!markdown.includes("Structure type: " + tick + skill.structure_type + tick)) fail(skillName + ": missing structure type in body");
+  const runtimeContract = formatKnowledgeSkillContract(skill);
+  if (!runtimeContract.includes(skill.id)) fail(skillName + ": runtime contract missing skill id");
+  if (!runtimeContract.includes(skill.structure_type)) fail(skillName + ": runtime contract missing structure type");
+
+  for (const requirement of skill.teaching_requirements) {
+    if (!runtimeContract.includes(requirement)) fail(skillName + ": runtime contract missing requirement " + requirement);
+    if (!markdown.includes(requirement)) fail(skillName + ": missing teaching requirement " + requirement);
   }
-  for (const step of pack.required_teaching_steps) {
-    if (!runtimeContract.includes(step)) fail(skillName + ": runtime contract missing teaching step " + step);
-  }
-  for (const pattern of pack.suitable_patterns) {
+  for (const pattern of skill.suitable_patterns) {
     if (!runtimeContract.includes(pattern)) fail(skillName + ": runtime contract missing suitable Pattern " + pattern);
+    if (!markdown.includes(tick + pattern + tick)) fail(skillName + ": missing suitable Pattern " + pattern);
   }
-  for (const pattern of pack.suitable_patterns) {
-    if (!markdown.includes("`" + pattern + "`")) fail(skillName + ": missing suitable Pattern " + pattern);
-  }
-  for (const pattern of pack.unsuitable_patterns) {
-    if (!markdown.includes("`" + pattern + "`")) fail(skillName + ": missing unsuitable Pattern " + pattern);
-  }
-  for (const step of pack.required_teaching_steps) {
-    if (!markdown.includes(step)) fail(skillName + ": missing teaching step " + step);
+  for (const pattern of skill.unsuitable_patterns) {
+    if (!markdown.includes(tick + pattern + tick)) fail(skillName + ": missing unsuitable Pattern " + pattern);
   }
 
   const evals = readJson<{
@@ -104,7 +94,7 @@ for (const pack of KNOWLEDGE_SKILL_PACKS) {
   }>(evalPath);
   if (evals.skill_name !== skillName) fail(skillName + ": eval skill_name mismatch");
 
-  const expectedCases = cases.filter((item) => item.skill_id ? item.skill_id === pack.id : item.expectedStructure === pack.structure_type && !pack.skill_directory);
+  const expectedCases = cases.filter((item) => item.expectedStructure === skill.structure_type);
   if (evals.evals.length !== expectedCases.length) {
     fail(skillName + ": expected " + expectedCases.length + " evals, got " + evals.evals.length);
   }
@@ -124,15 +114,15 @@ for (const pack of KNOWLEDGE_SKILL_PACKS) {
   console.log(skillName + ": pass (" + expectedCases.length + " evals)");
 }
 
-const expectedSkillNames = new Set(KNOWLEDGE_SKILL_PACKS.map((pack) => skillNameFor(pack)));
+const expectedSkillNames = new Set(KNOWLEDGE_SKILL_PACKS.map((skill) => slug(skill.structure_type)));
 if (fs.existsSync(skillRoot)) {
   for (const entry of fs.readdirSync(skillRoot, { withFileTypes: true })) {
     if (entry.isDirectory() && !expectedSkillNames.has(entry.name)) fail("unexpected skill directory: " + entry.name);
   }
 }
 
-if (!dynamicFlowSource.includes("Aha Skill Pack runtime contract") || !dynamicFlowSource.includes("formatKnowledgeSkillContract")) {
-  fail("dynamic Flow prompt does not inject Skill Pack runtime contract");
+if (!dynamicFlowSource.includes("Aha Structure Skill runtime contract") || !dynamicFlowSource.includes("formatKnowledgeSkillContract")) {
+  fail("dynamic Flow prompt does not inject Structure Skill runtime contract");
 }
 
 console.log("skills: " + KNOWLEDGE_SKILL_PACKS.length);

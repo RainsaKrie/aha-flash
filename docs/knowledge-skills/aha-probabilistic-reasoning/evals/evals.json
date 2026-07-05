@@ -1,125 +1,145 @@
 {
-  "skill_name": "aha-probabilistic-reasoning",
-  "evals": [
-    {
-      "id": 1,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: Bayes theorem.",
-      "expected_output": "Classify as probabilistic_reasoning and use Pattern chain: probability -> parameter_explore -> knowledge_check.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is probabilistic_reasoning.",
-        "The Pattern chain is exactly probability -> parameter_explore -> knowledge_check.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 2,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: normal distribution.",
-      "expected_output": "Classify as probabilistic_reasoning and use Pattern chain: probability -> parameter_explore -> knowledge_check.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is probabilistic_reasoning.",
-        "The Pattern chain is exactly probability -> parameter_explore -> knowledge_check.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 3,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: expected value.",
-      "expected_output": "Classify as probabilistic_reasoning and use Pattern chain: probability -> parameter_explore -> knowledge_check.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is probabilistic_reasoning.",
-        "The Pattern chain is exactly probability -> parameter_explore -> knowledge_check.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 4,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: Monte Carlo method.",
-      "expected_output": "Classify as probabilistic_reasoning and use Pattern chain: probability -> parameter_explore -> knowledge_check.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is probabilistic_reasoning.",
-        "The Pattern chain is exactly probability -> parameter_explore -> knowledge_check.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 5,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: A/B testing.",
-      "expected_output": "Classify as probabilistic_reasoning and use Pattern chain: probability -> parameter_explore -> knowledge_check.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is probabilistic_reasoning.",
-        "The Pattern chain is exactly probability -> parameter_explore -> knowledge_check.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 6,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: hypothesis testing.",
-      "expected_output": "Classify as probabilistic_reasoning and use Pattern chain: probability -> parameter_explore -> knowledge_check.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is probabilistic_reasoning.",
-        "The Pattern chain is exactly probability -> parameter_explore -> knowledge_check.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 7,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: confidence interval.",
-      "expected_output": "Classify as probabilistic_reasoning and use Pattern chain: probability -> parameter_explore -> knowledge_check.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is probabilistic_reasoning.",
-        "The Pattern chain is exactly probability -> parameter_explore -> knowledge_check.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 8,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: Markov chain.",
-      "expected_output": "Classify as probabilistic_reasoning and use Pattern chain: probability -> parameter_explore -> knowledge_check.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is probabilistic_reasoning.",
-        "The Pattern chain is exactly probability -> parameter_explore -> knowledge_check.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 9,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: risk assessment.",
-      "expected_output": "Classify as probabilistic_reasoning and use Pattern chain: probability -> parameter_explore -> knowledge_check.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is probabilistic_reasoning.",
-        "The Pattern chain is exactly probability -> parameter_explore -> knowledge_check.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 10,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: random sampling.",
-      "expected_output": "Classify as probabilistic_reasoning and use Pattern chain: probability -> parameter_explore -> knowledge_check.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is probabilistic_reasoning.",
-        "The Pattern chain is exactly probability -> parameter_explore -> knowledge_check.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    }
-  ]
+    "skill_name":  "aha-probabilistic-reasoning",
+    "evals":  [
+                  {
+                      "id":  1,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: Bayes theorem.",
+                      "expected_output":  "Classify as probabilistic_reasoning and use Pattern chain: probability -\u003e parameter_explore -\u003e concept_memory -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is probabilistic_reasoning.",
+                                           "The Pattern chain is exactly probability -\u003e parameter_explore -\u003e concept_memory -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  2,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: normal distribution.",
+                      "expected_output":  "Classify as probabilistic_reasoning and use Pattern chain: probability -\u003e parameter_explore -\u003e concept_memory -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is probabilistic_reasoning.",
+                                           "The Pattern chain is exactly probability -\u003e parameter_explore -\u003e concept_memory -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  3,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: expected value.",
+                      "expected_output":  "Classify as probabilistic_reasoning and use Pattern chain: probability -\u003e parameter_explore -\u003e concept_memory -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is probabilistic_reasoning.",
+                                           "The Pattern chain is exactly probability -\u003e parameter_explore -\u003e concept_memory -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  4,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: Monte Carlo method.",
+                      "expected_output":  "Classify as probabilistic_reasoning and use Pattern chain: probability -\u003e parameter_explore -\u003e concept_memory -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is probabilistic_reasoning.",
+                                           "The Pattern chain is exactly probability -\u003e parameter_explore -\u003e concept_memory -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  5,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: A/B testing.",
+                      "expected_output":  "Classify as probabilistic_reasoning and use Pattern chain: probability -\u003e parameter_explore -\u003e concept_memory -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is probabilistic_reasoning.",
+                                           "The Pattern chain is exactly probability -\u003e parameter_explore -\u003e concept_memory -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  6,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: hypothesis testing.",
+                      "expected_output":  "Classify as probabilistic_reasoning and use Pattern chain: probability -\u003e parameter_explore -\u003e concept_memory -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is probabilistic_reasoning.",
+                                           "The Pattern chain is exactly probability -\u003e parameter_explore -\u003e concept_memory -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  7,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: confidence interval.",
+                      "expected_output":  "Classify as probabilistic_reasoning and use Pattern chain: probability -\u003e parameter_explore -\u003e concept_memory -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is probabilistic_reasoning.",
+                                           "The Pattern chain is exactly probability -\u003e parameter_explore -\u003e concept_memory -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  8,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: Markov chain.",
+                      "expected_output":  "Classify as probabilistic_reasoning and use Pattern chain: probability -\u003e parameter_explore -\u003e concept_memory -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is probabilistic_reasoning.",
+                                           "The Pattern chain is exactly probability -\u003e parameter_explore -\u003e concept_memory -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  9,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: risk assessment.",
+                      "expected_output":  "Classify as probabilistic_reasoning and use Pattern chain: probability -\u003e parameter_explore -\u003e concept_memory -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is probabilistic_reasoning.",
+                                           "The Pattern chain is exactly probability -\u003e parameter_explore -\u003e concept_memory -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  10,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: random sampling.",
+                      "expected_output":  "Classify as probabilistic_reasoning and use Pattern chain: probability -\u003e parameter_explore -\u003e concept_memory -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is probabilistic_reasoning.",
+                                           "The Pattern chain is exactly probability -\u003e parameter_explore -\u003e concept_memory -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  }
+              ]
 }

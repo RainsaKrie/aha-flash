@@ -9,7 +9,7 @@
 | `PRODUCT.md` | 当前产品定位、作品集体验、功能边界、设计质量标准和 V1 路线 |
 | `TECHNICAL.md` | 技术架构、V5/V6 Flow 路由、Schema 协议、QualityGate 与验证规则 |
 | `CHANGELOG.md` | 已完成任务、验收记录和重要修复 |
-| `knowledge-skills/` | 8 类运行时 Skill Pack 的教学合约与 Eval 资产 |
+| `knowledge-skills/` | 8 类通用 Structure Skill 的教学合约与 Eval 资产 |
 | `input-docs/README.md` | 后续增量规划文档的放置规则；当前仅保留前端设计参考 |
 
 ## 增量文档工作流
@@ -68,13 +68,14 @@ npm run eval:teaching-manual -- --topics="linear programming,DNS resolution" --r
 
 没有配置 `DEEPSEEK_API_KEY`、provider 异常或动态 QualityGate 失败时，系统会保留 topic-aware fallback 供诊断，但公开 UI 展示诚实失败态而不是把泛化四步 Flow 伪装成 AI 教学；五条精选示例仍可完整走完。
 <!-- DOCS_STATUS_START -->
-## 当前状态速览（2026-06-22）
-- V6 已完成“自由输入 -> ConceptPlan -> KnowledgeBlueprint -> 四步 Flow -> QualityGate -> 后续分支”的工程闭环；首页不再要求用户手选 Pattern，由 AI 根据知识结构自动选择。
-- `/api/flow` 支持普通 JSON 与 `stream: true` SSE 两种响应；Explore 消费真实的 `concept_plan -> blueprint -> flow -> quality_gate` 阶段，而不是前端计时器。
-- 生成成功后，用户先查看知识结构和四个面向学习者的关卡目标，再自行进入路径或重新拆解；Blueprint 核心词和 Pattern 元数据仅用于后台校验，不直接展示。失败时提供重试、换概念、换拆解方式与精选示例逃逸路径。
-- 质量基线：80 个 Blueprint 固定用例通过；2026-06-21 的 8 结构 x 3 次严格 live smoke 是历史发布基线（24/24、所有 repair 指标为 0）。2026-06-22 新增“关卡标题必须具体”闸门后，复利单例真实调用通过，首轮泛称标题触发了一次可见且可追踪的 LLM 修复。
-- 教学质量门已细分为四个确定性维度：每关 trace 与可见主体内容同时覆盖“教学动作术语 + topic grounding 术语”、用户动作与组件模板契约一致、模板确实可执行；`eval:teaching` 覆盖反例，`eval:flow-live` 按知识结构输出 repair 标签分布和四项覆盖率。
-- 复利类数值互动采用显式公式契约：滑块显示公式和代入值，模拟器按“终值 = 本金 × (1 + 年利率)^期数”逐期计算；无法验证的模型只能显示为趋势示意，不能伪装成真实数值。
-- 动态 Flow 只保存在当前浏览器会话，Hub 完成记录写入本机 localStorage；草稿存储不可用时会明确提示，不会跳转到空 Flow。
-- 当前不做：账号、数据库、多设备同步、社区发布、生产级埋点、检索/RAG 和内部 Wiki；这些是 V6.5/V7 的后续范围。
+## 当前状态速览（2026-06-24）
+- V6的主链路为：自由输入 -> ConceptPlan -> 八类通用Structure Skill -> KnowledgeBlueprint -> 四步Flow -> QualityGate -> 后续分支。
+- 81个Blueprint固定用例覆盖八类知识结构；通用Skills不携带概念专用术语或预制关卡，概念grounding只来自当前ConceptPlan。
+- 动态Flow不会为任意主题强行选择simulation_play。只有滑块输出或模拟器payload提供可验证公式时，数值结果才可作为事实显示。
+- QualityGate继续做确定性结构校验：Schema、Pattern、动作与模板契约、主题grounding、占位符和禁止框架；它不把内部教学角色词写回用户界面。
+- 事实准确性、时效信息和来源引用不属于V6。V7计划做按需Evidence Pack，而不是让所有请求无差别走RAG或堆积专用Skill。
+- 当前不做账号、数据库、多设备同步、社区发布、生产级埋点、内部Wiki或常驻检索。
 <!-- DOCS_STATUS_END -->
+
+- 2026-07-01：结构化 LLM 调用已接入 DeepSeek JSON Output，降低非法 JSON、空 content 和格式漂移导致的 fallback；`eval:flow-live` 最新 8/8 通过，QualityGate 增加中英术语别名和分步术语覆盖；事实准确性仍规划到 V7 Evidence Pack。
+- 2026-07-05: V6 visible grounding closeout passed. Dynamic Flow now filters internal teaching-action words from visible cue selection and prefers concrete ConceptPlan / Blueprint terms. Latest real `eval:flow-live` is 8/8 with `overall=1`, `llm_success_rate=1`, and all teaching metrics at 1.

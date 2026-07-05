@@ -1,211 +1,125 @@
-import type { BlueprintStep, KnowledgeStructureType } from "./knowledge-blueprint.ts";
+import type { KnowledgeStructureType } from "./knowledge-blueprint.ts";
 import type { PatternType } from "../../types/schema.ts";
 
-export interface KnowledgeSkeleton {
+export type SupportedKnowledgeStructure = Exclude<KnowledgeStructureType, "unclassified">;
+
+export interface KnowledgeStructureSkill {
   id: string;
-  structure_type: KnowledgeStructureType;
-  hints: string[];
-  required_core_terms: string[];
-  required_teaching_steps: string[];
+  structure_type: SupportedKnowledgeStructure;
+  teaching_requirements: string[];
   common_misconceptions: string[];
   forbidden_framings: string[];
   suitable_patterns: PatternType[];
   unsuitable_patterns: PatternType[];
   canonical_examples: string[];
-  pattern_strategy?: PatternType[];
-  teaching_sequence?: BlueprintStep[];
-  skill_directory?: string;
 }
 
-export const KNOWLEDGE_SKILL_PACKS: KnowledgeSkeleton[] = [
+// A Skill teaches a reusable knowledge structure. It never routes a topic or stores a prewritten lesson.
+export const KNOWLEDGE_STRUCTURE_SKILLS: KnowledgeStructureSkill[] = [
   {
-    id: "optimization-linear-programming",
+    id: "optimization-model",
     structure_type: "optimization_model",
-    hints: ["linear programming", "integer programming", "optimization", "resource allocation", "production planning", "线性规划", "整数规划", "资源分配", "生产计划", "diet problem", "transportation problem", "assignment problem", "knapsack problem", "project scheduling"],
-    required_core_terms: ["decision variable", "objective function", "constraint", "feasible region", "optimum", "决策变量", "目标函数", "约束条件", "可行域", "最优解"],
-    required_teaching_steps: ["define decision variables", "set objective function", "apply constraints", "search feasible region", "compare optimum"],
-    common_misconceptions: ["treating optimization as a random draw", "only changing one slider without defining constraints", "只把线性规划当成随机选择"],
-    forbidden_framings: ["看涨期权券", "期权费", "奖池", "抽取", "random prize"],
-    suitable_patterns: ["system_builder", "parameter_explore", "simulation_play"],
-    unsuitable_patterns: ["probability"],
-    canonical_examples: ["factory product mix", "diet problem", "transportation planning", "资源分配"],
+    teaching_requirements: ["name what can be chosen", "state the objective", "make constraints visible", "compare feasible choices"],
+    common_misconceptions: ["treating optimisation as a random draw", "changing a value without stating the constraint"],
+    forbidden_framings: ["random prize", "fabricated numerical forecast"],
+    suitable_patterns: ["system_builder", "parameter_explore", "comparison", "knowledge_check"],
+    unsuitable_patterns: ["probability", "simulation_play"],
+    canonical_examples: ["resource allocation", "production planning", "diet problem"],
   },
   {
-    id: "system-dns-resolution",
+    id: "system-process",
     structure_type: "system_process",
-    hints: ["dns", "domain resolution", "域名解析", "DNS 解析", "tcp handshake", "ci/cd pipeline", "message queue", "payment checkout", "database replication", "http request", "kubernetes scheduling", "compiler pipeline", "oauth login"],
-    required_core_terms: ["browser", "recursive resolver", "root server", "authoritative server", "cache", "IP address", "浏览器", "递归解析器", "根服务器", "权威服务器", "缓存", "IP 地址"],
-    required_teaching_steps: ["request starts", "resolver asks hierarchy", "authoritative answer returns", "cache shortens next lookup"],
-    common_misconceptions: ["DNS is just one database lookup", "recursive resolver and authoritative server are the same role"],
-    forbidden_framings: ["single lookup only", "one-step lookup"],
-    suitable_patterns: ["system_builder", "process_timeline", "knowledge_check"],
+    teaching_requirements: ["identify actors", "follow a handoff", "separate normal and failure paths", "diagnose one boundary"],
+    common_misconceptions: ["a system process is one lookup", "two actors have the same role"],
+    forbidden_framings: ["one-step lookup", "single actor explains the whole process"],
+    suitable_patterns: ["system_builder", "process_timeline", "classification_sort", "knowledge_check"],
     unsuitable_patterns: ["probability"],
-    canonical_examples: ["open example.com", "cache hit vs cache miss"],
+    canonical_examples: ["DNS resolution", "payment checkout", "message queue"],
   },
   {
-    id: "probability-bayes-update",
+    id: "probabilistic-reasoning",
     structure_type: "probabilistic_reasoning",
-    hints: ["bayes", "bayesian", "贝叶斯", "条件概率", "hypothesis testing", "confidence interval", "markov chain", "risk assessment", "random sampling", "normal distribution", "expected value", "monte carlo", "a/b testing"],
-    required_core_terms: ["prior", "likelihood", "posterior", "evidence", "conditional probability", "先验", "似然", "后验", "证据", "条件概率"],
-    required_teaching_steps: ["start from prior", "weigh evidence", "update posterior", "make decision"],
-    common_misconceptions: ["new evidence erases the prior", "posterior is just the same as likelihood"],
-    forbidden_framings: ["memorize formula only", "只背公式"],
-    suitable_patterns: ["probability", "parameter_explore", "knowledge_check"],
+    teaching_requirements: ["start with uncertainty", "weigh evidence", "update the judgment", "make a conditional decision"],
+    common_misconceptions: ["new evidence erases the prior", "likelihood and conclusion are identical"],
+    forbidden_framings: ["memorise a formula without a judgment", "investment jargon for non-finance topics"],
+    suitable_patterns: ["probability", "parameter_explore", "concept_memory", "knowledge_check"],
     unsuitable_patterns: ["system_builder"],
     canonical_examples: ["medical test", "spam filtering", "weather forecast"],
   },
   {
-    id: "history-industrial-revolution",
+    id: "historical-change",
     structure_type: "historical_change",
-    hints: ["industrial revolution", "agricultural revolution", "urbanization", "工业革命", "农业革命", "城市化", "cold war", "renaissance", "meiji restoration", "internet evolution", "electrification", "reform and opening-up", "company history"],
-    required_core_terms: ["steam engine", "factory system", "urbanization", "machine", "energy", "蒸汽机", "工厂制度", "城市化", "机器", "能源"],
-    required_teaching_steps: ["initial condition", "trigger", "driver separation", "turning point", "long-term consequence"],
-    common_misconceptions: ["one invention alone caused the whole change", "history is just a date list"],
-    forbidden_framings: ["pure date memorization", "年份就是全部"],
-    suitable_patterns: ["process_timeline", "classification_sort", "narrative_branch"],
+    teaching_requirements: ["show the starting condition", "identify the trigger", "separate drivers", "test a consequence"],
+    common_misconceptions: ["one invention caused the whole change", "history is only a date list"],
+    forbidden_framings: ["pure date memorisation", "single-cause explanation"],
+    suitable_patterns: ["process_timeline", "classification_sort", "narrative_branch", "knowledge_check"],
     unsuitable_patterns: ["probability"],
-    canonical_examples: ["steam power changes factory rhythm", "rural workers move to cities"],
+    canonical_examples: ["industrial revolution", "urbanisation", "internet evolution"],
   },
   {
-    id: "comparison-inflation-deflation",
+    id: "comparison-frame",
     structure_type: "comparison_frame",
-    hints: ["inflation deflation", "inflation vs deflation", "tcp udp", "stocks options", "通胀", "通缩", "股票", "期权", "sql nosql", "supervised unsupervised", "cpu gpu", "renewable fossil", "renting buying", "rest graphql", "capitalism socialism"],
-    required_core_terms: ["shared problem", "dimension", "tradeoff", "boundary case", "共同问题", "维度", "权衡", "边界情况", "same question", "common problem", "comparison dimension", "difference", "trade-off", "edge case", "boundary", "misconception", "signal", "indicator", "cause", "mechanism", "classification", "metric", "transmission mechanism", "信号", "指标", "成因", "机制", "分类", "传播机制"],
-    required_teaching_steps: ["define shared problem", "compare stable dimensions", "test boundary case"],
-    common_misconceptions: ["two terms are compared only by definition", "one side is always better"],
-    forbidden_framings: ["always choose A", "always choose B", "A 一定更好", "B 一定更好"],
-    suitable_patterns: ["comparison", "classification_sort", "knowledge_check"],
-    unsuitable_patterns: ["probability"],
-    canonical_examples: ["inflation vs deflation", "TCP vs UDP", "stocks vs options"],
-  },
-  {
-    id: "classification-rule-boundaries",
-    structure_type: "classification_rule",
-    hints: ["classification", "taxonomy", "waste sorting", "legal liability", "分类", "归类", "垃圾分类", "责任类型", "biological taxonomy", "email sorting", "bloom taxonomy", "rock types", "design pattern types", "http status codes", "customer segmentation"],
-    required_core_terms: ["rule", "category", "boundary case", "anchor example", "规则", "类别", "边界样本", "典型样本"],
-    required_teaching_steps: ["define categories by rule", "sort examples", "test boundary cases", "remember anchors"],
-    common_misconceptions: ["category names are enough without rules", "borderline examples can be guessed by feeling"],
-    forbidden_framings: ["guess by name only", "只看名称"],
-    suitable_patterns: ["classification_sort", "knowledge_check", "concept_memory"],
-    unsuitable_patterns: ["probability"],
-    canonical_examples: ["trash sorting", "legal liability", "email classification"],
-  },
-  {
-    id: "decision-sunk-cost",
-    skill_directory: "aha-decision-sunk-cost",
-    structure_type: "comparison_frame",
-    hints: ["sunk cost", "sunk-cost", "沉没成本", "沉没成本谬误"],
-    required_core_terms: ["沉没成本", "已投入成本", "继续投入", "未来收益", "机会成本"],
-    required_teaching_steps: ["separate past cost", "compare future value and future cost", "choose by next outcome", "check decision rule"],
-    common_misconceptions: ["为了回本而继续投入", "把已经花掉的钱算进现在是否继续的比较"],
-    forbidden_framings: ["继续投入一定能回本", "把沉没成本当作未来收益", "趋势指数", "示意基准", "沉没成本入口", "沉没成本决策链", "factor", "effect"],
+    teaching_requirements: ["place the alternatives in one concrete question", "compare stable dimensions", "separate relevant reasons from noise", "apply the trade-off once"],
+    common_misconceptions: ["comparison is only two definitions", "one option is always better", "past investment proves a future benefit"],
+    forbidden_framings: ["always choose A", "always choose B", "fabricated numerical trend", "internal workflow labels"],
     suitable_patterns: ["narrative_branch", "comparison", "classification_sort", "knowledge_check"],
-    unsuitable_patterns: ["simulation_play", "probability", "system_builder"],
-    canonical_examples: ["电影看了一半是否继续", "亏损项目是否追加预算", "排队太久是否继续等待"],
-    pattern_strategy: ["narrative_branch", "comparison", "classification_sort", "knowledge_check"],
-    teaching_sequence: [
-      {
-        goal: "notice the sunk cost pull",
-        must_explain: ["沉没成本", "已投入成本", "未来选择"],
-        user_action: "choose",
-        recommended_pattern: "narrative_branch",
-        success_criteria: "user can say that past spending cannot be recovered",
-      },
-      {
-        goal: "compare future value and future cost",
-        must_explain: ["继续投入", "未来收益", "机会成本"],
-        user_action: "compare",
-        recommended_pattern: "comparison",
-        success_criteria: "user compares only the next cost and next return",
-      },
-      {
-        goal: "separate past cost from future judgment",
-        must_explain: ["沉没成本", "已投入成本", "未来收益", "机会成本"],
-        user_action: "sort",
-        recommended_pattern: "classification_sort",
-        success_criteria: "user separates irrecoverable past cost from reasons that matter now",
-      },
-      {
-        goal: "check the decision rule",
-        must_explain: ["沉没成本", "未来收益", "机会成本"],
-        user_action: "choose",
-        recommended_pattern: "knowledge_check",
-        success_criteria: "user can apply the rule to a new situation",
-      },
-    ],
+    unsuitable_patterns: ["probability", "simulation_play", "system_builder"],
+    canonical_examples: ["TCP versus UDP", "renting versus buying", "whether to continue a failing option"],
   },
   {
-    id: "causal-compound-interest",
-    structure_type: "causal_mechanism",
-    hints: ["compound interest", "supply demand", "network effect", "incentive mechanism", "复利", "供需", "网络效应", "激励机制", "inflation spiral", "greenhouse effect", "habit formation", "viral spread", "price elasticity", "dopamine reward loop"],
-    required_core_terms: ["input", "mechanism", "feedback", "outcome", "intervention", "输入", "机制", "反馈", "结果", "干预点", "cause", "factor", "effect", "result", "feedback loop", "intervention point", "impact", "growth", "final value", "change", "result change", "影响", "变化", "增长", "最终值"],
-    required_teaching_steps: ["identify input", "connect mechanism", "change one factor", "observe feedback/outcome"],
-    common_misconceptions: ["correlation is enough to prove causation", "one factor explains everything"],
-    forbidden_framings: ["single cause only", "唯一原因"],
-    suitable_patterns: ["system_builder", "parameter_explore", "simulation_play"],
-    unsuitable_patterns: ["concept_memory"],
-    canonical_examples: ["interest compounds over time", "price changes demand", "network value increases with users"],
-  },
-  {
-    id: "procedure-binary-search",
-    structure_type: "procedure_algorithm",
-    hints: ["binary search", "gradient descent", "dijkstra", "merge sort", "breadth first search", "二分查找", "梯度下降", "归并排序", "广度优先搜索", "quicksort", "dynamic programming", "a* search", "topological sort", "backpropagation"],
-    required_core_terms: ["state", "iteration", "rule", "termination", "edge case", "状态", "迭代", "规则", "终止条件", "边界情况"],
-    required_teaching_steps: ["state problem and rule", "step through process", "track state", "test edge case"],
-    common_misconceptions: ["algorithm is only code syntax", "edge cases do not matter"],
-    forbidden_framings: ["just memorize code", "只背代码"],
-    suitable_patterns: ["process_timeline", "simulation_play", "knowledge_check"],
+    id: "classification-rule",
+    structure_type: "classification_rule",
+    teaching_requirements: ["state a sorting rule", "classify examples", "test a boundary case", "apply the rule again"],
+    common_misconceptions: ["a category name is a rule", "borderline cases can be guessed by feel"],
+    forbidden_framings: ["guess by name only", "claim drag-and-drop when the UI uses category choices"],
+    suitable_patterns: ["classification_sort", "knowledge_check", "concept_memory", "narrative_branch"],
     unsuitable_patterns: ["probability"],
-    canonical_examples: ["find target in sorted list", "update gradient step", "merge two sorted lists"],
+    canonical_examples: ["waste sorting", "HTTP status codes", "customer segmentation"],
+  },
+  {
+    id: "causal-mechanism",
+    structure_type: "causal_mechanism",
+    teaching_requirements: ["identify a condition and mechanism", "change one condition", "compare consequences", "choose a plausible intervention"],
+    common_misconceptions: ["correlation alone proves causation", "one factor explains everything"],
+    forbidden_framings: ["single-cause explanation", "unverifiable numerical simulation", "raw factor/effect labels"],
+    suitable_patterns: ["system_builder", "parameter_explore", "narrative_branch", "knowledge_check"],
+    unsuitable_patterns: ["simulation_play"],
+    canonical_examples: ["supply and demand", "network effects", "habit formation"],
+  },
+  {
+    id: "procedure-algorithm",
+    structure_type: "procedure_algorithm",
+    teaching_requirements: ["state the repeated rule", "order a state change", "retain an invariant", "test a boundary"],
+    common_misconceptions: ["an algorithm is only code syntax", "edge cases do not matter"],
+    forbidden_framings: ["memorise code only", "unverifiable numerical simulation"],
+    suitable_patterns: ["process_timeline", "classification_sort", "concept_memory", "knowledge_check"],
+    unsuitable_patterns: ["probability", "simulation_play"],
+    canonical_examples: ["binary search", "merge sort", "shortest-path search"],
   },
 ];
 
-function norm(value: string) {
-  return value.toLowerCase().replace(/[\s\-_，。、：“”‘’：:；;,.!?()[\]{}<>]+/g, "");
+export const KNOWLEDGE_SKILL_PACKS = KNOWLEDGE_STRUCTURE_SKILLS;
+
+export function getKnowledgeSkill(structureType?: KnowledgeStructureType) {
+  if (!structureType || structureType === "unclassified") return undefined;
+  return KNOWLEDGE_STRUCTURE_SKILLS.find((skill) => skill.structure_type === structureType);
 }
 
-function containsAny(text: string, hints: string[]) {
-  const normalized = norm(text);
-  return hints.some((hint) => normalized.includes(norm(hint)));
-}
-
-export function selectKnowledgeSkeleton(topic: string, structureType?: KnowledgeStructureType) {
-  return KNOWLEDGE_SKILL_PACKS.find((pack) => {
-    if (structureType && structureType !== "unclassified" && pack.structure_type !== structureType) return false;
-    return containsAny(topic, pack.hints);
-  });
-}
-
-export function getKnowledgeSkeletonById(id?: string) {
+export function getKnowledgeSkillById(id?: string) {
   if (!id) return undefined;
-  return KNOWLEDGE_SKILL_PACKS.find((pack) => pack.id === id);
+  return KNOWLEDGE_STRUCTURE_SKILLS.find((skill) => skill.id === id);
 }
 
-function shortList(values: string[], limit = 8) {
-  return values.slice(0, limit).join(", ");
-}
-
-export function formatKnowledgeSkillContract(pack: KnowledgeSkeleton) {
+export function formatKnowledgeSkillContract(skill: KnowledgeStructureSkill) {
   return [
-    "Skill Pack: " + pack.id,
-    "Structure type: " + pack.structure_type,
-    "Teach these core terms in visible UI copy: " + shortList(pack.required_core_terms, 10),
-    "Follow this teaching order: " + shortList(pack.required_teaching_steps, 8),
-    "Recommended Pattern family: " + pack.suitable_patterns.join(" -> "),
-    "Avoid Pattern family: " + (pack.unsuitable_patterns.join(", ") || "none"),
-    "Correct these misconceptions: " + shortList(pack.common_misconceptions, 4),
-    "Do not frame the topic as: " + (shortList(pack.forbidden_framings, 5) || "none"),
-    "Useful example anchors: " + shortList(pack.canonical_examples, 4),
-    "Visible step coverage: every play must visibly include at least one term from its matching teaching step.",
-    pack.structure_type === "causal_mechanism" ? "Causal final-step rule: the final simulation must visibly name outcome/result/feedback/final value and show how the result changes." : "",
-    "Use this as a teaching contract, not as prewritten lesson copy. Adapt the examples to the user topic.",
-  ].filter(Boolean).join("\n");
-}
-
-export function topicSkeletonTerms(topic: string) {
-  const terms: string[] = [];
-  for (const pack of KNOWLEDGE_SKILL_PACKS) {
-    if (containsAny(topic, pack.hints)) terms.push(...pack.required_core_terms);
-  }
-  return Array.from(new Set(terms));
+    "Structure Skill: " + skill.id,
+    "Structure type: " + skill.structure_type,
+    "Teaching requirements: " + skill.teaching_requirements.join(" -> "),
+    "Recommended Pattern family: " + skill.suitable_patterns.join(" -> "),
+    "Avoid Pattern family: " + (skill.unsuitable_patterns.join(", ") || "none"),
+    "Correct these misconceptions: " + skill.common_misconceptions.join("; "),
+    "Do not frame the topic as: " + (skill.forbidden_framings.join("; ") || "none"),
+    "Example domains: " + skill.canonical_examples.join(", "),
+    "The ConceptPlan supplies topic-specific grounding terms. Do not expose structure roles, internal labels, or examples as learner-facing lesson copy.",
+  ].join("\n");
 }

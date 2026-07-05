@@ -1,125 +1,145 @@
 {
-  "skill_name": "aha-historical-change",
-  "evals": [
-    {
-      "id": 1,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: industrial revolution.",
-      "expected_output": "Classify as historical_change and use Pattern chain: process_timeline -> classification_sort -> narrative_branch.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is historical_change.",
-        "The Pattern chain is exactly process_timeline -> classification_sort -> narrative_branch.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 2,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: Cold War.",
-      "expected_output": "Classify as historical_change and use Pattern chain: process_timeline -> classification_sort -> narrative_branch.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is historical_change.",
-        "The Pattern chain is exactly process_timeline -> classification_sort -> narrative_branch.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 3,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: urbanization.",
-      "expected_output": "Classify as historical_change and use Pattern chain: process_timeline -> classification_sort -> narrative_branch.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is historical_change.",
-        "The Pattern chain is exactly process_timeline -> classification_sort -> narrative_branch.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 4,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: agricultural revolution.",
-      "expected_output": "Classify as historical_change and use Pattern chain: process_timeline -> classification_sort -> narrative_branch.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is historical_change.",
-        "The Pattern chain is exactly process_timeline -> classification_sort -> narrative_branch.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 5,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: company history.",
-      "expected_output": "Classify as historical_change and use Pattern chain: process_timeline -> classification_sort -> narrative_branch.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is historical_change.",
-        "The Pattern chain is exactly process_timeline -> classification_sort -> narrative_branch.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 6,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: Renaissance.",
-      "expected_output": "Classify as historical_change and use Pattern chain: process_timeline -> classification_sort -> narrative_branch.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is historical_change.",
-        "The Pattern chain is exactly process_timeline -> classification_sort -> narrative_branch.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 7,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: Meiji Restoration.",
-      "expected_output": "Classify as historical_change and use Pattern chain: process_timeline -> classification_sort -> narrative_branch.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is historical_change.",
-        "The Pattern chain is exactly process_timeline -> classification_sort -> narrative_branch.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 8,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: internet evolution.",
-      "expected_output": "Classify as historical_change and use Pattern chain: process_timeline -> classification_sort -> narrative_branch.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is historical_change.",
-        "The Pattern chain is exactly process_timeline -> classification_sort -> narrative_branch.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 9,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: electrification.",
-      "expected_output": "Classify as historical_change and use Pattern chain: process_timeline -> classification_sort -> narrative_branch.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is historical_change.",
-        "The Pattern chain is exactly process_timeline -> classification_sort -> narrative_branch.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 10,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: reform and opening-up.",
-      "expected_output": "Classify as historical_change and use Pattern chain: process_timeline -> classification_sort -> narrative_branch.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is historical_change.",
-        "The Pattern chain is exactly process_timeline -> classification_sort -> narrative_branch.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    }
-  ]
+    "skill_name":  "aha-historical-change",
+    "evals":  [
+                  {
+                      "id":  1,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: industrial revolution.",
+                      "expected_output":  "Classify as historical_change and use Pattern chain: process_timeline -\u003e classification_sort -\u003e narrative_branch -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is historical_change.",
+                                           "The Pattern chain is exactly process_timeline -\u003e classification_sort -\u003e narrative_branch -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  2,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: Cold War.",
+                      "expected_output":  "Classify as historical_change and use Pattern chain: process_timeline -\u003e classification_sort -\u003e narrative_branch -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is historical_change.",
+                                           "The Pattern chain is exactly process_timeline -\u003e classification_sort -\u003e narrative_branch -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  3,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: urbanization.",
+                      "expected_output":  "Classify as historical_change and use Pattern chain: process_timeline -\u003e classification_sort -\u003e narrative_branch -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is historical_change.",
+                                           "The Pattern chain is exactly process_timeline -\u003e classification_sort -\u003e narrative_branch -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  4,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: agricultural revolution.",
+                      "expected_output":  "Classify as historical_change and use Pattern chain: process_timeline -\u003e classification_sort -\u003e narrative_branch -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is historical_change.",
+                                           "The Pattern chain is exactly process_timeline -\u003e classification_sort -\u003e narrative_branch -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  5,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: company history.",
+                      "expected_output":  "Classify as historical_change and use Pattern chain: process_timeline -\u003e classification_sort -\u003e narrative_branch -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is historical_change.",
+                                           "The Pattern chain is exactly process_timeline -\u003e classification_sort -\u003e narrative_branch -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  6,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: Renaissance.",
+                      "expected_output":  "Classify as historical_change and use Pattern chain: process_timeline -\u003e classification_sort -\u003e narrative_branch -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is historical_change.",
+                                           "The Pattern chain is exactly process_timeline -\u003e classification_sort -\u003e narrative_branch -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  7,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: Meiji Restoration.",
+                      "expected_output":  "Classify as historical_change and use Pattern chain: process_timeline -\u003e classification_sort -\u003e narrative_branch -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is historical_change.",
+                                           "The Pattern chain is exactly process_timeline -\u003e classification_sort -\u003e narrative_branch -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  8,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: internet evolution.",
+                      "expected_output":  "Classify as historical_change and use Pattern chain: process_timeline -\u003e classification_sort -\u003e narrative_branch -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is historical_change.",
+                                           "The Pattern chain is exactly process_timeline -\u003e classification_sort -\u003e narrative_branch -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  9,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: electrification.",
+                      "expected_output":  "Classify as historical_change and use Pattern chain: process_timeline -\u003e classification_sort -\u003e narrative_branch -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is historical_change.",
+                                           "The Pattern chain is exactly process_timeline -\u003e classification_sort -\u003e narrative_branch -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  10,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: reform and opening-up.",
+                      "expected_output":  "Classify as historical_change and use Pattern chain: process_timeline -\u003e classification_sort -\u003e narrative_branch -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is historical_change.",
+                                           "The Pattern chain is exactly process_timeline -\u003e classification_sort -\u003e narrative_branch -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  }
+              ]
 }

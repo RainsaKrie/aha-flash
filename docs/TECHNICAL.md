@@ -590,7 +590,7 @@ V6 当前已经具备：`Explore 任意输入 -> AI 生成四步 Flow -> /flow/c
 
 - POST /api/flow uses a two-stage chain: ConceptPlan -> KnowledgeFlow -> UISchema validation/repair.
 - ConceptPlan is the grounding contract. It preserves the user topic, extracts concrete grounding_terms, chooses recommended_patterns, and lists avoid_patterns before any UI payload is generated.
-- `KnowledgeBlueprint.pattern_strategy` is authoritative after ConceptPlan. ConceptPlan `recommended_patterns` and `avoid_patterns` are planning hints, but they cannot remove core Blueprint patterns or reorder the three-step teaching contract.
+- KnowledgeBlueprint pattern_strategy is authoritative after ConceptPlan. ConceptPlan recommendations are planning hints; avoid patterns can remove unsafe interaction types, and dynamic free flows never force simulation_play without an explicit formula contract.
 - Debug mode (?debug=1 in dev/local) exposes concept_plan and raw_plan_output alongside raw_output and validation_error.
 - If ConceptPlan fails validation after repair, fallback uses makeFallbackFlowFromPlan(plan) instead of a fixed showcase topic.
 - Dynamic fallback regression covers Agent, Kubernetes operator, and linear programming; the latter must not include probability in the generated pattern chain.
@@ -605,10 +605,10 @@ Topic -> ConceptPlan -> KnowledgeBlueprint -> KnowledgeFlow -> QualityGate -> Fl
 
 Key implementation points:
 
-- `KnowledgeBlueprint` is the teaching contract and contains `structure_type`, `core_terms`, `teaching_sequence`, `pattern_strategy`, `avoid_patterns`, and confidence.
+- KnowledgeBlueprint pattern_strategy is authoritative after ConceptPlan. ConceptPlan recommendations are planning hints; avoid patterns can remove unsafe interaction types, and dynamic free flows never force simulation_play without an explicit formula contract.
 - `TeachingTrace` is attached to each generated `KnowledgePlay` after normalization. It is derived from the Blueprint, not trusted from model output.
 - `QualityGate` remains deterministic-first. It checks visible step content, schema validity, pattern fit, avoided patterns, placeholder terms, Blueprint step coverage, and trace alignment.
-- Teaching metrics are emitted with every QualityGate result: `trace_covered_steps`, `visible_term_steps`, `action_contract_steps`, and `template_affordance_steps`. A step only earns visible coverage when its primary title/payload includes both the Blueprint action terms and topic grounding; reward copy is intentionally excluded.
+- Teaching metrics are emitted with every QualityGate result: trace_covered_steps, visible_term_steps, action_contract_steps, and template_affordance_steps. Trace coverage proves the Blueprint teaching contract; visible coverage proves that user-facing component copy contains topic grounding rather than internal role labels.
 - Action contracts are deterministic: `connect -> module_sandbox`, `adjust -> single_slider`, `simulate -> parameter_simulation`, timeline sorting -> `sequence_order`, classification sorting -> `category_buckets`, and knowledge checks -> exactly one correct option plus an explanation for each option.
 - Trace fields are for debugging and eval audit. They must not be used as a substitute for visible user-facing teaching copy.
 - No-key or low-quality dynamic generation returns an honest failure state while still carrying enough draft/debug information for diagnosis.
@@ -619,23 +619,21 @@ Key implementation points:
 - Dynamic Flow completion branches are generated from `KnowledgeBlueprint.structure_type`, `core_terms`, and `teaching_sequence` before considering model-provided or static follow-ups, so completion continues the same knowledge path instead of falling back to generic branches.
 - `npm run eval:flow-live` samples the real LLM path and separates schema repair from flow/quality repair, so V6 can track both structural validity and teaching reliability.
 - `eval:flow-live` also reports each repair tag by inferred knowledge structure plus the four teaching coverage rates. `eval:teaching` is a deterministic negative-contract suite; `eval:teaching-manual` writes a Markdown rubric with each step's planned goal, actual component, visible payload summary, and 1-5 human ratings.
-### V6 Skill Pack Direction
+### V6 Generic Structure Skills
 
-The next V6 reliability layer should split the current universal generation prompt into internal Aha Skill Packs. A Skill Pack is a small teaching contract for a knowledge structure or Pattern family, not prebuilt lesson content.
+The implemented V6 reliability layer uses eight generic Aha Structure Skills, not concept-specific Skills.
 
-Runtime should become:
+Runtime boundary:
 
-```text
-Topic -> ConceptPlan -> selected Skill Pack -> Blueprint/Pattern recipe -> Flow generation -> skill-specific QualityGate
-```
+Topic -> ConceptPlan -> one Structure Skill -> KnowledgeBlueprint -> Pattern chain -> Flow generation -> deterministic QualityGate
 
-Implementation principles:
+- The eight Skills correspond to reusable knowledge structures: optimisation, system process, probabilistic reasoning, historical change, comparison, classification, causal mechanism, and procedure or algorithm.
+- A Skill defines only the reusable teaching contract: four required learning moves, common misconceptions, allowed and disallowed Pattern families, and forbidden framings.
+- Topic routing remains in KnowledgeBlueprint inference. Topic-specific grounding terms remain in ConceptPlan. Pattern components own the actual interaction affordance. No Skill contains a prewritten topic lesson or a hard-coded term list.
+- Dynamic free generation does not choose simulation_play by default. Formula-backed numeric interaction is allowed only when a verifiable formula is present; otherwise the planner chooses a non-numeric Pattern.
+- docs/knowledge-skills contains one concise SKILL.md and one evals/evals.json per structure. eval:skills checks that all eight documents, the runtime registry, and Blueprint fixtures agree.
+- generateDynamicFlow returns structured repair_actions so live evaluation can identify which generic contract or prompt needs improvement.
 
-- Load only the relevant knowledge-structure recipe and Pattern recipes for the current topic.
-- Keep Skill Packs upstream of generation; keep deterministic QualityGate downstream of generation.
-- First implementation exists in `src/lib/content/skill-packs.ts`: 8 internal skeletons provide required core terms, required teaching steps, forbidden framings, suitable Patterns, and unsuitable Patterns. `KnowledgeBlueprint` carries the selected skeleton id and QualityGate blocks drafts that miss required skeleton terms or hit forbidden framings. `eval:blueprint` now covers the Stage C target of 80 fixed cases: 10 topics for each supported structure, with the current baseline at `overall: 1`. Comparison and causal skeletons include natural-language anchors such as signal, indicator, transmission mechanism, result, effect, and final value so deterministic checks match real teaching copy.
-- `generateDynamicFlow` returns structured `repair_actions` (`field_fix`, `pattern_normalize`, `placeholder_clean`, `schema_repair`, `schema_fallback`, `flow_repair`) so live eval can identify which prompt or Skill Pack needs work.
-- The repair layer remains a safety net. The practical target is keeping repair reliance at or below 0.2 while expanding coverage. After runtime Skill Contract injection, the full 8x3 live baseline on 2026-06-19 reached `overall: 1`, `llm_success_rate: 1`, `schema_repair_rate: 0`, `flow_repair_rate: 0.083`, and `repair_reliance_rate: 0.083`; the remaining repairs are concentrated in causal/compound-interest flow repair.
 ### V6 Verifiable Numerical Interaction Contract
 
 parameter_explore output entries may declare formula: kind compound_interest, principal, periods, rate_unit, and output. simulation_play may declare formula: kind compound_interest, principal_param, rate_param, and rate_unit.
@@ -644,19 +642,17 @@ For a declared or explicitly inferred compound-interest model, runtime calculati
 
 The UI renders the formula and active substitution next to the result. simulation_play performs the same calculation for each period; it never derives a rate from parameter position. The only automatic inference is narrow: a compound-interest Flow with parameter labels that explicitly identify principal and annual rate. If a model lacks a verifiable formula, its output is labelled as a qualitative trend index rather than a factual number.
 
-QualityGate rejects compound-interest Flows without a simulation_play formula bound to existing principal and rate parameter labels. npm run eval:math covers 100 × (1 + 5%)^10 = 162.89 and 10000 × (1 + 5%)^5 = 12762.82.
-### V6 Accuracy Grounding Scope
+QualityGate accepts a compound-interest Flow only when a verifiable formula is attached to a slider output or simulation payload. Formula-free simulations cannot pass as numerical teaching.
+### V7 Evidence Boundary
 
-V6 should solve factual reliability with compact Skill Pack knowledge skeletons, not with a full Wiki or always-on web search.
+Generic Structure Skills improve teaching form and interaction fit. They are not a factual knowledge base and must not be presented as one.
 
-A knowledge skeleton should define required core terms, required teaching steps, common misconceptions, forbidden framings, suitable Patterns, unsuitable Patterns, and a few canonical examples for one knowledge structure or high-risk topic family.
+V7 should introduce an Evidence Pack only when a topic needs externally verifiable facts, formulas, dates, or current information:
 
-The skeleton should be used in two places:
-
-1. Before generation: constrain the Blueprint and Pattern recipe.
-2. After generation: let deterministic QualityGate check visible content against required terms, required steps, forbidden framings, and unsuitable Patterns.
-
-Network search and a curated Wiki are future layers. They should not be a hard dependency for V6 free generation.
+1. A lightweight agent decides whether evidence is required and asks a configured retrieval provider for a small set of authoritative sources.
+2. The system normalizes those results into an Evidence Pack containing source, claim, date when relevant, formula or quote bounds, and allowed grounding terms.
+3. ConceptPlan and KnowledgeBlueprint may use the Evidence Pack, while QualityGate deterministically verifies only its structured fields and citations.
+4. There is no always-on RAG, giant internal Wiki, or uncontrolled web search in V6. Retrieval remains opt-in and provider-agnostic until source policy, latency, cost, and citation UI are designed.
 
 ### V6 Generation Visibility
 
@@ -669,26 +665,26 @@ V6 internal Skill Packs now have a project-level, skill-creator-style asset laye
 - `SKILL.md`: YAML frontmatter with `name` and a triggering `description`, plus concise teaching-contract instructions.
 - `evals/evals.json`: skill-level prompts and expectations synchronized with `tests/fixtures/blueprint-cases.json`.
 
-These folders are not user-installable Codex skills yet. They are the human/agent-editable specification layer for the runtime skeletons in `src/lib/content/skill-packs.ts`. Runtime generation still reads the TypeScript skeletons so product behavior remains deterministic and cheap.
+These folders are not user-installable Codex skills. They are the human and agent editable specification layer for the runtime generic Structure Skills in src/lib/content/skill-packs.ts. Runtime reads the TypeScript registry so behavior remains deterministic and cheap.
 
-`npm run eval:skills` verifies that the skill folders, frontmatter, Pattern recipes, teaching steps, eval cases, and runtime prompt contracts stay aligned with the runtime skeletons and Blueprint fixture set.
+`npm run eval:skills` verifies that the skill folders, frontmatter, Pattern recipes, teaching steps, eval cases, and runtime prompt contracts stay aligned with the runtime generic Skills and Blueprint fixture set.
 
-Runtime Flow generation now injects a compact Aha Skill Pack contract into both the first-pass Flow prompt and the repair prompt. The contract exposes only the selected skeleton id, structure type, required visible core terms, teaching order, recommended/avoided Pattern family, misconceptions, forbidden framings, and example anchors. This keeps the LLM focused on the selected teaching skill instead of relying only on a large generic Blueprint JSON block.
+Runtime Flow generation injects a compact Structure Skill contract into both the first-pass Flow prompt and the repair prompt. It carries the selected generic Skill id, structure type, four teaching requirements, allowed and avoided Pattern families, misconceptions, and forbidden framings. It never injects a concept-specific lesson or a static topic term list.
 
 ### V6 Grounding Stabilization Update
 
-ConceptPlan grounding is now deterministic-first:
+ConceptPlan grounding is topic-owned and deterministic-first:
 
-- `normalizeConceptPlan()` stabilizes `grounding_terms` through the selected Skill Pack skeleton before the Flow prompt is composed.
-- Matching uses `selectKnowledgeSkeleton(topic, structure) || selectKnowledgeSkeleton(topic)` so a weak LLM structure label cannot block a topic-specific teaching contract.
-- Fallback ConceptPlans also use stabilized Skill Pack terms, not generic `<topic>入口 / 关键动作` anchors.
-- Fallback plays append visible Blueprint step terms to `reward_copy`; `teaching_trace` remains eval/debug metadata and is not treated as a substitute for visible teaching copy.
-- `eval:flow-live` supports `--case=` for targeted live checks, e.g. `npm run eval:flow-live -- --case=optimization --runs=5`.
+- normalizeConceptPlan filters generic filler from grounding_terms; it does not borrow terms from a special Skill skeleton.
+- KnowledgeBlueprint selects one generic Structure Skill from the inferred knowledge structure, while ConceptPlan supplies the concrete terms for the current topic.
+- Fallback ConceptPlans preserve their topic and may use known domain anchors, but public failure UI does not disguise a low-quality fallback as a completed AI lesson.
+- TeachingTrace records the internal four-step contract for audit. Visible QualityGate coverage reads rendered payload fields and requires topic grounding, not raw internal action labels. It also supports a small deterministic bilingual alias layer for common teaching terms, so valid Chinese UI copy such as “目标函数/可行域/最优解” can satisfy English ConceptPlan anchors such as `objective function` / `feasible region` / `optimum` without exposing raw English tags.
+- eval:flow-live supports targeted live checks, for example npm run eval:flow-live -- --case=optimization --runs=5.
 
 Current validation:
 
-- Non-live gates pass: `typecheck`, `build`, `eval:score`, `eval:blueprint`, `eval:flow-dynamic`, `eval:skills`.
-- Provider live rebaseline is blocked by `Insufficient Balance`; this is an external API/account state, not a schema or QualityGate failure.
+- Non-live gates pass: typecheck, build, eval:score, eval:blueprint, eval:flow-dynamic, eval:skills, eval:teaching, and eval:math.
+- A live rebaseline still requires a configured provider account and is intentionally separate from deterministic local checks.
 ### V6 Live Baseline After Provider Recharge
 
 After the provider key was recharged, `eval:flow-live` was rerun successfully.
@@ -726,3 +722,24 @@ V6 之外的准确性增强仍按既定边界推进：V6.5 考虑低置信度 to
 - `writeFlowDraft()` returns a boolean. Explore and generated follow-up branches surface a storage-permission/quota error instead of navigating to `/flow/custom` without a readable draft. `recordCompletedFlow()` remains nonfatal so a blocked localStorage write cannot break the completed Flow UI.
 - The 2026-06-21 strict release smoke passed: `npm run lint`, `npm run typecheck`, `npm run build`, `eval:score` 32/32, local `eval:flow` 15/15, `eval:blueprint` 80/80, `eval:flow-dynamic` 9/9, `eval:skills` 8/8, `eval:showcase` 10/10 Pattern coverage, and `eval:flow-live -- --limit=8 --runs=3 --strict --threshold=1` 24/24 with all repair action rates at 0.
 - A diagnosed comparison drift (`dimensions[].name/title` instead of `label`) is addressed in the generation contract, not hidden by a fallback field rewrite. A targeted strict comparison sample passed 5/5 before the full smoke.
+## DeepSeek JSON Output 边界
+
+结构化生成统一经过 `src/lib/llm/retry-generate-text.ts`。当调用方传入 `jsonOutput: true` 时，包装层会给 AI SDK 设置 JSON response format，DeepSeek provider 会映射为 `response_format: { type: "json_object" }`。
+
+当前启用范围：
+- `/api/chat` 的 JSON Schema fallback 与 repair。
+- 精选 Flow 的 LLM Flow Steps 生成。
+- 自由 Flow 的 ConceptPlan、Flow 生成和 Flow repair。
+
+当前不启用范围：
+- Tool Calling。工具调用本身已经有工具 schema，不走纯文本 JSON。
+- 规则路由、追问识别、状态提炼等非结构化输出任务。
+
+边界说明：JSON Output 只保证模型更倾向输出合法 JSON，并不能保证教学正确、事实准确、Pattern 选择合理或文案自然。后续质量仍由 Zod Schema、KnowledgeBlueprint、Structure Skill、QualityGate 和 V7 Evidence Pack 负责。2026-07-01 live rebaseline 后，`eval:flow-live` 8/8 通过；结构质量提升来自 JSON Output + QualityGate 中英术语别名 + 分步核心术语覆盖，而不是增加概念专属 Skill。
+
+补充：当 Flow 正文生成和 repair 都未通过 QualityGate，但 ConceptPlan / KnowledgeBlueprint 已通过时，系统会使用基于该 Blueprint 的确定性 fallback，而不是固定 topic mock。该 fallback 仍会保留 validation_error，便于开发模式定位问题。
+### 2026-07-05 visible grounding closeout
+
+Dynamic Flow visible cue selection now filters generic internal teaching-action words before choosing the learner-facing anchor term. Terms such as `condition`, `mechanism`, `result`, `intervention`, `input`, `output` and their Chinese equivalents are treated as scaffolding, not topic grounding. The UI-visible title, description, and instruction fields now prefer concrete ConceptPlan / Blueprint terms, while `teaching_trace` remains the internal audit record.
+
+The fix is generic: it does not add concept-specific fallback content. It prevents generated cards from exposing backend teaching roles as product copy, and it gives QualityGate the same kind of concrete terms that learners see. Latest verification: focused causal live sample 5/5 with repair reliance 0; full `eval:flow-live` 8/8 with `overall=1` and all teaching metrics at 1.

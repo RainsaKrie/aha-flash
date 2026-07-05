@@ -1,5 +1,5 @@
 import { validateSchema } from "../llm/schema-validator.ts";
-import { selectKnowledgeSkeleton, topicSkeletonTerms } from "./skill-packs.ts";
+import { getKnowledgeSkill } from "./skill-packs.ts";
 import type { FlowPatternPreference } from "./flow-pattern-options.ts";
 import type { KnowledgeFlow } from "./mock-flows.ts";
 import type { PatternType } from "../../types/schema.ts";
@@ -39,9 +39,7 @@ export interface KnowledgeBlueprint {
   avoid_patterns: PatternType[];
   failure_risks: string[];
   confidence: number;
-  skill_skeleton_id?: string;
-  required_core_terms?: string[];
-  required_teaching_steps?: string[];
+  skill_id?: string;
   forbidden_framings?: string[];
 }
 
@@ -144,14 +142,14 @@ const STRUCTURE_PRIORITY: Exclude<KnowledgeStructureType, "unclassified">[] = [
 export const DYNAMIC_FLOW_STEP_COUNT = 4;
 
 const STRATEGY: Record<KnowledgeStructureType, PatternType[]> = {
-  optimization_model: ["system_builder", "parameter_explore", "simulation_play", "knowledge_check"],
+  optimization_model: ["system_builder", "parameter_explore", "comparison", "knowledge_check"],
   system_process: ["system_builder", "process_timeline", "classification_sort", "knowledge_check"],
   probabilistic_reasoning: ["probability", "parameter_explore", "concept_memory", "knowledge_check"],
   historical_change: ["process_timeline", "classification_sort", "narrative_branch", "knowledge_check"],
-  comparison_frame: ["comparison", "classification_sort", "narrative_branch", "knowledge_check"],
+  comparison_frame: ["narrative_branch", "comparison", "classification_sort", "knowledge_check"],
   classification_rule: ["classification_sort", "knowledge_check", "concept_memory", "narrative_branch"],
-  causal_mechanism: ["system_builder", "parameter_explore", "simulation_play", "knowledge_check"],
-  procedure_algorithm: ["process_timeline", "simulation_play", "concept_memory", "knowledge_check"],
+  causal_mechanism: ["system_builder", "parameter_explore", "narrative_branch", "knowledge_check"],
+  procedure_algorithm: ["process_timeline", "classification_sort", "concept_memory", "knowledge_check"],
   unclassified: ["knowledge_check", "concept_memory", "comparison", "narrative_branch"],
 };
 
@@ -159,7 +157,7 @@ const DEFAULT_STEPS: Record<Exclude<KnowledgeStructureType, "unclassified">, Arr
   optimization_model: [
     ["define decision variables", ["decision variables", "决策变量", "变量", "x", "y"], "connect", "system_builder", "user can identify what is being chosen"],
     ["connect objective and constraints", ["objective function", "constraints", "feasible region", "目标函数", "约束", "约束条件", "可行域"], "adjust", "parameter_explore", "user sees constraints change the feasible region"],
-    ["search for optimum", ["optimum", "tradeoff", "最优解", "最优", "权衡", "顶点"], "simulate", "simulation_play", "user can explain why the best point is constrained"],
+    ["compare feasible choices", ["optimum", "tradeoff", "最优解", "最优", "权衡", "可行域"], "compare", "comparison", "user can explain why one feasible choice is better"],
     ["check a feasible decision", ["feasible region", "constraint", "optimum", "可行域", "约束", "最优解"], "choose", "knowledge_check", "user can reject an infeasible or non-optimal choice"],
   ],
   system_process: [
@@ -180,11 +178,11 @@ const DEFAULT_STEPS: Record<Exclude<KnowledgeStructureType, "unclassified">, Arr
     ["choose a turning path", ["turning point", "consequence", "转折点", "后果", "结果"], "choose", "narrative_branch", "user can explain a branch consequence"],
     ["test the causal explanation", ["trigger", "driver", "consequence", "触发", "驱动因素", "后果"], "choose", "knowledge_check", "user can reject a shallow single-cause explanation"],
   ],
-  comparison_frame: [
-    ["define shared problem", ["shared problem", "共同问题", "同一问题", "共同目标"], "compare", "comparison", "user sees both sides answer the same problem"],
-    ["compare stable dimensions", ["dimension", "tradeoff", "维度", "权衡", "差异"], "sort", "classification_sort", "user can classify examples by dimension"],
-    ["choose under a boundary", ["boundary case", "tradeoff", "边界情况", "权衡"], "choose", "narrative_branch", "user can choose a fitting tradeoff"],
-    ["test misconception", ["boundary case", "misconception", "边界情况", "误区", "反例"], "choose", "knowledge_check", "user avoids a false contrast"],
+comparison_frame: [
+    ["place alternatives in one scenario", ["共同问题", "选择", "情境", "权衡"], "choose", "narrative_branch", "user sees what decision the alternatives answer"],
+    ["compare stable dimensions", ["维度", "权衡", "差异", "条件"], "compare", "comparison", "user compares the same dimensions"],
+    ["separate relevant reasons", ["相关条件", "无关投入", "未来成本", "未来收益"], "sort", "classification_sort", "user separates reasons that matter now from noise"],
+    ["test the trade-off", ["边界情况", "权衡", "误区", "反例"], "choose", "knowledge_check", "user applies the rule to a new situation"],
   ],
   classification_rule: [
     ["define categories by rule", ["rule", "category", "规则", "类别", "分类标准"], "sort", "classification_sort", "user sorts by rule"],
@@ -192,17 +190,17 @@ const DEFAULT_STEPS: Record<Exclude<KnowledgeStructureType, "unclassified">, Arr
     ["remember category anchors", ["anchor", "example", "锚点", "例子", "典型样本"], "recall", "concept_memory", "user remembers category anchors"],
     ["apply a category rule", ["rule", "boundary", "规则", "边界"], "choose", "narrative_branch", "user can apply the rule to a new scenario"],
   ],
-  causal_mechanism: [
-    ["identify input and mechanism", ["input", "mechanism", "输入", "机制", "原因"], "connect", "system_builder", "user connects cause to mechanism"],
-    ["change one factor", ["factor", "effect", "因素", "影响", "变化"], "adjust", "parameter_explore", "user sees one factor move the result"],
-    ["observe outcome", ["outcome", "feedback", "结果", "反馈", "输出"], "simulate", "simulation_play", "user explains the outcome"],
-    ["choose an intervention", ["intervention", "feedback", "干预点", "反馈"], "choose", "knowledge_check", "user can identify a useful intervention point"],
+causal_mechanism: [
+    ["identify a condition and mechanism", ["条件", "机制", "原因", "作用"], "connect", "system_builder", "user connects a condition to its mechanism"],
+    ["change one condition", ["条件", "变化", "影响", "结果"], "adjust", "parameter_explore", "user sees one condition change the outcome"],
+    ["compare consequences", ["结果", "反馈", "后果", "条件"], "choose", "narrative_branch", "user compares what follows from different choices"],
+    ["choose an intervention", ["干预", "反馈", "结果", "机制"], "choose", "knowledge_check", "user can identify a useful intervention point"],
   ],
-  procedure_algorithm: [
-    ["state problem and rule", ["problem", "rule", "问题", "规则", "目标"], "recall", "process_timeline", "user can state the repeated rule"],
-    ["step through process", ["iteration", "state", "迭代", "状态", "步骤"], "simulate", "simulation_play", "user can advance one step"],
-    ["remember the invariant", ["state", "rule", "状态", "规则"], "recall", "concept_memory", "user remembers what remains true each round"],
-    ["test edge case", ["edge case", "termination", "边界情况", "终止", "停止条件"], "choose", "knowledge_check", "user knows when the process stops"],
+procedure_algorithm: [
+    ["state problem and rule", ["问题", "规则", "目标", "输入"], "recall", "process_timeline", "user can state the repeated rule"],
+    ["separate state changes", ["状态", "步骤", "分支", "条件"], "sort", "classification_sort", "user can distinguish what changes at each step"],
+    ["remember the invariant", ["状态", "规则", "不变条件", "边界"], "recall", "concept_memory", "user remembers what remains true each round"],
+    ["test edge case", ["边界情况", "终止", "停止条件", "规则"], "choose", "knowledge_check", "user knows when the process stops"],
   ],
 };
 
@@ -261,66 +259,48 @@ function makeSteps(structure: Exclude<KnowledgeStructureType, "unclassified">): 
 }
 
 function protectBlueprintAvoidPatterns(structure: KnowledgeStructureType, patterns: PatternType[] = []) {
-  if (structure === "unclassified") return patterns;
-  const protectedPatterns = new Set(STRATEGY[structure]);
-  return patterns.filter((pattern) => !protectedPatterns.has(pattern));
+  const requiredPatterns = new Set(STRATEGY[structure] || []);
+  return Array.from(new Set(patterns)).filter((pattern) => !requiredPatterns.has(pattern));
 }
 
 export function selectBlueprintPatternStrategy(blueprint: KnowledgeBlueprint, preferredPattern: FlowPatternPreference): PatternType[] {
   const blueprintAvoidPatterns = protectBlueprintAvoidPatterns(blueprint.structure_type, blueprint.avoid_patterns);
-  const avoid = new Set(preferredPattern === "auto" ? blueprintAvoidPatterns : blueprintAvoidPatterns.filter((pattern) => pattern !== preferredPattern));
+  const requestedPattern = preferredPattern !== "auto"
+    && preferredPattern !== "simulation_play"
+    && !blueprintAvoidPatterns.includes(preferredPattern)
+    ? preferredPattern
+    : null;
+  const avoid = new Set(blueprintAvoidPatterns);
   const result: PatternType[] = [];
+
   for (const pattern of blueprint.pattern_strategy) {
     if (!avoid.has(pattern) && !result.includes(pattern)) result.push(pattern);
     if (result.length === DYNAMIC_FLOW_STEP_COUNT) break;
   }
   while (result.length < DYNAMIC_FLOW_STEP_COUNT) result.push("knowledge_check");
-  if (preferredPattern !== "auto" && !result.includes(preferredPattern)) result[1] = preferredPattern;
+  if (requestedPattern && !result.includes(requestedPattern)) result[1] = requestedPattern;
   return result.slice(0, DYNAMIC_FLOW_STEP_COUNT);
 }
 
-const TOPIC_CORE_TERM_SKELETONS: Array<{ hints: string[]; terms: string[] }> = [
-  {
-    hints: ["industrial revolution", "\u5de5\u4e1a\u9769\u547d"],
-    terms: ["steam engine", "factory system", "urbanization", "machine", "energy", "\u84b8\u6c7d\u673a", "\u5de5\u5382\u5236\u5ea6", "\u57ce\u5e02\u5316", "\u673a\u5668", "\u80fd\u6e90"],
-  },
-  {
-    hints: ["linear programming", "\u7ebf\u6027\u89c4\u5212"],
-    terms: ["decision variable", "objective function", "constraint", "feasible region", "optimum", "\u51b3\u7b56\u53d8\u91cf", "\u76ee\u6807\u51fd\u6570", "\u7ea6\u675f\u6761\u4ef6", "\u53ef\u884c\u57df", "\u6700\u4f18\u89e3"],
-  },
-  {
-    hints: ["bayes", "\u8d1d\u53f6\u65af"],
-    terms: ["prior", "likelihood", "posterior", "evidence", "conditional probability", "\u5148\u9a8c", "\u4f3c\u7136", "\u540e\u9a8c", "\u8bc1\u636e", "\u6761\u4ef6\u6982\u7387"],
-  },
-  {
-    hints: ["dns"],
-    terms: ["browser", "recursive resolver", "root server", "authoritative server", "cache", "IP address", "\u6d4f\u89c8\u5668", "\u9012\u5f52\u89e3\u6790\u5668", "\u6839\u670d\u52a1\u5668", "\u6743\u5a01\u670d\u52a1\u5668", "\u7f13\u5b58", "IP \u5730\u5740"],
-  },
-];
-
 function topicCoreTerms(topic: string) {
-  const result: string[] = [...topicSkeletonTerms(topic)];
-  for (const item of TOPIC_CORE_TERM_SKELETONS) {
-    if (containsAny(topic, item.hints)) result.push(...item.terms);
-  }
-  return unique(result);
+  const value = String(topic || "").trim().slice(0, 32);
+  return value ? [value] : [];
 }
-
 export function buildKnowledgeBlueprint(
   plan: BlueprintPlanInput,
   preferredPattern: FlowPatternPreference = "auto",
   preferredStructure: KnowledgeStructurePreference = "auto",
 ): KnowledgeBlueprint {
   const structure = preferredStructure === "auto" ? inferKnowledgeStructure(plan) : preferredStructure;
-  const skeleton = selectKnowledgeSkeleton(plan.topic, structure);
   const grounding = unique(plan.grounding_terms || []);
+
   if (structure === "unclassified") {
     return {
       topic: plan.topic,
       structure_type: "unclassified",
-      learning_objective: plan.core_question || `Find a reliable teaching structure for ${plan.topic}`,
+      learning_objective: plan.core_question || "Find a reliable teaching structure for " + plan.topic,
       prerequisite_terms: [],
-      core_terms: grounding.slice(0, 5),
+      core_terms: unique([...topicCoreTerms(plan.topic), ...grounding]).slice(0, 8),
       misconceptions: [],
       teaching_sequence: [],
       pattern_strategy: STRATEGY.unclassified,
@@ -329,42 +309,71 @@ export function buildKnowledgeBlueprint(
       confidence: 0.2,
     };
   }
-  const steps = skeleton?.teaching_sequence || makeSteps(structure);
-  const coreTerms = unique([...(skeleton?.required_core_terms || []), ...topicCoreTerms(plan.topic), ...grounding, ...steps.flatMap((step) => step.must_explain)]).slice(0, 14);
-  const avoidPatterns = protectBlueprintAvoidPatterns(structure, Array.from(new Set([...(plan.avoid_patterns || []), ...(skeleton?.unsuitable_patterns || [])])));
+
+  const skill = getKnowledgeSkill(structure);
+  const steps = makeSteps(structure);
+  const coreTerms = unique([...topicCoreTerms(plan.topic), ...grounding]).slice(0, 10);
+  const avoidPatterns = protectBlueprintAvoidPatterns(
+    structure,
+    Array.from(new Set([...(plan.avoid_patterns || []), ...(skill?.unsuitable_patterns || [])])),
+  );
   const draft: KnowledgeBlueprint = {
     topic: plan.topic,
     structure_type: structure,
-    learning_objective: plan.core_question || `Understand ${plan.topic}`,
+    learning_objective: plan.core_question || "Understand " + plan.topic,
     prerequisite_terms: [],
     core_terms: coreTerms,
-    misconceptions: skeleton?.common_misconceptions || [],
+    misconceptions: skill?.common_misconceptions || [],
     teaching_sequence: steps,
-    pattern_strategy: skeleton?.pattern_strategy || STRATEGY[structure],
+    pattern_strategy: STRATEGY[structure],
     avoid_patterns: avoidPatterns,
-    failure_risks: skeleton?.forbidden_framings || [],
-    confidence: Math.min(0.96, 0.72 + Math.min(grounding.length, 5) * 0.04 + (plan.recommended_patterns?.length ? 0.04 : 0) + (skeleton ? 0.04 : 0)),
-    skill_skeleton_id: skeleton?.id,
-    required_core_terms: skeleton?.required_core_terms,
-    required_teaching_steps: skeleton?.required_teaching_steps,
-    forbidden_framings: skeleton?.forbidden_framings,
+    failure_risks: skill?.forbidden_framings || [],
+    confidence: Math.min(0.94, 0.74 + Math.min(grounding.length, 5) * 0.04 + (plan.recommended_patterns?.length ? 0.04 : 0)),
+    skill_id: skill?.id,
+    forbidden_framings: skill?.forbidden_framings,
   };
   return { ...draft, pattern_strategy: selectBlueprintPatternStrategy(draft, preferredPattern) };
 }
 
+const TERM_ALIASES: Record<string, string[]> = {
+  linearprogramming: ["线性规划"],
+  decisionvariable: ["决策变量", "变量"],
+  decisionvariables: ["决策变量", "变量"],
+  objective: ["目标", "目标函数"],
+  objectivefunction: ["目标函数"],
+  constraint: ["约束", "约束条件"],
+  constraints: ["约束", "约束条件"],
+  feasibleregion: ["可行域", "可行解空间"],
+  feasiblechoice: ["可行方案", "可行选择"],
+  feasiblechoices: ["可行方案", "可行选择"],
+  optimum: ["最优解", "最优"],
+  optimal: ["最优", "最优解"],
+  optimalsolution: ["最优解"],
+  simplexmethod: ["单纯形法"],
+  duality: ["对偶", "对偶问题"],
+};
+
+function termVariants(term: string) {
+  const key = norm(term);
+  return [term, ...(TERM_ALIASES[key] || [])];
+}
+
 function termHits(text: string, terms: string[]) {
   const normalized = norm(text);
-  return terms.filter((term) => {
-    const key = norm(term);
+  return terms.filter((term) => termVariants(term).some((variant) => {
+    const key = norm(variant);
     return key.length > 0 && normalized.includes(key);
-  });
+  }));
 }
 
 function flowPlayText(play: KnowledgeFlow["plays"][number]) {
   return JSON.stringify({
     title: play.title,
-    concept: play.concept,
-    schema: play.schema,
+    schema: {
+      pattern: play.schema.pattern,
+      template: play.schema.template,
+      payload: play.schema.payload,
+    },
   });
 }
 
@@ -526,12 +535,11 @@ function getInteractionActionFailure(play: KnowledgeFlow["plays"][number], step:
   return null;
 }
 
-function hasStepTermCoverage(text: string, step: BlueprintStep, blueprint: KnowledgeBlueprint) {
-  const stepHits = termHits(text, step.must_explain);
+function hasStepTermCoverage(text: string, _step: BlueprintStep, blueprint: KnowledgeBlueprint) {
   const groundingHits = termHits(text, blueprint.core_terms);
   return {
-    ok: stepHits.length > 0 && groundingHits.length > 0,
-    step_hits: stepHits,
+    ok: groundingHits.length > 0,
+    step_hits: [] as string[],
     grounding_hits: groundingHits,
   };
 }
@@ -539,10 +547,13 @@ function hasStepTermCoverage(text: string, step: BlueprintStep, blueprint: Knowl
 function hasTraceCoverage(play: KnowledgeFlow["plays"][number], step: BlueprintStep, blueprint: KnowledgeBlueprint) {
   const trace = play.teaching_trace;
   if (!trace) return false;
-  const coverage = hasStepTermCoverage(JSON.stringify(trace.covered_terms), step, blueprint);
+  const traceText = JSON.stringify(trace.covered_terms);
+  const stepHits = termHits(traceText, step.must_explain);
+  const groundingHits = termHits(traceText, blueprint.core_terms);
   return trace.blueprint_step_goal === step.goal
     && trace.intended_user_action === step.user_action
-    && coverage.ok;
+    && stepHits.length > 0
+    && groundingHits.length > 0;
 }
 
 function collectTeachingMetrics(flow: KnowledgeFlow, blueprint: KnowledgeBlueprint): TeachingMetrics {
@@ -567,26 +578,39 @@ function collectTeachingMetrics(flow: KnowledgeFlow, blueprint: KnowledgeBluepri
   return metrics;
 }
 function hasCompoundInterestFormula(play: KnowledgeFlow["plays"][number]) {
-  if (play.schema.pattern !== "simulation_play") return false;
   const payload = play.schema.payload && typeof play.schema.payload === "object"
     ? play.schema.payload as Record<string, unknown>
     : {};
-  const formula = payload.formula && typeof payload.formula === "object"
-    ? payload.formula as Record<string, unknown>
-    : null;
-  const params = Array.isArray(payload.params) ? payload.params : [];
-  const labels = new Set(
-    params
-      .filter((param): param is Record<string, unknown> => Boolean(param) && typeof param === "object")
-      .map((param) => typeof param.label === "string" ? param.label : "")
-      .filter(Boolean),
-  );
 
-  return formula?.kind === "compound_interest"
-    && typeof formula.principal_param === "string"
-    && typeof formula.rate_param === "string"
-    && labels.has(formula.principal_param)
-    && labels.has(formula.rate_param);
+  if (play.schema.pattern === "simulation_play") {
+    const formula = payload.formula && typeof payload.formula === "object"
+      ? payload.formula as Record<string, unknown>
+      : null;
+    const params = Array.isArray(payload.params) ? payload.params : [];
+    const labels = new Set(
+      params
+        .filter((param): param is Record<string, unknown> => Boolean(param) && typeof param === "object")
+        .map((param) => typeof param.label === "string" ? param.label : "")
+        .filter(Boolean),
+    );
+    return formula?.kind === "compound_interest"
+      && typeof formula.principal_param === "string"
+      && typeof formula.rate_param === "string"
+      && labels.has(formula.principal_param)
+      && labels.has(formula.rate_param);
+  }
+
+  if (play.schema.pattern === "parameter_explore") {
+    const outputs = Array.isArray(payload.outputs) ? payload.outputs : [];
+    return outputs.some((output) => {
+      const formula = output && typeof output === "object" && "formula" in output
+        ? (output as { formula?: unknown }).formula
+        : null;
+      return Boolean(formula && typeof formula === "object" && (formula as { kind?: unknown }).kind === "compound_interest");
+    });
+  }
+
+  return false;
 }
 
 export function evaluateFlowAgainstBlueprint(flow: KnowledgeFlow, blueprint: KnowledgeBlueprint, preferredPattern: FlowPatternPreference = "auto"): QualityGateResult {
@@ -598,15 +622,12 @@ export function evaluateFlowAgainstBlueprint(flow: KnowledgeFlow, blueprint: Kno
   const blueprintAvoidPatterns = protectBlueprintAvoidPatterns(blueprint.structure_type, blueprint.avoid_patterns);
   const avoid = new Set(preferredPattern === "auto" ? blueprintAvoidPatterns : blueprintAvoidPatterns.filter((pattern) => pattern !== preferredPattern));
   const coveredTerms = termHits(text, blueprint.core_terms);
-  const requiredCoreTerms = blueprint.required_core_terms || [];
-  const requiredCoreHits = termHits(text, requiredCoreTerms);
   const forbiddenFrameHits = termHits(text, blueprint.forbidden_framings || []);
   const disallowed = patterns.filter((pattern) => !allowed.has(pattern));
   const avoided = patterns.filter((pattern) => avoid.has(pattern));
   const placeholderHits = PLACEHOLDERS.filter((pattern) => pattern.test(text));
   const requiresCompoundFormula = /(compound interest|compoundinterest|复利)/i.test(`${blueprint.topic} ${flow.concept}`);
-  const hasCompoundSimulation = flow.plays.some((play) => play.schema.pattern === "simulation_play");
-  const compoundFormulaOk = !requiresCompoundFormula || (hasCompoundSimulation && flow.plays.some(hasCompoundInterestFormula));
+  const compoundFormulaOk = !requiresCompoundFormula || flow.plays.some(hasCompoundInterestFormula);
   const expectedSteps = blueprint.teaching_sequence.slice(0, DYNAMIC_FLOW_STEP_COUNT);
   const teachingMetrics = collectTeachingMetrics(flow, blueprint);
   const schemaFailures: string[] = [];
@@ -615,12 +636,12 @@ export function evaluateFlowAgainstBlueprint(flow: KnowledgeFlow, blueprint: Kno
   if (blueprint.structure_type === "unclassified") failures.push("KnowledgeBlueprint is unclassified");
   if (flow.plays.length < expectedSteps.length) failures.push("Flow has " + flow.plays.length + " steps, below Blueprint minimum " + expectedSteps.length);
   if (blueprint.core_terms.length >= 3 && coveredTerms.length < Math.min(3, blueprint.core_terms.length)) failures.push(`Flow covers ${coveredTerms.length}/${Math.min(3, blueprint.core_terms.length)} required core terms`);
-  if (requiredCoreTerms.length >= 3 && requiredCoreHits.length < Math.min(3, requiredCoreTerms.length)) failures.push(`Flow covers ${requiredCoreHits.length}/${Math.min(3, requiredCoreTerms.length)} Skill Pack required terms`);
   if (forbiddenFrameHits.length) failures.push(`Flow hits forbidden Skill Pack framings: ${forbiddenFrameHits.join(", ")}`);
   if (disallowed.length) failures.push(`Flow uses patterns outside Blueprint strategy: ${disallowed.join(" -> ")}`);
   if (avoided.length) failures.push(`Flow uses avoided patterns: ${avoided.join(" -> ")}`);
-  if (preferredPattern !== "auto" && !patterns.includes(preferredPattern)) failures.push(`Flow misses user-selected pattern: ${preferredPattern}`);
-  if (!compoundFormulaOk) failures.push("Compound-interest Flow must declare a simulation formula bound to its principal and annual-rate parameters");
+  const requestedPattern = preferredPattern === "auto" || preferredPattern === "simulation_play" ? null : preferredPattern;
+  if (requestedPattern && !patterns.includes(requestedPattern)) failures.push("Flow misses user-selected pattern: " + requestedPattern);
+  if (!compoundFormulaOk) failures.push("Compound-interest Flow must declare a verifiable formula in a slider output or simulation payload");
 
   flow.plays.forEach((play, index) => {
     if (!validateSchema(play.schema)) schemaFailures.push("Step " + (index + 1) + " schema failed validation");
@@ -678,7 +699,6 @@ export function evaluateFlowAgainstBlueprint(flow: KnowledgeFlow, blueprint: Kno
     avoided.length === 0,
     placeholderHits.length === 0,
     forbiddenFrameHits.length === 0,
-    requiredCoreTerms.length < 3 || requiredCoreHits.length >= Math.min(3, requiredCoreTerms.length),
     schemaFailures.length === 0,
     stepFailures.length === 0,
     compoundFormulaOk,

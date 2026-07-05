@@ -1,125 +1,145 @@
 {
-  "skill_name": "aha-optimization-model",
-  "evals": [
-    {
-      "id": 1,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: linear programming.",
-      "expected_output": "Classify as optimization_model and use Pattern chain: system_builder -> parameter_explore -> simulation_play.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is optimization_model.",
-        "The Pattern chain is exactly system_builder -> parameter_explore -> simulation_play.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 2,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: integer programming.",
-      "expected_output": "Classify as optimization_model and use Pattern chain: system_builder -> parameter_explore -> simulation_play.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is optimization_model.",
-        "The Pattern chain is exactly system_builder -> parameter_explore -> simulation_play.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 3,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: portfolio optimization.",
-      "expected_output": "Classify as optimization_model and use Pattern chain: system_builder -> parameter_explore -> simulation_play.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is optimization_model.",
-        "The Pattern chain is exactly system_builder -> parameter_explore -> simulation_play.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 4,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: resource allocation.",
-      "expected_output": "Classify as optimization_model and use Pattern chain: system_builder -> parameter_explore -> simulation_play.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is optimization_model.",
-        "The Pattern chain is exactly system_builder -> parameter_explore -> simulation_play.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 5,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: production planning.",
-      "expected_output": "Classify as optimization_model and use Pattern chain: system_builder -> parameter_explore -> simulation_play.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is optimization_model.",
-        "The Pattern chain is exactly system_builder -> parameter_explore -> simulation_play.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 6,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: diet problem.",
-      "expected_output": "Classify as optimization_model and use Pattern chain: system_builder -> parameter_explore -> simulation_play.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is optimization_model.",
-        "The Pattern chain is exactly system_builder -> parameter_explore -> simulation_play.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 7,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: transportation problem.",
-      "expected_output": "Classify as optimization_model and use Pattern chain: system_builder -> parameter_explore -> simulation_play.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is optimization_model.",
-        "The Pattern chain is exactly system_builder -> parameter_explore -> simulation_play.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 8,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: assignment problem.",
-      "expected_output": "Classify as optimization_model and use Pattern chain: system_builder -> parameter_explore -> simulation_play.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is optimization_model.",
-        "The Pattern chain is exactly system_builder -> parameter_explore -> simulation_play.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 9,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: knapsack problem.",
-      "expected_output": "Classify as optimization_model and use Pattern chain: system_builder -> parameter_explore -> simulation_play.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is optimization_model.",
-        "The Pattern chain is exactly system_builder -> parameter_explore -> simulation_play.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    },
-    {
-      "id": 10,
-      "prompt": "Generate a three-step Aha Flash learning Flow for topic: project scheduling.",
-      "expected_output": "Classify as optimization_model and use Pattern chain: system_builder -> parameter_explore -> simulation_play.",
-      "files": [],
-      "expectations": [
-        "The output structure_type is optimization_model.",
-        "The Pattern chain is exactly system_builder -> parameter_explore -> simulation_play.",
-        "The visible teaching path covers the selected Skill Pack's required teaching steps.",
-        "No forbidden framing or unsuitable Pattern from this Skill Pack is used."
-      ]
-    }
-  ]
+    "skill_name":  "aha-optimization-model",
+    "evals":  [
+                  {
+                      "id":  1,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: linear programming.",
+                      "expected_output":  "Classify as optimization_model and use Pattern chain: system_builder -\u003e parameter_explore -\u003e comparison -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is optimization_model.",
+                                           "The Pattern chain is exactly system_builder -\u003e parameter_explore -\u003e comparison -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  2,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: integer programming.",
+                      "expected_output":  "Classify as optimization_model and use Pattern chain: system_builder -\u003e parameter_explore -\u003e comparison -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is optimization_model.",
+                                           "The Pattern chain is exactly system_builder -\u003e parameter_explore -\u003e comparison -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  3,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: portfolio optimization.",
+                      "expected_output":  "Classify as optimization_model and use Pattern chain: system_builder -\u003e parameter_explore -\u003e comparison -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is optimization_model.",
+                                           "The Pattern chain is exactly system_builder -\u003e parameter_explore -\u003e comparison -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  4,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: resource allocation.",
+                      "expected_output":  "Classify as optimization_model and use Pattern chain: system_builder -\u003e parameter_explore -\u003e comparison -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is optimization_model.",
+                                           "The Pattern chain is exactly system_builder -\u003e parameter_explore -\u003e comparison -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  5,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: production planning.",
+                      "expected_output":  "Classify as optimization_model and use Pattern chain: system_builder -\u003e parameter_explore -\u003e comparison -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is optimization_model.",
+                                           "The Pattern chain is exactly system_builder -\u003e parameter_explore -\u003e comparison -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  6,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: diet problem.",
+                      "expected_output":  "Classify as optimization_model and use Pattern chain: system_builder -\u003e parameter_explore -\u003e comparison -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is optimization_model.",
+                                           "The Pattern chain is exactly system_builder -\u003e parameter_explore -\u003e comparison -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  7,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: transportation problem.",
+                      "expected_output":  "Classify as optimization_model and use Pattern chain: system_builder -\u003e parameter_explore -\u003e comparison -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is optimization_model.",
+                                           "The Pattern chain is exactly system_builder -\u003e parameter_explore -\u003e comparison -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  8,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: assignment problem.",
+                      "expected_output":  "Classify as optimization_model and use Pattern chain: system_builder -\u003e parameter_explore -\u003e comparison -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is optimization_model.",
+                                           "The Pattern chain is exactly system_builder -\u003e parameter_explore -\u003e comparison -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  9,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: knapsack problem.",
+                      "expected_output":  "Classify as optimization_model and use Pattern chain: system_builder -\u003e parameter_explore -\u003e comparison -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is optimization_model.",
+                                           "The Pattern chain is exactly system_builder -\u003e parameter_explore -\u003e comparison -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  },
+                  {
+                      "id":  10,
+                      "prompt":  "Generate a four-step Aha Flash learning Flow for topic: project scheduling.",
+                      "expected_output":  "Classify as optimization_model and use Pattern chain: system_builder -\u003e parameter_explore -\u003e comparison -\u003e knowledge_check.",
+                      "files":  [
+
+                                ],
+                      "expectations":  [
+                                           "The output structure_type is optimization_model.",
+                                           "The Pattern chain is exactly system_builder -\u003e parameter_explore -\u003e comparison -\u003e knowledge_check.",
+                                           "The visible teaching path covers the generic Structure Skill teaching contract.",
+                                           "No forbidden framing or unsuitable Pattern from this Structure Skill is used."
+                                       ]
+                  }
+              ]
 }

@@ -3,6 +3,31 @@
 > 文档定位：归档已经完成的开发任务、验收记录和重要修复。新的增量规划先放入 `docs/input-docs/`，整合后再开发。
 
 ---
+## 2026-07-05
+### V6 visible grounding closeout
+- Fixed learner-facing cue selection in dynamic Flow generation: visible titles/descriptions now prefer concrete ConceptPlan / Blueprint terms over internal teaching-action words such as condition, result, intervention, input, or output.
+- Rewrote the visible cue fallback in `dynamic-flow-generation.ts` with ASCII-safe source strings, fixing a Windows encoding regression that had corrupted fallback copy and the title cue template.
+- Latest verification passed: `typecheck`, `lint`, `build`, `eval:score`, `eval:flow`, `eval:flow-dynamic`, `eval:blueprint`, `eval:skills`, and real `eval:flow-live`.
+- Real live baseline: 8/8 structures passed with `overall=1`, `llm_success_rate=1`, `clean_schema_rate=1`, `schema_repair_rate=0`, and all teaching metrics at 1. Focused causal sample passed 5/5 with `repair_reliance_rate=0`.
+## 2026-07-01
+### DeepSeek JSON Output 接入
+- 结构化生成链路接入 DeepSeek JSON Output：`/api/chat` 的 JSON fallback、精选 Flow 生成、自由 Flow 的 ConceptPlan / Flow / Repair 均通过 AI SDK `responseFormat: json` 触发 DeepSeek `response_format: { type: "json_object" }`。
+- `retryGenerateText` 新增 `jsonOutput` 开关，默认不影响 Tool Calling、路由分类、状态提炼等非 JSON 任务；JSON 任务默认 `maxOutputTokens=8192`，降低输出被截断的概率。
+- 针对 DeepSeek 文档提到的空 content 风险，JSON Output 的空内容、非法 JSON 和解析失败会进入同一套重试逻辑，不再直接放大为 mock 回退。
+- 该改动只提高结构合法性和 fallback 稳定性；内容正确率、Pattern 匹配率和文案风格仍由 ConceptPlan、Structure Skill、QualityGate 和后续 Evidence Pack 负责。
+- 同步收紧 Blueprint 策略：LLM 的 avoid_patterns 不再能移除结构必需 Pattern；Flow repair 失败时优先使用 LLM ConceptPlan 派生的确定性 Blueprint fallback，避免退回固定 mock。
+- 真实 `eval:flow-live` 已从 0.5 修复到 8/8 通过（`overall=1`、`llm_success_rate=1`、四项 teaching metrics 均为 1）。本轮新增中英术语别名匹配与分步核心术语轮换，解决 `optimization_model` 中 “feasible region/可行域” 等正常翻译被误判为未覆盖的问题；剩余 repair 依赖集中在 probabilistic/procedure 个别 live case，可继续按 repair tag 降噪。
+
+## 2026-06-24
+### 通用Structure Skill收口
+- 撤销沉没成本等概念专属Skill，统一为8个按知识结构划分的通用Structure Skill；删除aha-decision-sunk-cost目录。
+- 明确职责边界：ConceptPlan负责主题grounding，KnowledgeBlueprint负责四步教学顺序，Structure Skill负责通用教学合同，Pattern负责可执行交互，QualityGate只做确定性一致性检查。
+- 动态自由生成不再默认选择simulation_play；只有滑块输出或模拟器提供可验证公式时，数值交互才允许作为事实展示。
+- 更新81个Blueprint固定用例、8个Skill文档与Skill Eval，新增沉没成本作为comparison_frame的普通用例，不再拥有独立教学骨架。
+- 文档明确V7的事实准确性边界：按需Evidence Pack与受控检索待后续实现，不把V6的通用Skill伪装成知识库。
+
+---
+
 
 
 ## 2026-06-23
