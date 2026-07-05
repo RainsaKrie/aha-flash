@@ -1071,3 +1071,15 @@ th-child 顺序轮换改为按知识语义映射。
 - Targeted probability check: `npm run eval:flow-live -- --case=probability --runs=5` passed 5/5 with repair reliance 0.
 - Final full live baseline: `npm run eval:flow-live -- --limit=8 --runs=3` passed 24/24 with `overall: 1`, `llm_success_rate: 1`, `schema_repair_rate: 0`, `flow_repair_rate: 0`, and `repair_reliance_rate: 0`.
 - Latest live report: `output/live-flow-eval/live-flow-2026-06-19T03-19-17-050Z.json`.
+
+## 2026-07-05
+### V7 planning draft
+- Added `docs/input-docs/PRODUCT_V7.md` as the first Grounded Skill Engine planning draft.
+- Synced PRODUCT / TECHNICAL / README with the V7 direction: SourcePack before ConceptPlan, generic Skills instead of concept-specific Skills, deterministic QualityGate first, and selective EvidencePack rather than always-on RAG.
+- V7 acceptance is defined around learner-visible quality: correctness, topic match rate, copy style, and interaction clarity.
+## 2026-07-05
+### MVP convergence planning
+- Added root `README.md` for GitHub-facing project presentation.
+- Added `docs/MVP_SCOPE.md` as the current boundary document for V6 MVP, the four-week closure plan, and the no-go list.
+- Reframed `docs/input-docs/PRODUCT_V7.md` from a near-term Grounded Skill Engine build plan into a V7 MVP quality guardrail.
+- Synced docs so the current public version is V6 MVP; V7 is deferred to correctness, topic match, copy style, and interaction clarity guardrails.

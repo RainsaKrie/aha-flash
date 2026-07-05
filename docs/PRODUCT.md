@@ -3,7 +3,7 @@
 > 前台文案边界：用户只应看到学习动作、概念解释和下一步选择；Blueprint、Pattern/template、source、schema、grounding terms 及协议兼容字段均属于内部实现，不得直接作为产品文案或标签展示。概率类互动必须先让用户做出判断，再揭示结果并解释判断如何更新；二元结果是合法教学结构。
 > 文档定位：记录当前产品真相、体验原则、互动组件质量标准和 V1 路线。临时输入文档放入 `docs/input-docs/`，完成整合后归档或删除。
 
-> 当前版本：V5。V5 将趣灵从“AI 生成互动组件工具”收束为“知识版休闲游戏 / 不内疚的知识消遣”。
+> 当前版本：V6 MVP。V6 MVP 将趣灵收束为“AI 知识轻消费产品”：用户输入或选择一个概念，系统生成 3-5 分钟的互动知识挑战；V7 暂不作为近期完整开发主线，只作为质量护栏。
 ## 1. 产品定位
 
 **一句话**：给"不想浪费时间但也不想动脑子"的人，提供一个比刷短视频有收获、比学习轻松的知识轻消费体验。
@@ -448,3 +448,42 @@ Hub 的路径节点不按列表顺序轮换颜色，而是复用 V5 既有四个
 - ConceptPlan makes free generation auditable: every generated Flow must first decide what the concept really is, what terms anchor it, and which patterns should or should not be used.
 - This is the key difference from static authored content: adding or entering a new topic should not require prebuilt content, but it must pass grounding and pattern-fit checks before it is shown as LLM output.
 - Manual local checks now pass for Agent and linear programming with source=llm and topic-specific pattern chains.
+
+## 13. V7 质量护栏（后续增强）
+
+V7 不是接下来四周的完整开发主线。`docs/input-docs/PRODUCT_V7.md` 中的 SourcePack、EvidencePack 和 Grounded Skill Engine 方向长期有效，但近期只作为 MVP 质量护栏保留。
+
+近期 V7 只处理三个可控问题：
+
+1. 生成内容是否贴合用户输入 topic。
+2. 前台文案是否像产品文案，而不是 schema 或后台标签。
+3. 互动是否真的帮助理解，而不是只是动了一下组件。
+
+近期不完整开发 SourcePack，不接 EvidencePack 检索，不做 always-on RAG，不建设内部 Wiki，也不新增概念专属 Skill。只针对验证概念整理轻量检查标准，并修复直接影响用户体验和作品集展示的质量问题。
+## 14. MVP 收束口径（2026-07-05）
+
+当前主线：把趣灵从强技术 demo 收束成可展示、可试用、可讲述的 AI 知识轻消费产品。
+
+固定定位：趣灵把“有点好奇但不想正经学习”的时刻，转化成 3-5 分钟互动知识挑战。
+
+当前可展示版本为 V6 MVP：
+
+- Explore 自由输入任意 topic。
+- 系统展示真实生成阶段。
+- 成功后展示四步路径预览。
+- Flow 每次只呈现一个互动组件，用户先互动再看反馈。
+- 完成后展示后续分支。
+- Hub 只做本机完成记录和轻量回顾。
+- QualityGate 与 Eval 用来证明 AI 生成路径不是随机拼接。
+
+五个稳定示例：`bayes-starter`、`dns-router`、`options-risk`、`industrial-revolution`、`inflation-deflation`。
+
+第一批动态测试概念：线性规划、复利效应、沉没成本、边际效用、缓存机制、监督学习 vs 无监督学习、操作系统进程、供需曲线、因果推断、资本主义 vs 社会主义。
+
+V7 近期降级为 MVP 质量护栏，只处理三个可控问题：
+
+1. 生成内容是否贴合用户输入 topic。
+2. 前台文案是否像产品文案，而不是 schema 或后台标签。
+3. 互动是否真的帮助理解。
+
+近期不做账号、数据库、多设备同步、社区、排行榜、UGC、创作者后台、长期知识图谱、Always-on RAG、内部 Wiki、大规模 EvidencePack、付费商业化，也不为每个具体概念创建专用 Skill。

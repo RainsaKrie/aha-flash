@@ -743,3 +743,30 @@ V6 之外的准确性增强仍按既定边界推进：V6.5 考虑低置信度 to
 Dynamic Flow visible cue selection now filters generic internal teaching-action words before choosing the learner-facing anchor term. Terms such as `condition`, `mechanism`, `result`, `intervention`, `input`, `output` and their Chinese equivalents are treated as scaffolding, not topic grounding. The UI-visible title, description, and instruction fields now prefer concrete ConceptPlan / Blueprint terms, while `teaching_trace` remains the internal audit record.
 
 The fix is generic: it does not add concept-specific fallback content. It prevents generated cards from exposing backend teaching roles as product copy, and it gives QualityGate the same kind of concrete terms that learners see. Latest verification: focused causal live sample 5/5 with repair reliance 0; full `eval:flow-live` 8/8 with `overall=1` and all teaching metrics at 1.
+## V7 Technical Planning - MVP Quality Guardrail
+
+V7 is not the next four-week development mainline. The immediate mainline is V6 MVP public demonstration and portfolio readiness.
+
+The V7 technical direction is kept as a quality guardrail around the existing V6 dynamic Flow chain:
+
+```text
+User topic
+  -> optional lightweight SourcePack / checklist
+  -> ConceptPlan
+  -> KnowledgeBlueprint
+  -> Generic Structure Skill
+  -> TeachingFlow / Pattern Plan
+  -> UISchema
+  -> deterministic QualityGate
+  -> Flow or honest failure
+```
+
+Near-term V7 constraints:
+
+- Do not build a full SourcePack service yet.
+- Do not add always-on retrieval, RAG, internal Wiki, or database-backed evidence storage.
+- Do not create concept-specific Skills.
+- Use generic Structure Skills and small quality checks only where they directly improve the MVP demo.
+- Keep V6 downstream generation, Flow playback, Hub, and Eval infrastructure intact.
+
+The practical V7 guardrail metrics are correctness, topic match, copy style, and interaction clarity. They should first be checked against the fixed validation concepts listed in `docs/MVP_SCOPE.md`, not expanded into a large new evaluation system.
