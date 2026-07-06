@@ -1,31 +1,49 @@
 "use client";
 
 import { Blend } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ComparisonSplitConfig, InteractionEvent } from "@/types/schema";
 import { ChoiceButton, ComponentFrame, FeedbackPanel, Panel } from "./shared";
 
 export function ComparisonOverlay({
   config,
   onInteraction,
+  onComplete,
 }: {
   config: ComparisonSplitConfig;
   onInteraction?: (event: InteractionEvent) => void;
+  onComplete?: (event: InteractionEvent) => void;
 }) {
   const [ratio, setRatio] = useState(50);
+  const [ratioTouched, setRatioTouched] = useState(false);
   const [dimensionIndex, setDimensionIndex] = useState(0);
+  const [visitedDimensions, setVisitedDimensions] = useState<Record<number, boolean>>({});
+  const [completed, setCompleted] = useState(false);
   const dimensions = config.dimensions || [];
   const activeDimension = dimensions[dimensionIndex];
   const leftLabel = config.subject_a || config.left.label;
   const rightLabel = config.subject_b || config.right.label;
 
+  useEffect(() => {
+    if (completed || !ratioTouched) return;
+    const visitedEveryDimension = dimensions.length === 0 || dimensions.every((_, index) => visitedDimensions[index]);
+    if (!visitedEveryDimension) return;
+    setCompleted(true);
+    onComplete?.({
+      type: "comparison_overlay_completed",
+      payload: { ratio, dimensions: dimensions.length, left: leftLabel, right: rightLabel },
+    });
+  }, [completed, dimensions, leftLabel, onComplete, ratio, ratioTouched, rightLabel, visitedDimensions]);
+
   function update(value: number) {
     setRatio(value);
+    setRatioTouched(true);
     onInteraction?.({ type: "comparison_ratio_changed", payload: { ratio: value, left: config.left.label, right: config.right.label } });
   }
 
   function selectDimension(index: number) {
     setDimensionIndex(index);
+    setVisitedDimensions((value) => ({ ...value, [index]: true }));
     onInteraction?.({
       type: "comparison_dimension_selected",
       payload: { index, label: dimensions[index]?.label, left: leftLabel, right: rightLabel },

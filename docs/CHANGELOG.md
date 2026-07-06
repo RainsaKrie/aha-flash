@@ -4,6 +4,10 @@
 
 ---
 ## 2026-07-05
+### MVP comparison completion gate
+- Fixed comparison interactions so one clicked dimension no longer unlocks the next Flow stage.
+- Comparison split now completes only after every visible comparison dimension has been opened; overlay comparison also requires a slider interaction before completion.
+- Verified industrial-revolution and inflation-deflation in the browser: quiz feedback appears before Flow continuation, timeline/compare/card stages stay locked until their internal interaction is complete, and completion branches render normally.
 ### MVP card flip completion gate
 - Fixed concept-memory card completion: flipping one card no longer unlocks the next Flow stage.
 - CardFlip now completes only after every visible card has been opened at least once; the outer action bar treats concept-memory stages as internally completed interactions.

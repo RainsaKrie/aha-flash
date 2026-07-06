@@ -1,7 +1,7 @@
 "use client";
 
 import { Columns2, Eye, Lightbulb } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ComparisonSplitConfig, InteractionEvent } from "@/types/schema";
 import { ChoiceButton, ComponentFrame, FeedbackPanel, Panel } from "./shared";
 
@@ -18,12 +18,17 @@ function splitPoints(content: string) {
 export function ComparisonSplit({
   config,
   onInteraction,
+  onComplete,
 }: {
   config: ComparisonSplitConfig;
   onInteraction?: (event: InteractionEvent) => void;
+  onComplete?: (event: InteractionEvent) => void;
 }) {
   const [focus, setFocus] = useState<FocusMode>("both");
   const [dimensionIndex, setDimensionIndex] = useState(0);
+  const [visitedDimensions, setVisitedDimensions] = useState<Record<number, boolean>>({});
+  const [visitedFocus, setVisitedFocus] = useState<Record<FocusMode, boolean>>({ both: false, left: false, right: false });
+  const [completed, setCompleted] = useState(false);
   const dimensions = config.dimensions || [];
   const activeDimension = dimensions[dimensionIndex];
   const subjectA = config.subject_a || config.left.label;
@@ -31,8 +36,21 @@ export function ComparisonSplit({
   const leftPoints = splitPoints(config.left.content);
   const rightPoints = splitPoints(config.right.content);
 
+  useEffect(() => {
+    if (completed) return;
+    const visitedEveryDimension = dimensions.length > 0 && dimensions.every((_, index) => visitedDimensions[index]);
+    const visitedEveryFocus = dimensions.length === 0 && visitedFocus.both && visitedFocus.left && visitedFocus.right;
+    if (!visitedEveryDimension && !visitedEveryFocus) return;
+    setCompleted(true);
+    onComplete?.({
+      type: "comparison_completed",
+      payload: { dimensions: dimensions.length, left: subjectA, right: subjectB },
+    });
+  }, [completed, dimensions, onComplete, subjectA, subjectB, visitedDimensions, visitedFocus]);
+
   function updateFocus(nextFocus: FocusMode) {
     setFocus(nextFocus);
+    setVisitedFocus((value) => ({ ...value, [nextFocus]: true }));
     onInteraction?.({
       type: "comparison_focus_changed",
       payload: { focus: nextFocus, left: config.left.label, right: config.right.label },
@@ -41,6 +59,7 @@ export function ComparisonSplit({
 
   function selectDimension(index: number) {
     setDimensionIndex(index);
+    setVisitedDimensions((value) => ({ ...value, [index]: true }));
     onInteraction?.({
       type: "comparison_dimension_selected",
       payload: { index, label: dimensions[index]?.label, left: subjectA, right: subjectB },
