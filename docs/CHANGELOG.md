@@ -4,6 +4,10 @@
 
 ---
 ## 2026-07-05
+### MVP card flip completion gate
+- Fixed concept-memory card completion: flipping one card no longer unlocks the next Flow stage.
+- CardFlip now completes only after every visible card has been opened at least once; the outer action bar treats concept-memory stages as internally completed interactions.
+- Verified in the browser on bayes-starter: one flipped card stays locked; all cards flipped unlocks the next stage.
 ### MVP probability completion gate
 - Fixed probability/card-flip Flow completion: choosing a possible outcome no longer unlocks the next stage before the learner reveals the actual result.
 - Aligned the bottom SpiritHint and action bar state for internally completed patterns, so probability, quiz, classification, and sequence-order stages do not signal completion early.

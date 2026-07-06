@@ -55,7 +55,7 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
   const isCompleted = completedIds.includes(activePlay.id);
   const hasTouchedStage = isCompleted || touchedPlayIds.includes(activePlay.id);
   const hasNext = activeIndex < flow.plays.length - 1;
-  const requiresInternalCompletion = normalized.pattern === "probability" || normalized.pattern === "knowledge_check" || normalized.pattern === "classification_sort" || normalized.template === "sequence_order";
+  const requiresInternalCompletion = normalized.pattern === "probability" || normalized.pattern === "concept_memory" || normalized.pattern === "knowledge_check" || normalized.pattern === "classification_sort" || normalized.template === "sequence_order";
   const progress = Math.round(((activeIndex + (isCompleted ? 1 : 0)) / flow.plays.length) * 100);
   const showBranches = isCompleted && !hasNext;
   const debugGate =
