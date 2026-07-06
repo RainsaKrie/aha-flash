@@ -4,6 +4,12 @@
 
 ---
 ## 2026-07-05
+### MVP demo follow-up relevance
+- Fixed curated Flow completion branches for `dns-router` and `options-risk`; they no longer fall back to the Bayes default follow-up set.
+- DNS completion now offers cache / link diagnosis / system-collaboration directions instead of unrelated finance/probability paths.
+- Options completion now stays within uncertainty, price expectation, and next-step decision topics.
+- Verified with build, eval:score, and eval:flow.
+
 ### MVP QualityGate step grounding
 - Tightened step-level visible grounding in knowledge-blueprint.ts: every Blueprint step must now show both a topic/core anchor and a step-specific must_explain term in that step's own learner-facing content.
 - This prevents a generic card from passing QualityGate only because the whole Flow mentions the topic somewhere else.
