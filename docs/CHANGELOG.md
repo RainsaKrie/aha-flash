@@ -4,6 +4,10 @@
 
 ---
 ## 2026-07-05
+### MVP probability completion gate
+- Fixed probability/card-flip Flow completion: choosing a possible outcome no longer unlocks the next stage before the learner reveals the actual result.
+- Aligned the bottom SpiritHint and action bar state for internally completed patterns, so probability, quiz, classification, and sequence-order stages do not signal completion early.
+- Verified in the browser on options-risk: select -> no continue button; reveal result -> continue button appears.
 ### MVP learner-facing card labels
 - Replaced card-flip internal labels term / meaning with learner-facing 概念 / 解释, removing English schema copy from concept-memory cards.
 - Verified in the browser on bayes-starter: front cards show 概念 and flipped cards show 解释.

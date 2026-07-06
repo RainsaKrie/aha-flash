@@ -55,7 +55,7 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
   const isCompleted = completedIds.includes(activePlay.id);
   const hasTouchedStage = isCompleted || touchedPlayIds.includes(activePlay.id);
   const hasNext = activeIndex < flow.plays.length - 1;
-  const requiresInternalCompletion = normalized.pattern === "knowledge_check" || normalized.pattern === "classification_sort" || normalized.template === "sequence_order";
+  const requiresInternalCompletion = normalized.pattern === "probability" || normalized.pattern === "knowledge_check" || normalized.pattern === "classification_sort" || normalized.template === "sequence_order";
   const progress = Math.round(((activeIndex + (isCompleted ? 1 : 0)) / flow.plays.length) * 100);
   const showBranches = isCompleted && !hasNext;
   const debugGate =
@@ -236,14 +236,16 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
         </AnimatePresence>
       </section>
 
-      <footer className="v5-flow-actionbar" data-state={isCompleted ? "success" : hasTouchedStage ? "ready" : "idle"}>
-        <SpiritHint tone={isCompleted ? "reward" : hasTouchedStage ? "idle" : "neutral"} compact title="趣灵">
+      <footer className="v5-flow-actionbar" data-state={isCompleted ? "success" : hasTouchedStage && !requiresInternalCompletion ? "ready" : "idle"}>
+        <SpiritHint tone={isCompleted ? "reward" : hasTouchedStage && !requiresInternalCompletion ? "idle" : "neutral"} compact title="趣灵">
           {showBranches
             ? "选一个分支继续走；只有想换领域时，再回首页。"
             : isCompleted
               ? completionHint(normalized.pattern)
               : hasTouchedStage
-                ? "准备好了就检查这一关。"
+                ? requiresInternalCompletion
+                  ? "先在卡片里完成这一步，再看反馈。"
+                  : "准备好了就检查这一关。"
                 : "先和中间的卡片互动一下，再看反馈。"}
         </SpiritHint>
 
