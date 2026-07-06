@@ -4,6 +4,9 @@
 
 ---
 ## 2026-07-05
+### MVP learner-facing card labels
+- Replaced card-flip internal labels term / meaning with learner-facing 概念 / 解释, removing English schema copy from concept-memory cards.
+- Verified in the browser on bayes-starter: front cards show 概念 and flipped cards show 解释.
 ### MVP demo follow-up relevance
 - Fixed curated Flow completion branches for `dns-router` and `options-risk`; they no longer fall back to the Bayes default follow-up set.
 - DNS completion now offers cache / link diagnosis / system-collaboration directions instead of unrelated finance/probability paths.

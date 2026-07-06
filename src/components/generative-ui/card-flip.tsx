@@ -36,7 +36,7 @@ export function CardFlip({
             title="翻转"
           >
             <span className="text-xs uppercase tracking-[0.16em] text-[var(--muted)]">
-              {flipped[index] ? "meaning" : "term"}
+              {flipped[index] ? "解释" : "概念"}
             </span>
             <span className={`mt-4 block text-base font-medium leading-relaxed ${flipped[index] ? "ui-result" : ""}`}>
               <GeneratedRichText value={flipped[index] ? card.back : card.front} />
