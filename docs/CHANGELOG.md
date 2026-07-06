@@ -4,6 +4,12 @@
 
 ---
 ## 2026-07-05
+### MVP flow diagnostics and system-builder gate
+- Hid Flow source/mock diagnostic banners by default; they now appear only when the URL includes `?debug=1`.
+- Polished showcase Flow loading copy so it reads like product guidance instead of a temporary debug state.
+- Added `system_builder` to the internal-completion gate: selecting one module no longer unlocks the next Flow stage before all required modules are selected.
+- Verified `dns-router` in the browser through module selection, classification feedback, final quiz feedback, and completion branches.
+
 ### MVP comparison completion gate
 - Fixed comparison interactions so one clicked dimension no longer unlocks the next Flow stage.
 - Comparison split now completes only after every visible comparison dimension has been opened; overlay comparison also requires a slider interaction before completion.

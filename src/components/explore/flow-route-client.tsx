@@ -13,10 +13,15 @@ interface FlowApiResponse {
 }
 
 export function FlowRouteClient({ flowId, fallbackFlow }: { flowId: string; fallbackFlow: KnowledgeFlow }) {
+  const [showDebug, setShowDebug] = useState(false);
   const [flow, setFlow] = useState<KnowledgeFlow>(fallbackFlow);
   const [source, setSource] = useState<"llm" | "mock">("mock");
   const [error, setError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(isShowcaseFlowId(flowId));
+
+  useEffect(() => {
+    setShowDebug(new URLSearchParams(window.location.search).get("debug") === "1");
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -56,10 +61,10 @@ export function FlowRouteClient({ flowId, fallbackFlow }: { flowId: string; fall
       <main className="v5-flow-loading">
         <div className="v5-flow-loading__card">
           <Loader2 size={26} className="animate-spin" />
-          <p>趣灵正在临时生成三关挑战</p>
-          <h1>先把问题变成能玩的挑战</h1>
+          <p>趣灵正在生成三关挑战</p>
+          <h1>先把问题变成能玩的路径</h1>
           <SpiritHint tone="loading" compact title="趣灵">
-            我会先做 3 个小关：先试一下，再看机制，最后抓住关键差异。
+            我会先拆出几个小关卡：先试一下，再看机制，最后抓住关键差异。
           </SpiritHint>
         </div>
       </main>
@@ -68,7 +73,7 @@ export function FlowRouteClient({ flowId, fallbackFlow }: { flowId: string; fall
 
   return (
     <>
-      {process.env.NODE_ENV !== "production" && (source === "mock" || error) && (
+      {showDebug && (source === "mock" || error) && (
         <div className="v5-flow-dev-banner" role="status">
           Flow source: {source}{error ? ` · ${error}` : ""}
         </div>
