@@ -4,6 +4,10 @@
 
 ---
 ## 2026-07-05
+### MVP stable-demo pass
+- Checked the five stable entry flows from Explore: bayes-starter, dns-router, options-risk, industrial-revolution, and inflation-deflation.
+- Fixed the Flow bottom-bar copy for partially completed internal interactions: it now says to continue the card task instead of implying feedback already exists.
+- Verified the DNS module-builder partial state, Bayes quiz feedback gate, inflation wrong-answer feedback, industrial timeline entry, and options probability entry in the browser.
 ### MVP option-risk interaction gates
 - Fixed probability result controls so revealed outcomes become a completed state instead of remaining as a repeatable action.
 - Added internal completion gates for simulation and narrative-branch interactions: simulation stages unlock only after the full run, and narrative branches require reading the branch feedback before Flow completion.

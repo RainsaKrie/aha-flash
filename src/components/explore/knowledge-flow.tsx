@@ -257,7 +257,7 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
               ? completionHint(normalized.pattern)
               : hasTouchedStage
                 ? requiresInternalCompletion
-                  ? "先在卡片里完成这一步，再看反馈。"
+                  ? "按卡片里的提示完成这一步。"
                   : "准备好了就检查这一关。"
                 : "先和中间的卡片互动一下，再看反馈。"}
         </SpiritHint>
@@ -270,7 +270,7 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
           )}
           {!isCompleted && requiresInternalCompletion && (
             <span className="v5-flow-actionbar__hint">
-              {hasTouchedStage ? "先看完卡片内反馈，再继续。" : "先在卡片内完成互动。"}
+              {hasTouchedStage ? "继续完成卡片内任务。" : "先在卡片内完成互动。"}
             </span>
           )}
           {isCompleted && hasNext && (
