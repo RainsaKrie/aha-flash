@@ -62,9 +62,13 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
     "knowledge_check",
     "system_builder",
     "classification_sort",
+    "simulation_play",
+    "narrative_branch",
   ];
   const requiresInternalCompletion =
-    internallyCompletedPatterns.includes(normalized.pattern) || normalized.template === "sequence_order";
+    internallyCompletedPatterns.includes(normalized.pattern) ||
+    normalized.template === "sequence_order" ||
+    normalized.template === "parameter_simulation";
   const progress = Math.round(((activeIndex + (isCompleted ? 1 : 0)) / flow.plays.length) * 100);
   const showBranches = isCompleted && !hasNext;
   const debugGate =

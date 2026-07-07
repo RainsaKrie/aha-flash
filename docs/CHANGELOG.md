@@ -4,6 +4,12 @@
 
 ---
 ## 2026-07-05
+### MVP option-risk interaction gates
+- Fixed probability result controls so revealed outcomes become a completed state instead of remaining as a repeatable action.
+- Added internal completion gates for simulation and narrative-branch interactions: simulation stages unlock only after the full run, and narrative branches require reading the branch feedback before Flow completion.
+- Aligned simulation step labels with progress and replaced a tool-like control line with learner-facing copy.
+- Removed sunk-cost-specific default copy from narrative branch stages so option-risk and other branching lessons stay topic-appropriate.
+- Verified options-risk through probability reveal, simulation completion, branch feedback, and completion branches in the browser.
 ### MVP flow diagnostics and system-builder gate
 - Hid Flow source/mock diagnostic banners by default; they now appear only when the URL includes `?debug=1`.
 - Polished showcase Flow loading copy so it reads like product guidance instead of a temporary debug state.

@@ -1,15 +1,16 @@
 "use client";
 
-import { GitBranch } from "lucide-react";
+import { CheckCircle2, GitBranch } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { ChoiceButton, ComponentFrame, EmptyState, FeedbackPanel, Panel } from "./shared";
 import { DEFAULT_LEARNING_DEPTH } from "@/types/schema";
 import type { InteractionEvent, LearningDepth, NarrativeBranchConfig } from "@/types/schema";
 
 const depthGoals: Record<LearningDepth, string> = {
-  rapid: "目标：快速看见过去成本不可追回。",
-  scenario: "目标：在真实选择里比较未来收益和新增成本。",
-  mapping: "目标：把故事元素映射到沉没成本、机会成本和边际收益。",
+  rapid: "目标：先做一个选择，看它会带来什么后果。",
+  scenario: "目标：在真实情境里比较不同选择的收益、风险和代价。",
+  mapping: "目标：把故事里的选择、后果和关键概念对应起来。",
 };
 
 export function NarrativeBranch({
@@ -20,9 +21,25 @@ export function NarrativeBranch({
   onComplete?: (result: InteractionEvent) => void;
 }) {
   const [selected, setSelected] = useState<number | null>(null);
+  const [acknowledged, setAcknowledged] = useState(false);
   const branch = selected === null ? null : config.branches[selected];
   const depth = config.depth || DEFAULT_LEARNING_DEPTH;
   const branches = config.branches || [];
+
+  function choose(index: number) {
+    if (!branches[index] || acknowledged) return;
+    setSelected(index);
+    setAcknowledged(false);
+  }
+
+  function continueAfterFeedback() {
+    if (!branch || acknowledged) return;
+    setAcknowledged(true);
+    onComplete?.({
+      type: "narrative_branch_acknowledged",
+      payload: { choice: branch.choice_label, insight: branch.insight },
+    });
+  }
 
   return (
     <ComponentFrame
@@ -34,9 +51,14 @@ export function NarrativeBranch({
       footer={
         <FeedbackPanel tone={branch ? "success" : "neutral"}>
           {branch ? (
-            <div className="ui-result">
+            <div className="ui-result grid gap-3">
               <p className="text-[var(--muted)]">{branch.outcome_description}</p>
-              <strong className="mt-2 block text-[var(--accent)]">{branch.insight}</strong>
+              <strong className="text-[var(--accent)]">{branch.insight}</strong>
+              {!acknowledged && (
+                <Button type="button" onClick={continueAfterFeedback}>
+                  <CheckCircle2 size={16} /> 看懂了，继续
+                </Button>
+              )}
             </div>
           ) : (
             depthGoals[depth]
@@ -54,13 +76,8 @@ export function NarrativeBranch({
             <ChoiceButton
               key={item.choice_label}
               active={selected === index}
-              onClick={() => {
-                setSelected(index);
-                onComplete?.({
-                  type: "narrative_branch_selected",
-                  payload: { choice: item.choice_label, insight: item.insight },
-                });
-              }}
+              disabled={acknowledged}
+              onClick={() => choose(index)}
               className="min-h-28"
             >
               {item.choice_label}

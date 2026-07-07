@@ -60,6 +60,7 @@ export function GachaSimulator({
   const depth = config.depth || DEFAULT_LEARNING_DEPTH;
   const pool = config.pool || [];
   const hasSelection = Boolean(selectedName);
+  const hasResult = phase === "result";
   const guessedRight = Boolean(result && selectedName === result.name);
 
   function pull() {
@@ -120,12 +121,12 @@ export function GachaSimulator({
           <div className="mt-5 grid gap-2">
             <Button
               onClick={pull}
-              disabled={phase === "pulling" || pool.length === 0 || !hasSelection}
-              title={hasSelection ? "揭开结果" : "先选择一种可能"}
+              disabled={phase !== "idle" || pool.length === 0 || !hasSelection}
+              title={hasResult ? "结果已揭开" : hasSelection ? "揭开结果" : "先选择一种可能"}
               className={`${phase === "idle" && hasSelection ? "ui-breathe " : ""}transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]`}
             >
               <Sparkles size={16} />
-              {phase === "pulling" ? <InlineSpinner label="正在揭开" /> : hasSelection ? "揭开结果" : "先选一种可能"}
+              {phase === "pulling" ? <InlineSpinner label="正在揭开" /> : hasResult ? "结果已揭开" : hasSelection ? "揭开结果" : "先选一种可能"}
             </Button>
             <Button onClick={reset} className="bg-transparent transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]" title="重新判断">
               <RotateCcw size={16} />

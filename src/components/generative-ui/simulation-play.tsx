@@ -1,7 +1,7 @@
 "use client";
 
 import { Activity, Play, RotateCcw, StepForward } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { compoundInterestAt, formatInteractiveNumber, resolveSimulationCompoundInterest } from "@/lib/interactive-math";
 import type { InteractionEvent, SimulationPlayConfig } from "@/types/schema";
@@ -32,6 +32,7 @@ export function SimulationPlay({
   const [values, setValues] = useState<Record<string, number>>(initialParams);
   const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const completedRef = useRef(false);
   const maxSteps = Math.max(1, Math.round(config.steps));
   const compoundState = resolveSimulationCompoundInterest(config, values);
   const series = compoundState
@@ -62,7 +63,6 @@ export function SimulationPlay({
         if (value >= maxSteps) {
           window.clearInterval(timer);
           setPlaying(false);
-          onComplete?.({ type: "simulation_play_completed", payload: { final_value: finalValue, steps: maxSteps } });
           return value;
         }
         return value + 1;
@@ -70,8 +70,17 @@ export function SimulationPlay({
     }, 650);
 
     return () => window.clearInterval(timer);
-  }, [finalValue, maxSteps, onComplete, playing]);
-
+  }, [maxSteps, playing]);
+  useEffect(() => {
+    if (step < maxSteps) {
+      completedRef.current = false;
+      return;
+    }
+    if (completedRef.current) return;
+    completedRef.current = true;
+    setPlaying(false);
+    onComplete?.({ type: "simulation_play_completed", payload: { final_value: finalValue, steps: maxSteps } });
+  }, [finalValue, maxSteps, onComplete, step]);
   function updateParam(label: string, value: number) {
     setValues((current) => ({ ...current, [label]: value }));
     setStep(0);
@@ -134,7 +143,7 @@ export function SimulationPlay({
                 <div>
                   <div className="text-xs uppercase tracking-[0.18em] text-[var(--muted)]">{currentLabel}</div>
                   <div key={compoundState ? currentValue : step} className="mt-2 animate-value-pop text-3xl font-bold text-[var(--accent)]">
-                    {compoundState ? `${formatInteractiveNumber(currentValue)}${valueUnit}` : `第 ${step + 1} 步`}
+                    {compoundState ? `${formatInteractiveNumber(currentValue)}${valueUnit}` : step === 0 ? "起点" : `第 ${step} 步`}
                   </div>
                 </div>
                 <div className="text-right text-sm text-[var(--muted)]">{compoundState ? `共 ${maxSteps} 期` : "观察条件变化"}</div>
@@ -158,15 +167,15 @@ export function SimulationPlay({
           </div>
 
           <Panel className="flex flex-wrap items-center justify-between gap-4 p-5">
-            <div className="text-sm text-[var(--muted)]">{playing ? "自动播放中" : "手动推进或自动播放模拟。"}</div>
+            <div className="text-sm text-[var(--muted)]">{playing ? "自动播放中" : "逐步推进，看看结果怎么变。"}</div>
             <div className="flex gap-2">
               <Button type="button" onClick={reset} title="重置" className="transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]">
                 <RotateCcw size={16} />
                 重置
               </Button>
-              <Button type="button" onClick={() => setStep((value) => Math.min(maxSteps, value + 1))} title="下一步" className="transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]">
+              <Button type="button" onClick={() => setStep((value) => Math.min(maxSteps, value + 1))} disabled={step >= maxSteps} title={step >= maxSteps ? "推演完成" : "下一步"} className="transition-all duration-200 hover:scale-[1.02] active:scale-[0.96]">
                 <StepForward size={16} />
-                下一步
+                {step >= maxSteps ? "已完成" : "下一步"}
               </Button>
               <Button
                 type="button"
