@@ -5,6 +5,15 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { BuildSandboxConfig, InteractionEvent } from "@/types/schema";
 import { ChoiceButton, ComponentFrame, EmptyState, FeedbackPanel, Panel, ProgressMeter } from "./shared";
 
+type SandboxModule = BuildSandboxConfig["modules"][number];
+
+function compactQualifier(module: SandboxModule, fallback: string) {
+  const source = module.description.trim() || module.role?.trim() || fallback;
+  const normalized = source.replace(/\s+/g, " ").replace(/[.!?,;:].*$/, "");
+  const candidate = normalized && normalized !== module.label ? normalized : fallback;
+  return candidate.length > 10 ? `${candidate.slice(0, 10)}...` : candidate;
+}
+
 export function BuildSandbox({
   config,
   onComplete,
@@ -21,8 +30,21 @@ export function BuildSandbox({
   const selectedOptionalCount = selected.filter((id) => !requiredIds.includes(id)).length;
   const hasWrongSelection = selectedOptionalCount > 0;
   const complete = selectedRequiredCount >= requiredIds.length && !hasWrongSelection;
+  const labelCounts = config.modules.reduce((counts, module) => {
+    const key = module.label.trim();
+    counts.set(key, (counts.get(key) || 0) + 1);
+    return counts;
+  }, new Map<string, number>());
   const moduleLabelById = new Map(config.modules.map((module) => [module.id, module.label]));
-  const moduleName = (id: string) => moduleLabelById.get(id) || id;
+  const moduleDisplayLabelById = new Map(
+    config.modules.map((module, index) => {
+      const baseLabel = module.label.trim() || module.id;
+      const duplicateCount = labelCounts.get(baseLabel) || 0;
+      const label = duplicateCount > 1 ? `${baseLabel}\uFF08${compactQualifier(module, `\u7b2c${index + 1}\u9879`)}\uFF09` : baseLabel;
+      return [module.id, label];
+    }),
+  );
+  const moduleName = (id: string) => moduleDisplayLabelById.get(id) || moduleLabelById.get(id) || id;
   const connectionPathIds = config.connections?.length
     ? [config.connections[0].from, ...config.connections.map((connection) => connection.to)]
     : [];
@@ -67,7 +89,7 @@ export function BuildSandbox({
   return (
     <ComponentFrame
       icon={Boxes}
-      label="module sandbox"
+      label={"\u9009\u5173\u952e\u6a21\u5757"}
       title={config.title}
       depth={config.depth}
       description={`目标：${config.target}`}
@@ -87,10 +109,11 @@ export function BuildSandbox({
           {config.modules.map((module) => {
             const active = selected.includes(module.id);
             const required = requiredIds.includes(module.id);
+            const displayLabel = moduleName(module.id);
             return (
               <ChoiceButton key={module.id} active={active} correct={active ? required : undefined} onClick={() => toggle(module.id)} className="min-h-36">
                 <span className="flex items-center justify-between gap-4">
-                  <strong className="text-base font-medium">{module.label}</strong>
+                  <strong className="text-base font-medium">{displayLabel}</strong>
                   {active && (required ? <Check size={18} className="text-[var(--accent)]" /> : <X size={18} className="text-[var(--danger)]" />)}
                 </span>
                 <span className="mt-3 block text-sm leading-relaxed text-[var(--muted)]">{module.description}</span>
@@ -102,7 +125,7 @@ export function BuildSandbox({
         <EmptyState detail="模型没有给出可组装模块，重新生成后应包含 3-6 个模块。" />
       )}
 
-      {pathNodes.length > 1 && (
+      {pathNodes.length >= 4 && (
         <Panel className="mt-4 p-5">
           <div className="text-xs font-semibold text-[var(--muted)]">协作路径</div>
           <div className="system-path-track mt-4" role="list" aria-label="模块协作路径">

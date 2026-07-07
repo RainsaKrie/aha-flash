@@ -4,6 +4,11 @@
 
 ---
 ## 2026-07-05
+### MVP dynamic-topic smoke pass
+- Added `docs/MVP_DEMO_TEST_RECORD.md` with stable-flow and dynamic-topic smoke results for the Week-2 playable demo pass.
+- Checked dynamic topics for linear programming, DNS resolution, Bayes theorem, compound interest, and sunk cost.
+- Hardened `BuildSandbox` for generated content: duplicate module labels now get qualifiers, weak paths with fewer than four nodes are hidden, and the learner-facing action label is more general.
+- Browser-verified the linear-programming first stage after the fix: duplicate profit-coefficient cards are distinguishable and the misleading short path is no longer shown.
 ### MVP stable-demo pass
 - Checked the five stable entry flows from Explore: bayes-starter, dns-router, options-risk, industrial-revolution, and inflation-deflation.
 - Fixed the Flow bottom-bar copy for partially completed internal interactions: it now says to continue the card task instead of implying feedback already exists.
