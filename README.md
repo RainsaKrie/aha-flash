@@ -105,3 +105,7 @@ npm run eval:flow-live -- --limit=8 --runs=3 --strict --threshold=1
 未来四周不做账号、数据库、多设备同步、社区、创作者后台、长期知识图谱、Always-on RAG、内部 Wiki、大规模 EvidencePack、付费商业化，也不为每个具体概念创建专用 Skill。
 
 当前主线只有一个：把趣灵收束成可展示、可试用、可讲述的 AI 知识轻消费产品。
+
+## 作品集材料
+
+- docs/PROJECT_CASE_STUDY.md：作品集案例、架构图、Eval 证据和截图清单。

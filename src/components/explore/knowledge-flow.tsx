@@ -84,7 +84,7 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
       concept: flow.concept,
       category: flow.category,
       summary: flow.summary,
-      concepts: flow.concepts,
+      concepts: flow.concepts?.length ? flow.concepts : [flow.concept || flow.title],
       completed_play_count: flow.plays.length,
       source: flow.source || (flow.id.startsWith("custom-") ? "generated" : "curated"),
     });

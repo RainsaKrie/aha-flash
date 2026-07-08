@@ -74,3 +74,20 @@ Topic: Supervised learning vs unsupervised learning.
 
 - Generalized the narrative-branch completion hint so non-sunk-cost topics no longer inherit sunk-cost wording.
 - Replaced the completion branch badge AI extension with Continue exploring while keeping the internal ai_seed type unchanged.
+
+## Portfolio Evidence Pass - 2026-07-08
+
+Screenshots captured locally under `output/playwright/portfolio-2026-07-08/`:
+
+- `01-explore-input.png`
+- `02-generation-stage.png`
+- `03-route-preview.png`
+- `04-flow-interaction.png`
+- `05-completion-branches.png`
+- `06-hub-recap.png`
+
+Additional finding: using `open` in Playwright starts a fresh browser context, so Hub screenshots must use `goto` in the same context to preserve localStorage. In the real app, completion records persist through same-tab navigation.
+
+Additional fix: generated/custom Flow completion records now fall back to `[flow.concept || flow.title]` when `flow.concepts` is missing, so Hub does not silently filter them out.
+
+Content watch: one dynamic supervised-vs-unsupervised run generated a classification item about past investment while the categories were only supervised/unsupervised. The interaction gate behaved correctly, but V7 quality guardrails should constrain category granularity and irrelevant-item wording.

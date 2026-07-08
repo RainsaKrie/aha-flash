@@ -67,3 +67,10 @@ npm run eval:flow-live -- --limit=8 --runs=3 --strict --threshold=1
 ## 四周不做
 
 不做账号、数据库、多设备同步、社区、排行榜、UGC、创作者后台、长期知识图谱、Always-on RAG、内部 Wiki、大规模 EvidencePack、付费商业化，也不为每个具体概念创建专用 Skill。
+
+## 作品集材料
+
+| 文档 | 用途 |
+|---|---|
+| PROJECT_CASE_STUDY.md | 第 3 周证据化材料：产品复盘、技术架构、Eval 结果、截图清单和面试表达。 |
+| MVP_DEMO_TEST_RECORD.md | 第 2 周 demo 可玩性和动态 topic 浏览器验证记录。 |

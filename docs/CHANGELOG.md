@@ -4,6 +4,11 @@
 
 ---
 ## 2026-07-08
+### MVP portfolio evidence pack
+- Added `docs/PROJECT_CASE_STUDY.md` as the Week-3 portfolio artifact: product recap, architecture diagram, Eval evidence, screenshot manifest, interview pitch, and current boundaries.
+- Captured local portfolio screenshots under `output/playwright/portfolio-2026-07-08/`: Explore input, generation stage, route preview, Flow interaction, completion branches, and Hub recap.
+- Fixed Hub completion persistence for generated/custom Flows by falling back to `[flow.concept || flow.title]` when `flow.concepts` is missing.
+- Documented a remaining content-quality watch item: category granularity can still drift in dynamic classification, so V7 guardrails should constrain category wording rather than adding concept-specific fixes.
 ### MVP dynamic coverage closeout
 - Batch-checked the remaining dynamic smoke topics: cache mechanism, supervised vs unsupervised learning, operating-system process, supply and demand curve, causal inference, and capitalism vs socialism. All returned LLM flows without HonestFailure in this pass.
 - Browser-walked supervised vs unsupervised learning from Explore preview through final branches: branch feedback, comparison gate, classification progress, quiz explanation, and completion all behaved correctly.
