@@ -4,6 +4,9 @@
 
 ---
 ## 2026-07-08
+### Application asset pack
+- Added docs/APPLICATION_ASSETS.md for Week-4 application readiness: resume bullets, portfolio card copy, GitHub summary, five-minute interview script, follow-up Q&A, and expression boundaries.
+- Linked the new application asset pack from the root README and docs index so GitHub, portfolio, and interview materials share one vocabulary.
 ### MVP portfolio evidence pack
 - Added `docs/PROJECT_CASE_STUDY.md` as the Week-3 portfolio artifact: product recap, architecture diagram, Eval evidence, screenshot manifest, interview pitch, and current boundaries.
 - Captured local portfolio screenshots under `output/playwright/portfolio-2026-07-08/`: Explore input, generation stage, route preview, Flow interaction, completion branches, and Hub recap.

@@ -109,3 +109,4 @@ npm run eval:flow-live -- --limit=8 --runs=3 --strict --threshold=1
 ## 作品集材料
 
 - docs/PROJECT_CASE_STUDY.md：作品集案例、架构图、Eval 证据和截图清单。
+- docs/APPLICATION_ASSETS.md：简历项目描述、作品集卡片文案和 5 分钟面试讲稿。
