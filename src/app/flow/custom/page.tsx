@@ -3,7 +3,7 @@
 import { BrainCircuit, Home } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useMemo } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { KnowledgeFlowPlayer } from "@/components/explore/knowledge-flow";
 import { SpiritHint } from "@/components/spirit-hint";
 import { readFlowDraftRecord, type FlowDraftRecord } from "@/lib/utils/storage";
@@ -29,8 +29,15 @@ function CustomFlowFallback({ hasLoaded = false }: { hasLoaded?: boolean }) {
 function CustomFlowContent() {
   const searchParams = useSearchParams();
   const draftId = searchParams.get("draftId");
-  const draft = useMemo(() => readFlowDraftRecord(draftId), [draftId]);
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [draft, setDraft] = useState<FlowDraftRecord | null>(null);
 
+  useEffect(() => {
+    setDraft(readFlowDraftRecord(draftId));
+    setHasLoaded(true);
+  }, [draftId]);
+
+  if (!hasLoaded) return <CustomFlowFallback />;
   if (draft) return <KnowledgeFlowPlayer key={draft.flow.id} flow={draft.flow} debug={draft.debug} />;
   return <CustomFlowFallback hasLoaded />;
 }

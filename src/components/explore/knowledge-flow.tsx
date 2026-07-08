@@ -47,6 +47,7 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
   const [touchedPlayIds, setTouchedPlayIds] = useState<string[]>([]);
   const [branchGeneratingId, setBranchGeneratingId] = useState<string | null>(null);
   const [branchError, setBranchError] = useState<string | null>(null);
+  const [showDebugInspector, setShowDebugInspector] = useState(false);
 
   const activePlay = flow.plays[activeIndex] || flow.plays[0];
   const normalized = useMemo(() => normalizeUISchema(activePlay.schema), [activePlay.schema]);
@@ -88,6 +89,10 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
       source: flow.source || (flow.id.startsWith("custom-") ? "generated" : "curated"),
     });
   }, [flow]);
+
+  useEffect(() => {
+    setShowDebugInspector(new URLSearchParams(window.location.search).get("debug") === "1");
+  }, []);
 
   useEffect(() => {
     if (!showBranches) return;
@@ -291,7 +296,7 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
         </div>
       </footer>
 
-      {process.env.NODE_ENV !== "production" && debug && (
+      {process.env.NODE_ENV !== "production" && showDebugInspector && debug && (
         <details className="v6-flow-inspector">
           <summary>
             <span>V6 Inspector</span>

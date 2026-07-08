@@ -35,3 +35,15 @@ Checked from `/explore`:
 ## Current Readout
 
 The stable demo path is playable. Dynamic generation is good enough for MVP smoke demos on the tested concepts, but it still needs continued watch on topic fit and label quality for generated branches.
+## Additional Check - 2026-07-08
+
+| Topic | Source | Result | Notes |
+|---|---|---|---|
+| Marginal utility | LLM | Pass after escape | First generation entered HonestFailure because the route was not grounded enough. Failure copy now uses learner-facing reasons instead of raw QualityGate strings. Retrying with the modeling structure generated a playable four-step path around consumer choice, decision variables, utility, and feasibility. |
+
+## Additional Fixes - 2026-07-08
+
+- Explore failure cards now summarize QualityGate issues in product language.
+- Structure-retry hints avoid backend/example labels such as DNS, Agent, Pattern, or template names.
+- Custom Flow debug inspector is hidden unless the URL includes `?debug=1`.
+- Custom Flow draft loading waits for client mount to avoid a hydration mismatch in local demo runs.

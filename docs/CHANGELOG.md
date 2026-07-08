@@ -3,6 +3,14 @@
 > 文档定位：归档已经完成的开发任务、验收记录和重要修复。新的增量规划先放入 `docs/input-docs/`，整合后再开发。
 
 ---
+## 2026-07-08
+### MVP failure escape polish
+- Rechecked a dynamic marginal-utility generation from Explore. The first attempt correctly entered HonestFailure instead of shipping a weak Flow.
+- Replaced raw QualityGate failure strings in the public failure card with learner-facing copy, so internal phrases such as "Step does not visibly connect" are no longer exposed.
+- Rewrote the structure retry hints from backend/example labels into general product language: process, comparison, cause, steps, and modeling.
+- Verified the failure escape by retrying marginal utility with the modeling structure; it generated a playable four-step route.
+- Hid the V6 Inspector unless the custom Flow URL includes `?debug=1`, and fixed the custom Flow hydration mismatch by loading session drafts after client mount.
+
 ## 2026-07-05
 ### MVP dynamic-topic smoke pass
 - Added `docs/MVP_DEMO_TEST_RECORD.md` with stable-flow and dynamic-topic smoke results for the Week-2 playable demo pass.

@@ -117,11 +117,11 @@ async function readFlowEventStream(
   return result;
 }
 const STRUCTURE_CHOICES = [
-  { id: "system_process", label: "\u770b\u6d41\u7a0b", hint: "DNS / Agent / \u7cfb\u7edf\u6d41\u8f6c" },
-  { id: "comparison_frame", label: "\u770b\u5bf9\u6bd4", hint: "A vs B / \u533a\u522b" },
-  { id: "causal_mechanism", label: "\u770b\u56e0\u679c", hint: "\u539f\u56e0 / \u673a\u5236 / \u7ed3\u679c" },
-  { id: "procedure_algorithm", label: "\u770b\u6b65\u9aa4", hint: "\u7b97\u6cd5 / \u64cd\u4f5c\u6d41\u7a0b" },
-  { id: "optimization_model", label: "\u770b\u5efa\u6a21", hint: "\u76ee\u6807 / \u7ea6\u675f / \u6700\u4f18" },
+  { id: "system_process", label: "\u770b\u6d41\u7a0b", hint: "\u4e00\u4ef6\u4e8b\u600e\u4e48\u4e00\u6b65\u6b65\u8d70\u5b8c" },
+  { id: "comparison_frame", label: "\u770b\u5bf9\u6bd4", hint: "\u4e24\u4e2a\u6982\u5ff5\u5230\u5e95\u5dee\u5728\u54ea" },
+  { id: "causal_mechanism", label: "\u770b\u56e0\u679c", hint: "\u539f\u56e0\u600e\u4e48\u63a8\u5230\u7ed3\u679c" },
+  { id: "procedure_algorithm", label: "\u770b\u6b65\u9aa4", hint: "\u6309\u987a\u5e8f\u52a8\u624b\u505a\u4e00\u6b21" },
+  { id: "optimization_model", label: "\u770b\u5efa\u6a21", hint: "\u76ee\u6807\u3001\u9650\u5236\u548c\u53d6\u820d" },
 ] as const;
 
 function makePreviewStepLabel(title: unknown, topic: string, index: number) {
@@ -142,6 +142,37 @@ function makeFallbackPreview(flow: KnowledgeFlow, source: "llm" | "mock"): Gener
     gate: "unknown",
     source,
   };
+}
+function makeFriendlyFailureReasons(failure: FlowFailureResponse | null) {
+  const rawReasons = failure?.quality_gate?.failures?.length
+    ? failure.quality_gate.failures
+    : failure?.quality_gate?.reason
+      ? [failure.quality_gate.reason]
+      : [];
+  const friendly = rawReasons.map((reason) => {
+    const value = reason.toLowerCase();
+    if (/visibly connect|action terms|topic grounding|grounding/.test(value)) {
+      return "\u6709\u51e0\u6b65\u4e92\u52a8\u8fd8\u6ca1\u548c\u8fd9\u4e2a\u6982\u5ff5\u6263\u7d27\u3002";
+    }
+    if (/core terms|required core terms|anchor|term|\u951a\u70b9|\u4e13\u4e1a\u951a\u70b9/.test(value)) {
+      return "\u5173\u952e\u6982\u5ff5\u8fd8\u6ca1\u6709\u7a33\u5b9a\u8fdb\u5165\u5173\u5361\u3002";
+    }
+    if (/pattern|template|\u6a21\u677f|\u4e0d\u5408\u9002|\u7981\u7528/.test(value)) {
+      return "\u4e92\u52a8\u65b9\u5f0f\u548c\u8fd9\u4e2a\u6982\u5ff5\u8fd8\u4e0d\u591f\u5339\u914d\u3002";
+    }
+    if (/schema|payload|validation|\u5b57\u6bb5|\u6821\u9a8c/.test(value)) {
+      return "\u5173\u5361\u7ed3\u6784\u8fd8\u4e0d\u591f\u5b8c\u6574\u3002";
+    }
+    if (/formula|\u516c\u5f0f|\u8ba1\u7b97/.test(value)) {
+      return "\u9700\u8981\u7b97\u6e05\u695a\u7684\u516c\u5f0f\u6216\u7ed3\u679c\u8fd8\u4e0d\u591f\u53ef\u9760\u3002";
+    }
+    if (/placeholder|\u5360\u4f4d|\u6cdb\u5316/.test(value)) {
+      return "\u6587\u6848\u8fd8\u6709\u70b9\u6cdb\uff0c\u4e0d\u80fd\u76f4\u63a5\u62ff\u6765\u6559\u4f60\u3002";
+    }
+    return "\u6709\u51e0\u6b65\u8fd8\u6ca1\u6709\u8bb2\u5230\u4f4d\u3002";
+  });
+
+  return Array.from(new Set(friendly)).slice(0, 3);
 }
 export default function ExplorePage() {
   const router = useRouter();
@@ -211,11 +242,7 @@ export default function ExplorePage() {
     }
   }
 
-  const failureReasons = failureState?.quality_gate?.failures?.length
-    ? failureState.quality_gate.failures.slice(0, 3)
-    : failureState?.quality_gate?.reason
-      ? [failureState.quality_gate.reason]
-      : [];
+  const failureReasons = makeFriendlyFailureReasons(failureState);
   const shouldPreferShowcase = failureAttempts >= 2;
   const generationStepIndex = generationStage === "repair"
     ? GENERATION_STEPS.length - 1
@@ -355,7 +382,7 @@ export default function ExplorePage() {
             <p>{failureState.message}</p>
             {failureReasons.length > 0 && (
               <div className="v6-failure-card__reasons">
-                <strong>{"\u5361\u4f4f\u7684\u5730\u65b9"}</strong>
+                <strong>{"\u6211\u4e0d\u653e\u5fc3\u7684\u5730\u65b9"}</strong>
                 <ul>
                   {failureReasons.map((reason) => (
                     <li key={reason}>{reason}</li>
