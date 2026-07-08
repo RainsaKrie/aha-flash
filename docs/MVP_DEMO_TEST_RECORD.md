@@ -47,3 +47,30 @@ The stable demo path is playable. Dynamic generation is good enough for MVP smok
 - Structure-retry hints avoid backend/example labels such as DNS, Agent, Pattern, or template names.
 - Custom Flow debug inspector is hidden unless the URL includes `?debug=1`.
 - Custom Flow draft loading waits for client mount to avoid a hydration mismatch in local demo runs.
+
+## Dynamic Coverage Closeout - 2026-07-08
+
+| Topic | Source | Result | Notes |
+|---|---|---|---|
+| Cache mechanism | LLM | Pass | Generated a four-step path around cache conditions, replacement strategy, consistency choice, and final intervention check. |
+| Supervised learning vs unsupervised learning | LLM | Pass after browser check | Preview, branch choice, comparison, classification, quiz feedback, and completion branches all played through. Classification required correct per-card choices and showed one progress counter. |
+| Operating system process | LLM | Pass | Generated a process lifecycle path with resource modules, running-state timeline, process/thread classification, and scheduling check. |
+| Supply and demand curve | LLM | Pass | Generated a market-participant system, price/quantity parameter exploration, market-event branch choice, and final intervention check. |
+| Causal inference | LLM | Pass | Generated a cause/effect system, confounder-style parameter exploration, branch choice, and final reasoning check. |
+| Capitalism vs socialism | LLM | Pass | Generated a comparison-frame path with scenario choice, multi-dimension comparison, classification, and final boundary check. |
+
+## Browser Walkthrough - 2026-07-08
+
+Topic: Supervised learning vs unsupervised learning.
+
+- Explore generated four learner-facing steps without schema tags in the preview.
+- Stage 1 branch feedback appeared before Flow continuation.
+- Stage 2 comparison required opening every visible dimension before continuation.
+- Stage 3 classification used category-card clicks, not drag-and-drop copy; wrong choices did not advance progress; duplicate 0/4 counters did not appear.
+- Stage 4 quiz showed correctness and explanation before the final completion view.
+- Completion branches rendered and the generated-follow-up badge now reads Continue exploring instead of AI extension.
+
+## Additional Fixes - 2026-07-08 Dynamic Coverage
+
+- Generalized the narrative-branch completion hint so non-sunk-cost topics no longer inherit sunk-cost wording.
+- Replaced the completion branch badge AI extension with Continue exploring while keeping the internal ai_seed type unchanged.

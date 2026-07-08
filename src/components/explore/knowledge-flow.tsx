@@ -20,7 +20,7 @@ const completionHints: Record<string, string> = {
   comparison: "把两边放在同一个问题里看，差别就更清楚了。",
   knowledge_check: "你已经用自己的判断验证了这一关。",
   system_builder: "你已经把关键环节连起来了。",
-  narrative_branch: "过去已经付出的成本不会回来，下一步要看未来还值不值得。",
+  narrative_branch: "你已经做出一个选择，也看到了它会把问题带向哪里。",
   classification_sort: "每张卡都按同一条标准分清楚了。",
   simulation_play: "你已经走完整个推演，可以回头看看是哪一个条件改变了结果。",
 };
@@ -204,7 +204,7 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
                 {followUps.map((topic) => {
                   const content = (
                     <>
-                      <span><GitBranch size={16} /> {topic.kind === "ai_seed" ? "AI 延伸" : "精选路径"}</span>
+                      <span><GitBranch size={16} /> {topic.kind === "ai_seed" ? "继续探索" : "精选路径"}</span>
                       <h3>{topic.title}</h3>
                       <p>{topic.hook}</p>
                       <small>{topic.relation}</small>

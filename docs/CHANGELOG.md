@@ -4,6 +4,11 @@
 
 ---
 ## 2026-07-08
+### MVP dynamic coverage closeout
+- Batch-checked the remaining dynamic smoke topics: cache mechanism, supervised vs unsupervised learning, operating-system process, supply and demand curve, causal inference, and capitalism vs socialism. All returned LLM flows without HonestFailure in this pass.
+- Browser-walked supervised vs unsupervised learning from Explore preview through final branches: branch feedback, comparison gate, classification progress, quiz explanation, and completion all behaved correctly.
+- Generalized the narrative-branch completion hint so generated branch lessons no longer inherit sunk-cost-specific wording.
+- Replaced the visible AI extension badge on generated follow-up cards with Continue exploring, while leaving the internal ai_seed route type intact.
 ### MVP failure escape polish
 - Rechecked a dynamic marginal-utility generation from Explore. The first attempt correctly entered HonestFailure instead of shipping a weak Flow.
 - Replaced raw QualityGate failure strings in the public failure card with learner-facing copy, so internal phrases such as "Step does not visibly connect" are no longer exposed.
