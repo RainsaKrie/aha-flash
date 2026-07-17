@@ -1,63 +1,56 @@
-# 趣灵 aha-flash
+# 趣灵 Aha Flash
 
-趣灵是一个 AI 知识轻消费产品：把用户“有点好奇但不想正经学习”的时刻，转化成 3-5 分钟的互动知识挑战。
+> AI 生成互动知识路径，让用户用几关小游戏把一个概念玩明白。
 
-用户输入或选择一个概念，系统会把它拆成几步可交互的小挑战，让用户在短时间内获得“我好像懂了”的反馈。
+[在线体验](https://www.krie.me/explore) · [项目案例](docs/PROJECT_CASE_STUDY.md) · [发布审计](docs/RELEASE_AUDIT_2026-07-17.md)
 
-## 当前版本
+<img src="docs/assets/readme/flow-interaction.png" alt="趣灵的互动知识 Flow 界面" width="100%" />
 
-当前可展示版本：V6 MVP。
+趣灵面向“有点好奇，但不想正经学习”的时刻。用户输入或选择一个概念，AI 会把它拆成四步互动路径，让用户在 3-5 分钟内通过猜测、排序、对比、模拟或选择获得即时反馈。
 
-V6 MVP 已完成的主链路：
+## 产品闭环
+
+1. 在 Explore 输入任意概念，或从稳定示例开始。
+2. 查看 AI 的真实生成阶段与四步路径预览。
+3. 每关只完成一个互动动作，先操作，再看反馈。
+4. 完成后继续探索相关分支，或进入 Hub 回顾本机路径。
+
+<p align="center">
+  <img src="docs/assets/readme/completion-branches.png" alt="完成 Flow 后的继续探索分支" width="49%" />
+  <img src="docs/assets/readme/hub-recap.png" alt="Hub 本机路径回顾" width="49%" />
+</p>
+
+五个稳定入口覆盖贝叶斯定理、DNS 解析、期权风险、工业革命、通胀与通缩；自由输入则由动态生成链路创建新的互动 Flow。
+
+## 受控生成
 
 ```text
-打开 Explore
-  -> 输入或选择一个概念
-  -> AI 展示真实生成阶段
-  -> 生成四步互动路径预览
-  -> 进入 Flow 闯关
-  -> 完成后出现后续分支
-  -> Hub 记录本机完成路径
+Topic -> ConceptPlan -> Structure Skill -> KnowledgeBlueprint -> Four-step Flow -> QualityGate -> Player
 ```
 
-这不是正式课程平台，也不是个人知识库。趣灵当前只服务一件事：让轻度好奇心用户用几关小游戏把一个概念玩明白。
+趣灵没有让 LLM 直接生成页面，而是把生成限制在可验证的结构中：
 
-## 在线体验
+- 8 类通用 Structure Skill 负责选择知识组织方式，不为每个概念编写专用逻辑。
+- KnowledgeBlueprint 规定四步教学目标、用户动作与必须出现的主题锚点。
+- 固定交互组件负责渲染选择、分类、时间线、参数探索、模拟等体验。
+- QualityGate 检查主题贴合、互动契约、用户文案、答案可辩护性和 3-5 分钟时长。
+- 不合格结果进入 repair、确定性兜底或 HonestFailure，不伪装成功。
 
-- 线上地址：`https://www.krie.me`
-- 本地默认地址：`http://localhost:3000`
+## 验证证据
 
-## 核心能力
+| 检查 | 最近结果 |
+|---|---:|
+| 动态 Flow 结构 Eval | 9 / 9 通过 |
+| Flow 质量 Eval | 15 / 15 通过，overall = 1 |
+| 教学契约回归 | 通过 |
+| 真实模型严格复验 | 1 / 1 通过，repair reliance = 0 |
+| 线上发布审计 | Explore -> Flow -> Completion -> Hub 通过 |
 
-- 自由输入任意 topic，由 AI 生成互动路径。
-- 五个稳定示例 topic 作为低风险入口。
-- 四步 Flow 播放器，每次只呈现一个互动组件。
-- ConceptPlan、通用 Structure Skill、KnowledgeBlueprint、QualityGate 约束 LLM 输出。
-- Hub 记录本机完成路径，做轻量回顾。
-- Eval 体系用于证明动态生成不是随机拼接。
+最新发布审计同时验证了 4 分钟动态 Flow、知识检查主题贴合、移动端完成页和 Hub 持久化。详见 [Release Audit](docs/RELEASE_AUDIT_2026-07-17.md)。
 
-## 稳定示例
+## 技术栈
 
-- 贝叶斯定理
-- DNS 解析
-- 期权风险
-- 工业革命
-- 通胀与通缩
-
-## 第一批动态测试概念
-
-- 线性规划
-- 复利效应
-- 沉没成本
-- 边际效用
-- 缓存机制
-- 监督学习 vs 无监督学习
-- 操作系统进程
-- 供需曲线
-- 因果推断
-- 资本主义 vs 社会主义
-
-验收标准不是“讲得像教材”，而是：主题贴合、互动动作合理、文案不像后台术语、用户能在 3-5 分钟获得一个清楚理解。
+Next.js 16 · React 19 · TypeScript · AI SDK · DeepSeek · Tailwind CSS 4 · Zustand · Zod
 
 ## 本地运行
 
@@ -66,47 +59,32 @@ npm install
 npm run dev
 ```
 
-打开：
+打开 [http://localhost:3000](http://localhost:3000)。没有 API Key 时仍可体验稳定示例和 topic-aware fallback；要测试真实动态生成，在 `.env.local` 中配置：
 
-```text
-http://localhost:3000
+```env
+DEEPSEEK_API_KEY=
+DEEPSEEK_BASE_URL=https://api.deepseek.com
 ```
 
-常用检查：
+主要验证命令：
 
 ```bash
-npm run lint
 npm run typecheck
 npm run build
-npm run eval:score
+npm run eval:teaching
+npm run eval:flow-dynamic
 npm run eval:flow
-npm run eval:blueprint
-npm run eval:skills
 ```
 
-真实 LLM 动态链路检查：
+## 项目边界
 
-```bash
-npm run eval:flow-live -- --limit=8 --runs=3 --strict --threshold=1
-```
-
-需要配置 DeepSeek API Key 才能跑真实 live eval。
+当前是可公开试玩的 V6 MVP，服务轻度好奇心用户，不是课程平台或个人知识库。账号、数据库、多设备同步、社区、长期知识图谱和重型 RAG 均不在当前范围内。
 
 ## 文档
 
-- `docs/MVP_SCOPE.md`：当前 MVP 边界和四周收束计划。
-- `docs/PRODUCT.md`：产品定位、用户、体验和质量标准。
-- `docs/TECHNICAL.md`：技术架构、生成链路、QualityGate 和 Eval。
-- `docs/CHANGELOG.md`：开发记录和验证结果。
-- `docs/input-docs/PRODUCT_V7.md`：V7 质量护栏规划，非近期完整开发主线。
-
-## 不做什么
-
-未来四周不做账号、数据库、多设备同步、社区、创作者后台、长期知识图谱、Always-on RAG、内部 Wiki、大规模 EvidencePack、付费商业化，也不为每个具体概念创建专用 Skill。
-
-当前主线只有一个：把趣灵收束成可展示、可试用、可讲述的 AI 知识轻消费产品。
-
-## 作品集材料
-
-- docs/PROJECT_CASE_STUDY.md：作品集案例、架构图、Eval 证据和截图清单。
-- docs/APPLICATION_ASSETS.md：简历项目描述、作品集卡片文案和 5 分钟面试讲稿。
+- [产品定义](docs/PRODUCT.md)
+- [MVP 范围](docs/MVP_SCOPE.md)
+- [技术架构](docs/TECHNICAL.md)
+- [项目案例](docs/PROJECT_CASE_STUDY.md)
+- [发布审计](docs/RELEASE_AUDIT_2026-07-17.md)
+- [变更记录](docs/CHANGELOG.md)
