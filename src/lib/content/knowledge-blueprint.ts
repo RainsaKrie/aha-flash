@@ -694,6 +694,24 @@ export function evaluateFlowAgainstBlueprint(flow: KnowledgeFlow, blueprint: Kno
     if (!visibleCoverage.ok) {
       stepFailures.push(`Step ${index + 1} does not visibly connect its action terms and topic grounding for goal "${step.goal}"`);
     }
+    if (play.schema.pattern === "knowledge_check") {
+      const payload = payloadRecord(play);
+      const promptCoverage = hasStepTermCoverage(
+        JSON.stringify({
+          question: payload.question,
+          options: payload.options,
+        }),
+        step,
+        blueprint,
+      );
+      if (!promptCoverage.ok) {
+        stepFailures.push(
+          "Step " + (index + 1) +
+          " knowledge check prompt does not visibly connect its action terms and topic grounding for goal " +
+          step.goal,
+        );
+      }
+    }
     if (!hasSpecificPlayTitle(play)) {
       stepFailures.push(`Step ${index + 1} title is too generic: "${play.title}"`);
     }

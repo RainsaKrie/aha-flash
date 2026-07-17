@@ -98,6 +98,21 @@ async function main() {
         failures,
       );
 
+      const detachedQuiz = cloneFlow(result.flow);
+      const detachedQuizSchema = schemaRecord(detachedQuiz, 3);
+      detachedQuizSchema.payload.question = "If future use is frequent but learning ability is limited, which entrance should you choose?";
+      detachedQuizSchema.payload.options = [
+        { label: "Choose entrance A", correct: true, explanation: "It is easier to learn." },
+        { label: "Choose entrance B", correct: false, explanation: "It has a broader boundary." },
+        { label: "Either one", correct: false, explanation: "Choose based on mood." },
+      ];
+      const detachedQuizQuality = evaluateFlowAgainstBlueprint(detachedQuiz, blueprint, "auto");
+      requireCondition(
+        detachedQuizQuality.failures.some((failure) => failure.includes("knowledge check prompt does not visibly connect")),
+        "knowledge check question and options must remain visibly grounded to the topic",
+        failures,
+      );
+
       const overlong = cloneFlow(result.flow);
       overlong.estimated_minutes = 7;
       const overlongQuality = evaluateFlowAgainstBlueprint(overlong, blueprint, "auto");

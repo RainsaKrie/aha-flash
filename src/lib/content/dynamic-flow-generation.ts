@@ -1213,6 +1213,7 @@ function buildFlowUserPrompt(
     "- Set every play.estimated_minutes to 1 so the four-step Flow stays within the 3-5 minute product promise.",
     "- A single-answer knowledge check must have exactly one defensible answer under explicit conditions. Do not ask which option is best, most effective, or maximizes a result when a combined intervention is also offered.",
     "- Every knowledge_check/single_question must contain exactly 3 options, exactly one correct answer, and one explanation per option.",
+    "- The knowledge-check question and options must directly use topic grounding terms and the matching Blueprint step terms; never replace the topic with generic entrance A / entrance B choices.",
   ].filter(Boolean).join("\n");
 }
 
@@ -1295,6 +1296,7 @@ function buildRepairUserPrompt(
     "- Set every play.estimated_minutes to 1 so the four-step Flow totals 4 minutes.",
     "- A single-answer knowledge check must have exactly one defensible answer under explicit conditions. Remove ambiguous best/most-effective/maximize questions when one option combines multiple interventions.",
     "- Every knowledge_check/single_question must contain exactly 3 options, exactly one correct answer, and one explanation per option.",
+    "- Replace any generic entrance A / entrance B or unrelated boundary-choice knowledge check. Its question and options must directly use topic grounding terms and the matching Blueprint step terms.",
     "- simulation_play.params must contain at least 2 parameter objects. outputs[].model must use linear/quadratic/exponential/inverse/logarithmic.",
     "- The visible copy must teach the KnowledgeBlueprint core_terms, not merely mention the topic.",
     "- Do not use patterns listed in ConceptPlan.avoid_patterns.",
@@ -2075,6 +2077,7 @@ function buildDynamicSystemPrompt(
     "- Each step should ask the user to do something: guess, choose, sort, connect, slide, compare, or simulate.",
     "- A single-answer knowledge check must have exactly one defensible answer under explicit conditions. Do not ask which option is best, most effective, or maximizes a result when a combined intervention is also offered.",
     "- Every knowledge_check/single_question must contain exactly 3 options, exactly one correct answer, and one explanation per option.",
+    "- The knowledge-check question and options must directly use topic grounding terms and the matching Blueprint step terms; generic entrance A / entrance B or unrelated boundary choices are invalid.",
     "- For probability lessons, use plain learning language such as 先猜猜哪种情况更可能 / 看看新证据如何改变判断. Only use option-trading or game metaphors when the user topic itself is about options or games.",
     "- Do not hide Blueprint terms only in teaching_trace; QualityGate checks visible user-facing text.",
     "- Do not invent payload field names. Use only the required fields listed above for the selected pattern/template.",

@@ -9,6 +9,7 @@
 - Added a direct “查看我的图鉴” action to the completion footer so the recorded path has a visible user exit.
 - Normalized generated four-step Flow estimates to 4 minutes and added a 3–5 minute QualityGate contract.
 - Added a QualityGate rule for ambiguous superlative single-choice questions that also offer a combined intervention.
+- Added knowledge-check-specific Blueprint grounding so a topic-bearing stage title can no longer hide unrelated question and option content.
 - Added regression coverage for ambiguous knowledge checks and overlong Flow estimates.
 - Added docs/RELEASE_AUDIT_2026-07-17.md with severity-ranked findings, deployment acceptance checks, and the five-user no-guidance test table.
 
