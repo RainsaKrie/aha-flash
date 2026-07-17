@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, CheckCircle2, GitBranch, Home, Loader2, RotateCcw, Sparkles, X } from "lucide-react";
+import { ArrowRight, CheckCircle2, GitBranch, Home, LibraryBig, Loader2, RotateCcw, Sparkles, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
@@ -285,6 +285,9 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
           )}
           {showBranches && (
             <>
+              <Link href="/hub" className="v5-flow-main-action" onClick={persistCompletion}>
+                <LibraryBig size={17} /> 查看我的图鉴
+              </Link>
               <Link href="/explore" className="v5-flow-secondary-action" onClick={persistCompletion}>
                 <Home size={17} /> 换个起点
               </Link>

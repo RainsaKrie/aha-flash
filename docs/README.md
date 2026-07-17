@@ -75,3 +75,4 @@ npm run eval:flow-live -- --limit=8 --runs=3 --strict --threshold=1
 | PROJECT_CASE_STUDY.md | 第 3 周证据化材料：产品复盘、技术架构、Eval 结果、截图清单和面试表达。 |
 | APPLICATION_ASSETS.md | 第 4 周投递资产：简历项目描述、作品集卡片文案、GitHub 摘要和 5 分钟面试讲稿。 |
 | MVP_DEMO_TEST_RECORD.md | 第 2 周 demo 可玩性和动态 topic 浏览器验证记录。 |
+| RELEASE_AUDIT_2026-07-17.md | 线上完整闭环、发布问题分级、修复状态和 5 人无讲解试玩记录表。 |

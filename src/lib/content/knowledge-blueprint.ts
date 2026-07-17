@@ -484,6 +484,14 @@ function hasTextFieldRecords(value: unknown, field: string, minimum: number) {
     )).length >= minimum;
 }
 
+const SUPERLATIVE_QUESTION = /(最有效|最大化|最好|最佳|最优|best|most effective|maximi[sz]e|optimal)/i;
+const COMBINED_OPTION = /(同时|两者|二者|都要|以上全部|both|combined|all of the above)/i;
+
+function hasAmbiguousCombinedIntervention(question: unknown, options: Record<string, unknown>[]) {
+  if (typeof question !== "string" || !SUPERLATIVE_QUESTION.test(question)) return false;
+  return options.some((option) => typeof option.label === "string" && COMBINED_OPTION.test(option.label));
+}
+
 function getInteractionActionFailure(play: KnowledgeFlow["plays"][number], step: BlueprintStep) {
   const payload = payloadRecord(play);
 
@@ -513,9 +521,10 @@ function getInteractionActionFailure(play: KnowledgeFlow["plays"][number], step:
   if (step.user_action === "choose") {
     if (play.schema.pattern === "knowledge_check") {
       const options = Array.isArray(payload.options) ? payload.options.filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object") : [];
-      if (play.schema.template !== "single_question" || options.length < 3) return "knowledge check needs a three-option single question";
+      if (play.schema.template !== "single_question" || options.length !== 3) return "knowledge check needs exactly three options";
       if (options.filter((option) => option.correct === true).length !== 1) return "knowledge check needs exactly one correct answer";
       if (options.some((option) => typeof option.explanation !== "string" || !option.explanation.trim())) return "knowledge check needs an explanation for every option";
+      if (hasAmbiguousCombinedIntervention(payload.question, options)) return "knowledge check has an ambiguous superlative with a combined intervention";
     }
     if (play.schema.pattern === "narrative_branch" && (!Array.isArray(payload.branches) || payload.branches.length < 2)) return "branch choice needs at least two branches";
     if (play.schema.pattern === "probability" && (!Array.isArray(payload.pool) || payload.pool.length < 2)) return "probability choice needs at least two visible options";
@@ -629,6 +638,7 @@ export function evaluateFlowAgainstBlueprint(flow: KnowledgeFlow, blueprint: Kno
   const placeholderHits = PLACEHOLDERS.filter((pattern) => pattern.test(text));
   const requiresCompoundFormula = /(compound interest|compoundinterest|复利)/i.test(`${blueprint.topic} ${flow.concept}`);
   const compoundFormulaOk = !requiresCompoundFormula || flow.plays.some(hasCompoundInterestFormula);
+  const durationOk = Number.isFinite(flow.estimated_minutes) && flow.estimated_minutes >= 3 && flow.estimated_minutes <= 5;
   const expectedSteps = blueprint.teaching_sequence.slice(0, DYNAMIC_FLOW_STEP_COUNT);
   const teachingMetrics = collectTeachingMetrics(flow, blueprint);
   const schemaFailures: string[] = [];
@@ -643,6 +653,7 @@ export function evaluateFlowAgainstBlueprint(flow: KnowledgeFlow, blueprint: Kno
   const requestedPattern = preferredPattern === "auto" || preferredPattern === "simulation_play" ? null : preferredPattern;
   if (requestedPattern && !patterns.includes(requestedPattern)) failures.push("Flow misses user-selected pattern: " + requestedPattern);
   if (!compoundFormulaOk) failures.push("Compound-interest Flow must declare a verifiable formula in a slider output or simulation payload");
+  if (!durationOk) failures.push("Flow duration " + flow.estimated_minutes + " minutes is outside the 3-5 minute product promise");
 
   flow.plays.forEach((play, index) => {
     if (!validateSchema(play.schema)) schemaFailures.push("Step " + (index + 1) + " schema failed validation");
@@ -703,6 +714,7 @@ export function evaluateFlowAgainstBlueprint(flow: KnowledgeFlow, blueprint: Kno
     schemaFailures.length === 0,
     stepFailures.length === 0,
     compoundFormulaOk,
+    durationOk,
     teachingMetrics.trace_covered_steps === teachingMetrics.expected_steps,
     teachingMetrics.visible_term_steps === teachingMetrics.expected_steps,
     teachingMetrics.action_contract_steps === teachingMetrics.expected_steps,

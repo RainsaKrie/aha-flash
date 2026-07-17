@@ -3,6 +3,15 @@
 > 文档定位：归档已经完成的开发任务、验收记录和重要修复。新的增量规划先放入 `docs/input-docs/`，整合后再开发。
 
 ---
+## 2026-07-17
+### V6 MVP production release audit
+- Walked the production path at https://www.krie.me in one browser context: Explore, live compound-interest generation, four-step Flow, completion branches, and Hub persistence.
+- Added a direct “查看我的图鉴” action to the completion footer so the recorded path has a visible user exit.
+- Normalized generated four-step Flow estimates to 4 minutes and added a 3–5 minute QualityGate contract.
+- Added a QualityGate rule for ambiguous superlative single-choice questions that also offer a combined intervention.
+- Added regression coverage for ambiguous knowledge checks and overlong Flow estimates.
+- Added docs/RELEASE_AUDIT_2026-07-17.md with severity-ranked findings, deployment acceptance checks, and the five-user no-guidance test table.
+
 ## 2026-07-08
 ### Application asset pack
 - Added docs/APPLICATION_ASSETS.md for Week-4 application readiness: resume bullets, portfolio card copy, GitHub summary, five-minute interview script, follow-up Q&A, and expression boundaries.

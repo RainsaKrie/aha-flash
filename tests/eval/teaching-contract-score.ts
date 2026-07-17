@@ -82,6 +82,30 @@ async function main() {
         "knowledge check must require answer feedback",
         failures,
       );
+
+      const ambiguousQuiz = cloneFlow(result.flow);
+      const ambiguousQuizSchema = schemaRecord(ambiguousQuiz, 3);
+      ambiguousQuizSchema.payload.question = "为了最大化结果，下列哪种干预最有效？";
+      ambiguousQuizSchema.payload.options = [
+        { label: "只提高收益率", correct: false, explanation: "它会改变结果。" },
+        { label: "只延长时间", correct: true, explanation: "时间会放大累积效应。" },
+        { label: "同时提高收益率和初始本金", correct: false, explanation: "它同时改变两个条件。" },
+      ];
+      const ambiguousQuizQuality = evaluateFlowAgainstBlueprint(ambiguousQuiz, blueprint, "auto");
+      requireCondition(
+        ambiguousQuizQuality.failures.some((failure) => failure.includes("ambiguous superlative")),
+        "knowledge check must reject superlative questions with a combined intervention",
+        failures,
+      );
+
+      const overlong = cloneFlow(result.flow);
+      overlong.estimated_minutes = 7;
+      const overlongQuality = evaluateFlowAgainstBlueprint(overlong, blueprint, "auto");
+      requireCondition(
+        overlongQuality.failures.some((failure) => failure.includes("outside the 3-5 minute product promise")),
+        "dynamic Flow must stay within the 3-5 minute product promise",
+        failures,
+      );
     }
   } finally {
     if (savedApiKey) process.env.DEEPSEEK_API_KEY = savedApiKey;

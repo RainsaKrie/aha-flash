@@ -119,7 +119,7 @@ const FLOW_SCHEMA_PAYLOAD_GUIDE = [
   "- process_timeline/horizontal_timeline or vertical_scroll: payload.title; events [{label, description}]. These are browse-only and must never ask the user to sort or rearrange.",
   "- process_timeline/sequence_order: payload.title; mode exactly sequence_order; events [{label,description}] in their factual order; correct_order containing every event label exactly once. Use this template only when the learner must arrange a process or request path.",
   "- comparison/split_panel: payload.title; left {label, content}; right {label, content}; optional dimensions [{label,a,b,insight}]. Every dimensions item must use the field name label exactly; never use name, title, or dimension for that field.",
-  "- knowledge_check/single_question: payload.title; question; options [{label, correct boolean, explanation}]",
+  "- knowledge_check/single_question: payload.title; question; exactly 3 options [{label, correct boolean, explanation}], with exactly one correct answer",
   "- system_builder/module_sandbox: payload.title; target; modules [{id,label,description,role}]; optional required_module_ids, connections [{from,to,label}]",
   "- narrative_branch/branch_story: payload.title; opening; branches [{choice_label,outcome_description,insight}]",
   "- classification_sort/category_buckets: payload.title; categories [{id,name}]; items [{label,correct_category,explanation}]. This internal template renders one item at a time with clickable category cards. Learner-facing copy must say 点击类别卡/选择类别, never 拖入、拖到、拖拽 or 类别桶.",
@@ -128,6 +128,7 @@ const FLOW_SCHEMA_PAYLOAD_GUIDE = [
 ].join("\n");
 const CATEGORIES: TopicCategory[] = ["科技", "经济", "哲学", "心理", "历史", "数理"];
 const DIFFICULTIES: TopicDifficulty[] = ["轻松", "进阶", "烧脑一点"];
+const DYNAMIC_PLAY_ESTIMATED_MINUTES = 1;
 
 function cleanText(value: unknown, fallback: string, maxLength = 80) {
   if (typeof value !== "string") return fallback;
@@ -1209,6 +1210,9 @@ function buildFlowUserPrompt(
     "- Do not use ConceptPlan.avoid_patterns.",
     "- Do not put long definitions into titles.",
     "- For parameter_explore/single_slider, explanation_template must be a finished sentence the user can read as-is; never include braces, {value}, {result}, or value-substitution slots.",
+    "- Set every play.estimated_minutes to 1 so the four-step Flow stays within the 3-5 minute product promise.",
+    "- A single-answer knowledge check must have exactly one defensible answer under explicit conditions. Do not ask which option is best, most effective, or maximizes a result when a combined intervention is also offered.",
+    "- Every knowledge_check/single_question must contain exactly 3 options, exactly one correct answer, and one explanation per option.",
   ].filter(Boolean).join("\n");
 }
 
@@ -1288,6 +1292,9 @@ function buildRepairUserPrompt(
     "- Use the exact payload fields required by the selected pattern/template; do not place payload under config, data, fields, steps_data, nodes, or questions.",
     "- Prefer default templates: parameter_explore/single_slider, knowledge_check/single_question, system_builder/module_sandbox.",
     "- For parameter_explore/single_slider, explanation_template must be a fixed readable sentence, not a variable template; never include braces, {value}, or {result}.",
+    "- Set every play.estimated_minutes to 1 so the four-step Flow totals 4 minutes.",
+    "- A single-answer knowledge check must have exactly one defensible answer under explicit conditions. Remove ambiguous best/most-effective/maximize questions when one option combines multiple interventions.",
+    "- Every knowledge_check/single_question must contain exactly 3 options, exactly one correct answer, and one explanation per option.",
     "- simulation_play.params must contain at least 2 parameter objects. outputs[].model must use linear/quadratic/exponential/inverse/logarithmic.",
     "- The visible copy must teach the KnowledgeBlueprint core_terms, not merely mention the topic.",
     "- Do not use patterns listed in ConceptPlan.avoid_patterns.",
@@ -1633,14 +1640,14 @@ function normalizeKnowledgeCheckPayload(
 
   const firstCorrect = options.findIndex((option) => option.correct === true);
   const correctIndex = firstCorrect >= 0 ? firstCorrect : 0;
-  const normalizedOptions = options.slice(0, Math.max(3, Math.min(options.length, 4))).map((option, index) => ({
+  const normalizedOptions = options.slice(0, 3).map((option, index) => ({
     ...option,
     correct: index === correctIndex,
   }));
   if (firstCorrect < 0 || options.filter((option) => option.correct).length !== 1 || normalizedOptions.length !== rawOptions.length) changed = true;
 
   if (changed) {
-    addRepairAction(repairActions, "field_fix", "Normalized knowledge check to at least three explained options", { step, pattern: "knowledge_check" });
+    addRepairAction(repairActions, "field_fix", "Normalized knowledge check to exactly three explained options", { step, pattern: "knowledge_check" });
   }
 
   return {
@@ -1960,7 +1967,7 @@ function normalizeGeneratedFlow(
       title: cleanText(record.title, fallback.plays[index]?.title || "Step " + (index + 1), 18),
       concept: cleanText(record.concept, topic, 28),
       schema,
-      estimated_minutes: typeof record.estimated_minutes === "number" ? Math.max(1, Math.min(3, Math.round(record.estimated_minutes))) : 1,
+      estimated_minutes: DYNAMIC_PLAY_ESTIMATED_MINUTES,
       reward_copy: cleanText(record.reward_copy, fallback.plays[index]?.reward_copy || "这一关已经走通了。", 48),
     } satisfies KnowledgePlay;
     return attachBlueprintStepCue(play, blueprint?.teaching_sequence[index], stepCueTerms(blueprint, index, groundingTerms));
@@ -2056,6 +2063,7 @@ function buildDynamicSystemPrompt(
     "",
     "Hard rules:",
     "- plays must contain exactly " + DYNAMIC_FLOW_STEP_COUNT + " items.",
+    "- Set every play.estimated_minutes to 1 so the four-step Flow totals 4 minutes.",
     requiredPatternRule,
     "- flow.concept must equal ConceptPlan.topic.",
     "- Use ConceptPlan.grounding_terms in visible titles, questions, options, labels, modules, slider outputs, or explanations. Listing terms only in arrays is not enough.",
@@ -2065,6 +2073,8 @@ function buildDynamicSystemPrompt(
     "- follow_ups must extend the KnowledgeBlueprint: connect to a next concept, boundary case, method, or prerequisite from the same knowledge structure; avoid generic branches like real application / key mechanism unless they name the specific relation.",
     "- Pattern choice must match knowledge structure: deterministic optimization/planning/constraints should avoid probability unless the topic itself is about uncertainty.",
     "- Each step should ask the user to do something: guess, choose, sort, connect, slide, compare, or simulate.",
+    "- A single-answer knowledge check must have exactly one defensible answer under explicit conditions. Do not ask which option is best, most effective, or maximizes a result when a combined intervention is also offered.",
+    "- Every knowledge_check/single_question must contain exactly 3 options, exactly one correct answer, and one explanation per option.",
     "- For probability lessons, use plain learning language such as 先猜猜哪种情况更可能 / 看看新证据如何改变判断. Only use option-trading or game metaphors when the user topic itself is about options or games.",
     "- Do not hide Blueprint terms only in teaching_trace; QualityGate checks visible user-facing text.",
     "- Do not invent payload field names. Use only the required fields listed above for the selected pattern/template.",
