@@ -102,6 +102,7 @@
 
 ## 已完成的代码侧验证
 
+- 修复后线上复验：提交 da53009 部署后，“复利效应”接口返回 200、source=llm、无 HonestFailure、4 关共 4 分钟；知识检查直接使用每月投入、10 年、复利与年化收益率等主题锚点，不再出现“入口 A / 入口 B”。
 - npm run typecheck：通过。
 - npm run build：通过，25 个静态页面与动态 API 路由正常生成。
 - npm run eval:teaching：通过，包含歧义单选和 7 分钟 Flow 反例。
