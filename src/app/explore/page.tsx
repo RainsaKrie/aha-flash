@@ -4,10 +4,13 @@ import { motion } from "framer-motion";
 import { ArrowRight, BrainCircuit, Gauge, Home, LibraryBig, Loader2, Sparkles, Timer } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import { getAnalyticsHeaders, trackEvent } from "@/lib/analytics/client";
 import { getShowcaseFlows, type KnowledgeFlow } from "@/lib/content/mock-flows";
 import { writeFlowDraft, type FlowDraftDebug } from "@/lib/utils/storage";
+
+import { rememberPublicBetaInviteCode } from '@/lib/public-beta/client';
 
 const SHOWCASE_FLOWS = getShowcaseFlows();
 
@@ -37,12 +40,12 @@ interface GenerationPreview {
   structure: string;
   steps: GenerationPreviewStep[];
   gate: "pass" | "warn" | "unknown";
-  source: "llm" | "mock";
+  source: "llm" | "cache" | "fallback";
 }
 
 interface FlowApiResponse {
   flow: KnowledgeFlow;
-  source: "llm" | "mock";
+  source: "llm" | "cache" | "fallback";
   validation_error?: string;
   raw_output?: string;
   raw_plan_output?: string;
@@ -51,6 +54,13 @@ interface FlowApiResponse {
   quality_gate?: unknown;
   preview?: GenerationPreview;
   failure?: FlowFailureResponse;
+}
+
+interface PublicRuntimeConfig {
+  mode: "static" | "invite" | "open";
+  dynamic_enabled: boolean;
+  requires_invite: boolean;
+  reason?: "disabled" | "storage_unavailable" | "request_limit" | "token_budget";
 }
 
 const INPUT_EXAMPLES = ["\u7ebf\u6027\u89c4\u5212", "DNS \u89e3\u6790", "\u8d1d\u53f6\u65af\u5b9a\u7406", "\u590d\u5229\u6548\u5e94"];
@@ -62,6 +72,13 @@ const GENERATION_STEPS = [
 ] as const;
 
 type GenerationStage = (typeof GENERATION_STEPS)[number]["id"] | "repair" | "fallback";
+
+class FlowRequestError extends Error {
+  constructor(message: string, readonly code?: string) {
+    super(message);
+    this.name = "FlowRequestError";
+  }
+}
 
 function isGenerationStage(value: unknown): value is GenerationStage {
   return value === "concept_plan"
@@ -104,7 +121,10 @@ async function readFlowEventStream(
           const message = typeof payload === "object" && payload && "error" in payload && typeof payload.error === "string"
             ? payload.error
             : "生成连接意外中断，请再试一次。";
-          throw new Error(message);
+          const code = typeof payload === "object" && payload && "code" in payload && typeof payload.code === "string"
+            ? payload.code
+            : undefined;
+          throw new FlowRequestError(message, code);
         }
       }
       boundary = buffer.indexOf("\n\n");
@@ -131,7 +151,7 @@ function makePreviewStepLabel(title: unknown, topic: string, index: number) {
   return `${topic}：${fallback}`;
 }
 
-function makeFallbackPreview(flow: KnowledgeFlow, source: "llm" | "mock"): GenerationPreview {
+function makeFallbackPreview(flow: KnowledgeFlow, source: "llm" | "cache" | "fallback"): GenerationPreview {
   const topic = flow.concept || flow.title;
   return {
     topic,
@@ -186,9 +206,39 @@ export default function ExplorePage() {
   const [failureState, setFailureState] = useState<FlowFailureResponse | null>(null);
   const [failureAttempts, setFailureAttempts] = useState(0);
   const [lastFailedTopic, setLastFailedTopic] = useState<string | null>(null);
+  const [runtimeConfig, setRuntimeConfig] = useState<PublicRuntimeConfig>({
+    mode: "static",
+    dynamic_enabled: false,
+    requires_invite: false,
+  });
+  const [inviteCode, setInviteCode] = useState("");
+
+  useEffect(() => {
+    void trackEvent("page_view", { route: "/explore" });
+    void fetch("/api/public-beta/config", { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : null)
+      .then((payload: PublicRuntimeConfig | null) => {
+        if (payload) setRuntimeConfig(payload);
+      })
+      .catch(() => undefined);
+  }, []);
 
   async function startGeneratedFlow(nextTopic = topic, preferredStructure = "auto") {
     const trimmed = nextTopic.trim();
+    if (!runtimeConfig.dynamic_enabled) {
+      setErrorMessage("动态生成仍在小范围内测，请先体验下面的精选主题。");
+      void trackEvent("dynamic_generation_blocked", {
+        error_category: runtimeConfig.reason || "static_mode",
+      });
+      return;
+    }
+    if (runtimeConfig.requires_invite && !inviteCode.trim()) {
+      setErrorMessage("请输入内测邀请码，或先体验下面的精选主题。");
+      void trackEvent("dynamic_generation_blocked", {
+        error_category: "invite_required",
+      });
+      return;
+    }
     if (trimmed.length < 2) {
       setErrorMessage("先输入一个你想理解的知识点。");
       return;
@@ -200,16 +250,42 @@ export default function ExplorePage() {
     setFailureState(null);
     setGenerationPreview(null);
     setPendingDraftId(null);
+    const generationStartedAt = Date.now();
+    void trackEvent("dynamic_generation_started");
 
     try {
       const response = await fetch("/api/flow", {
         method: "POST",
-        headers: { "Accept": "text/event-stream", "Content-Type": "application/json" },
-        body: JSON.stringify({ topic: trimmed, preferredPattern: "auto", preferredStructure, stream: true }),
+        headers: {
+          "Accept": "text/event-stream",
+          "Content-Type": "application/json",
+          ...getAnalyticsHeaders(),
+        },
+        body: JSON.stringify({
+          topic: trimmed,
+          preferredPattern: "auto",
+          preferredStructure,
+          stream: true,
+          inviteCode: runtimeConfig.requires_invite ? inviteCode.trim() : undefined,
+        }),
       });
-      if (!response.ok) throw new Error(`flow request failed: ${response.status}`);
+      if (!response.ok) {
+        const blocked = await response.json().catch(() => null) as {
+          error?: string;
+          code?: string;
+        } | null;
+        const errorCategory = blocked?.code || "request_failed";
+        throw new FlowRequestError(
+          blocked?.error || "动态生成暂时不可用，请先体验精选主题。",
+          errorCategory,
+        );
+      }
       const payload = await readFlowEventStream(response, setGenerationStage);
       if (payload.failure) {
+        void trackEvent("dynamic_generation_failed", {
+          error_category: payload.failure.code || "quality_gate_failed",
+          generation_latency_ms: Date.now() - generationStartedAt,
+        });
         setFailureState(payload.failure);
         setGenerationPreview(null);
         setFailureAttempts((count) => (lastFailedTopic === trimmed ? count + 1 : 1));
@@ -217,6 +293,21 @@ export default function ExplorePage() {
         return;
       }
       const flow = payload.flow;
+      if (payload.source === "cache") {
+        void trackEvent("cache_hit", {
+          flow_id: flow.id,
+          flow_source: "cache",
+          generation_latency_ms: Date.now() - generationStartedAt,
+        });
+      }
+      void trackEvent("dynamic_generation_succeeded", {
+        flow_id: flow.id,
+        flow_source: payload.source,
+        generation_latency_ms: Date.now() - generationStartedAt,
+      });
+      if (runtimeConfig.requires_invite && inviteCode.trim()) {
+        rememberPublicBetaInviteCode(inviteCode);
+      }
       setGenerationPreview(payload.preview || makeFallbackPreview(flow, payload.source));
       setFailureAttempts(0);
       setLastFailedTopic(null);
@@ -233,10 +324,43 @@ export default function ExplorePage() {
       if (!writeFlowDraft(draftId, flow, debug)) throw new Error("无法保存本次学习路径，请允许浏览器会话存储后重试。");
       setPendingDraftId(draftId);
     } catch (error) {
+      const errorCategory = error instanceof FlowRequestError && error.code
+        ? error.code
+        : "request_failed";
+      const switchToStatic = errorCategory === "request_limit" || errorCategory === "token_budget";
+      const accessBlocked = [
+        "static_mode",
+        "storage_unavailable",
+        "invite_required",
+        "invite_invalid",
+        "invite_expired",
+        "invite_exhausted",
+        "request_limit",
+        "client_limit",
+        "token_budget",
+      ].includes(errorCategory);
+      void trackEvent(accessBlocked ? "dynamic_generation_blocked" : "dynamic_generation_failed", {
+        error_category: errorCategory,
+        generation_latency_ms: Date.now() - generationStartedAt,
+      });
+      if (errorCategory === "request_limit" || errorCategory === "client_limit") {
+        void trackEvent("rate_limited", { error_category: errorCategory });
+      }
+      if (errorCategory === "token_budget") {
+        void trackEvent("budget_exhausted", { error_category: errorCategory });
+      }
+      if (switchToStatic) {
+        setRuntimeConfig({
+          mode: "static",
+          dynamic_enabled: false,
+          requires_invite: false,
+          reason: "token_budget",
+        });
+      }
       setGenerationPreview(null);
       setPendingDraftId(null);
       setGenerationStage(null);
-      setErrorMessage(error instanceof Error ? error.message : String(error));
+      setErrorMessage(switchToStatic ? null : error instanceof Error ? error.message : String(error));
     } finally {
       setIsGenerating(false);
     }
@@ -273,9 +397,19 @@ export default function ExplorePage() {
       </header>
 
       <section className="v5-explore-hero v5-showcase-hero v5-ai-hero" aria-labelledby="explore-title">
-        <p className="v5-eyebrow">自由生成 · AI 原生交互学习</p>
+        <p className="v5-eyebrow">
+          {runtimeConfig.mode === "static"
+            ? "公开测试 · 精选主题"
+            : runtimeConfig.mode === "invite"
+              ? "小范围内测 · 邀请生成"
+              : "公开测试 · 动态生成"}
+        </p>
         <h1 id="explore-title">想学什么，走一条互动路径。</h1>
-        <p>输入概念，趣灵自动生成互动路径。</p>
+        <p>
+          {runtimeConfig.dynamic_enabled
+            ? "用 3-5 分钟，把一个概念放进互动里想明白。"
+            : "无需注册，选择一个精选主题，先完成一条 3-5 分钟互动路径。"}
+        </p>
 
         <div className="v5-flow-generator">
           <label className="v5-flow-generator__input">
@@ -293,7 +427,7 @@ export default function ExplorePage() {
                 setLastFailedTopic(null);
               }}
               placeholder="比如：光合作用、DNS 解析、沉没成本"
-              disabled={isGenerating}
+              disabled={isGenerating || !runtimeConfig.dynamic_enabled}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault();
@@ -302,11 +436,40 @@ export default function ExplorePage() {
               }}
             />
           </label>
-          <button type="button" className="v5-primary-button" disabled={isGenerating} onClick={() => void startGeneratedFlow()}>
+          <button
+            type="button"
+            className="v5-primary-button"
+            disabled={isGenerating || !runtimeConfig.dynamic_enabled}
+            onClick={() => void startGeneratedFlow()}
+          >
             {isGenerating ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-            开始闯关
+            {runtimeConfig.dynamic_enabled ? "开始闯关" : "动态生成小范围内测"}
           </button>
         </div>
+
+        {runtimeConfig.requires_invite && (
+          <label className="v5-public-beta-invite">
+            <span>内测邀请码</span>
+            <input
+              type="password"
+              value={inviteCode}
+              autoComplete="off"
+              onChange={(event) => {
+                setInviteCode(event.target.value);
+                setErrorMessage(null);
+              }}
+              placeholder="输入邀请码"
+              disabled={isGenerating}
+            />
+          </label>
+        )}
+        {!runtimeConfig.dynamic_enabled && (
+          <p className="v5-public-beta-note">
+            {runtimeConfig.reason === "token_budget" || runtimeConfig.reason === "request_limit"
+              ? "今天的动态生成额度已经用完，五条精选路径仍可直接完整体验。"
+              : "精选主题不消耗动态生成额度，五条路径都可以直接完整体验。"}
+          </p>
+        )}
 
         <div className="v5-flow-controls" aria-label={"\u8f85\u52a9\u8bbe\u7f6e"}>
           <div className="v5-flow-examples" aria-label={"\u8f93\u5165\u793a\u4f8b"}>
@@ -315,7 +478,7 @@ export default function ExplorePage() {
               <button
                 key={example}
                 type="button"
-                disabled={isGenerating}
+                disabled={isGenerating || !runtimeConfig.dynamic_enabled}
                 onClick={() => {
                   setTopic(example);
                   setErrorMessage(null);
@@ -332,6 +495,9 @@ export default function ExplorePage() {
           </div>
 
         </div>
+        <p className='v5-public-beta-privacy'>
+          试玩仅匿名记录开始、完成与反馈；不会记录你输入的自由主题原文。
+        </p>
         {isGenerating && (
           <div className="v6-generation-status" aria-live="polite">
             {GENERATION_STEPS.map((step, index) => (
@@ -432,7 +598,14 @@ export default function ExplorePage() {
             </div>
             <div className="v6-failure-card__examples" aria-label={"\u7a33\u5b9a\u793a\u4f8b"}>
               {SHOWCASE_FLOWS.slice(0, shouldPreferShowcase ? 5 : 3).map((flow) => (
-                <Link key={flow.id} href={`/flow/${flow.id}`}>
+                <Link
+                  key={flow.id}
+                  href={`/flow/${flow.id}`}
+                  onClick={() => void trackEvent("showcase_topic_selected", {
+                    flow_id: flow.id,
+                    flow_source: "static",
+                  })}
+                >
                   {flow.title}
                 </Link>
               ))}
@@ -455,7 +628,14 @@ export default function ExplorePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.24, delay: Math.min(index * 0.04, 0.16) }}
           >
-            <Link href={`/flow/${flow.id}`} className="v5-topic-card v5-showcase-card">
+            <Link
+              href={`/flow/${flow.id}`}
+              className="v5-topic-card v5-showcase-card"
+              onClick={() => void trackEvent("showcase_topic_selected", {
+                flow_id: flow.id,
+                flow_source: "static",
+              })}
+            >
               <div className="v5-topic-card__topline">
                 <span>{flow.category}</span>
                 <span>{flow.difficulty}</span>

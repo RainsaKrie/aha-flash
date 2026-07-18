@@ -1230,7 +1230,11 @@ async function generateConceptPlan(
     model,
     system,
     messages: [{ role: "user", content: `为「${topic}」生成 ConceptPlan。` }],
-  }, { jsonOutput: true, jsonName: "concept_plan" });
+  }, {
+    jsonOutput: true,
+    jsonName: "concept_plan",
+    operation: "concept_plan",
+  });
   const plan = normalizeConceptPlan(parseJson(result.text), topic, preferredPattern, preferredStructure);
   const evaluation = evaluateConceptPlan(plan, preferredPattern);
   if (evaluation.ok) {
@@ -1241,7 +1245,12 @@ async function generateConceptPlan(
     model,
     system,
     messages: [{ role: "user", content: buildConceptPlanRepairPrompt(topic, preferredPattern, preferredStructure, evaluation.reason, result.text) }],
-  }, { jsonOutput: true, jsonName: "concept_plan" });
+  }, {
+    jsonOutput: true,
+    jsonName: "concept_plan",
+    operation: "concept_plan_repair",
+    repair: true,
+  });
   const repairedPlan = normalizeConceptPlan(parseJson(repair.text), topic, preferredPattern, preferredStructure);
   const repairedEvaluation = evaluateConceptPlan(repairedPlan, preferredPattern);
   if (repairedEvaluation.ok) {
@@ -2154,7 +2163,11 @@ export async function generateDynamicFlow(
       model,
       system,
       messages: [{ role: "user", content: buildFlowUserPrompt(topic, plan, blueprint, preferredPattern) }],
-    }, { jsonOutput: true, jsonName: "knowledge_flow" });
+    }, {
+      jsonOutput: true,
+      jsonName: "knowledge_flow",
+      operation: "flow_generation",
+    });
     const parsed = parseJson(result.text);
     const normalized = normalizeGeneratedFlow(parsed, topic, preferredPattern, plan, preferredStructure);
     await reportGenerationStage(onStage, "quality_gate");
@@ -2182,7 +2195,12 @@ export async function generateDynamicFlow(
       model,
       system,
       messages: [{ role: "user", content: buildRepairUserPrompt(topic, preferredPattern, repairReason, result.text, plan, blueprint) }],
-    }, { jsonOutput: true, jsonName: "knowledge_flow" });
+    }, {
+      jsonOutput: true,
+      jsonName: "knowledge_flow",
+      operation: "flow_repair",
+      repair: true,
+    });
     const repaired = normalizeGeneratedFlow(parseJson(repair.text), topic, preferredPattern, plan, preferredStructure);
     const repairedActions = [...(normalized.repair_actions || [])];
     addRepairAction(repairedActions, "flow_repair", "Initial Flow validation failed; requested LLM repair");

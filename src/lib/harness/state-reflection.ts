@@ -1,4 +1,5 @@
-import { generateText, type LanguageModel } from "ai";
+import type { LanguageModel } from "ai";
+import { retryGenerateText } from "../llm/retry-generate-text.ts";
 import type { ConversationRoute } from "./conversation-router";
 import type { StateReflectionPatch } from "./state-store";
 import type { UISchemaType } from "@/types/schema";
@@ -106,7 +107,7 @@ export async function reflectTurn({
   if (!model) return fallback;
 
   try {
-    const result = await generateText({
+    const result = await retryGenerateText({
       model,
       system: [
         "你是趣灵（aha-flash）的回合状态提炼器。",
@@ -127,7 +128,7 @@ export async function reflectTurn({
           }),
         },
       ],
-    });
+    }, { operation: "state_reflection" });
 
     return normalizeReflection(parseJsonObject(result.text), fallback);
   } catch {

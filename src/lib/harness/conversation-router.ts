@@ -1,4 +1,5 @@
-import { generateText, type LanguageModel } from "ai";
+import type { LanguageModel } from "ai";
+import { retryGenerateText } from "../llm/retry-generate-text.ts";
 import type { CurrentThread } from "@/types/state";
 
 export type ConversationRoute = "knowledge" | "preference" | "casual";
@@ -170,7 +171,7 @@ export async function classifyConversationIntent(
   if (!model || ruleResult.confidence >= 0.9) return ruleResult;
 
   try {
-    const result = await generateText({
+    const result = await retryGenerateText({
       model,
       system: [
         "你是趣灵（aha-flash）的对话路由器。",
@@ -181,7 +182,7 @@ export async function classifyConversationIntent(
         "casual: 与学习和偏好无关的闲聊。",
       ].join("\n"),
       messages: [{ role: "user", content: input }],
-    });
+    }, { operation: "conversation_classification" });
     const parsed = parseClassification(result.text);
     if (parsed) return { ...parsed, source: "llm" };
   } catch {
@@ -272,7 +273,7 @@ export async function detectFollowupIntent(
   if (!model || !currentThread?.concept || ruleResult.confidence >= 0.84) return ruleResult;
 
   try {
-    const result = await generateText({
+    const result = await retryGenerateText({
       model,
       system: [
         "你是趣灵（aha-flash）的追问判别器。",
@@ -283,7 +284,7 @@ export async function detectFollowupIntent(
         `当前线程深度: ${currentThread.depth}`,
       ].join("\n"),
       messages: [{ role: "user", content: input }],
-    });
+    }, { operation: "followup_detection" });
     const parsed = parseFollowup(result.text);
     if (parsed) return { ...parsed, source: "llm" };
   } catch {

@@ -1,7 +1,7 @@
 "use client";
 
 import { CopyCheck } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { ChoiceButton, ComponentFrame, EmptyState, GeneratedRichText, normalizeGeneratedText } from "./shared";
 import type { CardFlipConfig, InteractionEvent } from "@/types/schema";
 
@@ -13,17 +13,24 @@ export function CardFlip({
   onComplete?: (result: InteractionEvent) => void;
 }) {
   const [flipped, setFlipped] = useState<Record<number, boolean>>({});
-  const [seen, setSeen] = useState<Record<number, boolean>>({});
-  const [completed, setCompleted] = useState(false);
+  const seenRef = useRef<Record<number, boolean>>({});
+  const completedRef = useRef(false);
   const cards = config.cards || [];
 
-  useEffect(() => {
-    if (completed || cards.length === 0) return;
-    if (cards.every((_, index) => seen[index])) {
-      setCompleted(true);
+  function flipCard(index: number) {
+    const nextSeen = { ...seenRef.current, [index]: true };
+    seenRef.current = nextSeen;
+    setFlipped((value) => ({ ...value, [index]: !value[index] }));
+
+    if (
+      !completedRef.current &&
+      cards.length > 0 &&
+      cards.every((_, cardIndex) => nextSeen[cardIndex])
+    ) {
+      completedRef.current = true;
       onComplete?.({ type: "card_flip_completed", payload: { cards: cards.length } });
     }
-  }, [cards, completed, onComplete, seen]);
+  }
 
   return (
     <ComponentFrame icon={CopyCheck} label="card flip" title={config.title} depth={config.depth}>
@@ -33,10 +40,7 @@ export function CardFlip({
             <ChoiceButton
               key={normalizeGeneratedText(card.front)}
               active={flipped[index]}
-              onClick={() => {
-                setSeen((value) => ({ ...value, [index]: true }));
-                setFlipped((value) => ({ ...value, [index]: !value[index] }));
-              }}
+              onClick={() => flipCard(index)}
               className="min-h-44"
               title="翻转"
             >

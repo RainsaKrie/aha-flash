@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { generateDynamicFlow } from "../src/lib/content/dynamic-flow-generation.ts";
 import type { KnowledgeBlueprint, TeachingMetrics } from "../src/lib/content/knowledge-blueprint.ts";
+import { createModelAccessContext, runWithModelAccess } from "../src/lib/public-beta/model-context.ts";
 
 interface ReviewRun {
   topic: string;
@@ -176,7 +177,16 @@ async function main() {
   console.log(`markdown: ${markdownPath}`);
 }
 
-main().catch((error) => {
+const manualEvalContext = createModelAccessContext({
+  requestId: "internal-manual-teaching-eval",
+  callType: "flow",
+  anonymousUserId: "internal_manual_eval",
+  sessionId: "internal_manual_eval_session",
+  allowed: false,
+  internalBypass: true,
+});
+
+runWithModelAccess(manualEvalContext, main).catch((error) => {
   console.error(error);
   process.exit(1);
 });

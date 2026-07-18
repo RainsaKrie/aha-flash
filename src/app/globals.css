@@ -5420,3 +5420,140 @@ button.v5-flow-branch-card {
   line-height: 1.55;
   white-space: pre-wrap;
 }
+.v5-public-beta-invite {
+  width: min(100%, 520px);
+  margin: 12px auto 0;
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  color: #334155;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.v5-public-beta-invite input {
+  min-width: 0;
+  height: 42px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 0 12px;
+  color: #111827;
+  font: inherit;
+  font-weight: 500;
+}
+
+.v5-public-beta-invite input:focus {
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
+}
+
+.v5-public-beta-note {
+  margin: 12px auto 0;
+  color: #475569;
+  font-size: 0.84rem;
+}
+
+.v5-public-beta-privacy {
+  margin: 14px auto 0;
+  color: #64748b;
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.v5-flow-feedback {
+  width: 100%;
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(148, 163, 184, 0.35);
+  display: grid;
+  gap: 12px;
+  text-align: left;
+}
+
+.v5-flow-feedback p {
+  margin: 0 0 4px;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.v5-flow-feedback h3 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.v5-flow-feedback__choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.v5-flow-feedback__choices button,
+.v5-flow-feedback__submit {
+  min-height: 40px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #334155;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.v5-flow-feedback__choices button[aria-pressed="true"] {
+  border-color: #16a34a;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.v5-flow-feedback textarea {
+  width: 100%;
+  min-height: 76px;
+  resize: vertical;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 10px 12px;
+  color: #0f172a;
+  font: inherit;
+  line-height: 1.5;
+}
+
+.v5-flow-feedback textarea:focus {
+  outline: 2px solid #22c55e;
+  outline-offset: 2px;
+}
+
+.v5-flow-feedback__submit {
+  justify-self: start;
+  border-color: #166534;
+  background: #166534;
+  color: #ffffff;
+}
+
+.v5-flow-feedback__submit:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.v5-flow-feedback small {
+  color: #475569;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 640px) {
+  .v5-public-beta-invite {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .v5-flow-feedback__choices {
+    grid-template-columns: 1fr;
+  }
+}

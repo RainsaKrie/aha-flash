@@ -1,7 +1,7 @@
 "use client";
 
 import { Blend } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import type { ComparisonSplitConfig, InteractionEvent } from "@/types/schema";
 import { ChoiceButton, ComponentFrame, FeedbackPanel, Panel } from "./shared";
 
@@ -15,39 +15,50 @@ export function ComparisonOverlay({
   onComplete?: (event: InteractionEvent) => void;
 }) {
   const [ratio, setRatio] = useState(50);
-  const [ratioTouched, setRatioTouched] = useState(false);
   const [dimensionIndex, setDimensionIndex] = useState(0);
-  const [visitedDimensions, setVisitedDimensions] = useState<Record<number, boolean>>({});
-  const [completed, setCompleted] = useState(false);
+  const ratioTouchedRef = useRef(false);
+  const visitedDimensionsRef = useRef<Record<number, boolean>>({});
+  const completedRef = useRef(false);
   const dimensions = config.dimensions || [];
   const activeDimension = dimensions[dimensionIndex];
   const leftLabel = config.subject_a || config.left.label;
   const rightLabel = config.subject_b || config.right.label;
 
-  useEffect(() => {
-    if (completed || !ratioTouched) return;
+  function completeIfReady(
+    nextRatio: number,
+    ratioWasTouched: boolean,
+    visitedDimensions: Record<number, boolean>,
+  ) {
+    if (completedRef.current || !ratioWasTouched) return;
+
     const visitedEveryDimension = dimensions.length === 0 || dimensions.every((_, index) => visitedDimensions[index]);
     if (!visitedEveryDimension) return;
-    setCompleted(true);
+    completedRef.current = true;
     onComplete?.({
       type: "comparison_overlay_completed",
-      payload: { ratio, dimensions: dimensions.length, left: leftLabel, right: rightLabel },
+      payload: { ratio: nextRatio, dimensions: dimensions.length, left: leftLabel, right: rightLabel },
     });
-  }, [completed, dimensions, leftLabel, onComplete, ratio, ratioTouched, rightLabel, visitedDimensions]);
+  }
 
   function update(value: number) {
     setRatio(value);
-    setRatioTouched(true);
+    ratioTouchedRef.current = true;
     onInteraction?.({ type: "comparison_ratio_changed", payload: { ratio: value, left: config.left.label, right: config.right.label } });
+    completeIfReady(value, true, visitedDimensionsRef.current);
   }
 
   function selectDimension(index: number) {
+    const nextVisitedDimensions = {
+      ...visitedDimensionsRef.current,
+      [index]: true,
+    };
+    visitedDimensionsRef.current = nextVisitedDimensions;
     setDimensionIndex(index);
-    setVisitedDimensions((value) => ({ ...value, [index]: true }));
     onInteraction?.({
       type: "comparison_dimension_selected",
       payload: { index, label: dimensions[index]?.label, left: leftLabel, right: rightLabel },
     });
+    completeIfReady(ratio, ratioTouchedRef.current, nextVisitedDimensions);
   }
 
   const leftContent = activeDimension?.a || config.left.content;

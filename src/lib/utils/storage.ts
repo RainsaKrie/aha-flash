@@ -17,7 +17,7 @@ export interface CompletedFlowRecord {
 }
 
 export interface FlowDraftDebug {
-  source?: "llm" | "mock";
+  source?: "llm" | "cache" | "fallback" | "mock";
   validation_error?: string;
   raw_output?: string;
   raw_plan_output?: string;

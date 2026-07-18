@@ -14,6 +14,17 @@ import { createMockSchema } from "@/lib/llm/mock-schema";
 import { getLLMProvider } from "@/lib/llm/provider";
 import { extractSchemaFromText, getKnownV2SchemaError, getSchemaFailureReason, validateKnownV2Schema } from "@/lib/llm/schema-validator";
 import {
+  createModelAccessContext,
+  runWithModelAccess,
+  type ModelAccessContext,
+} from "@/lib/public-beta/model-context";
+import {
+  consumeDynamicAccess,
+  inspectDynamicAccess,
+  recordAccessAnalyticsEvent,
+  type DynamicAccessCode,
+} from "@/lib/public-beta/repository";
+import {
   buildGenerativeAiTools,
   buildSchemaFromGenerativeToolCall,
   isGenerativeToolName,
@@ -241,7 +252,7 @@ async function generateSchemaWithTools({
       messages: [{ role: "user", content: [input, buildIntentDirective(intent)].filter(Boolean).join("\n\n") }],
       tools: buildGenerativeAiTools(),
       toolChoice: "required",
-    });
+    }, { operation: "chat_tool_generation" });
 
     const toolCall = result.toolCalls[0];
     if (!toolCall) {
@@ -294,7 +305,11 @@ async function generateSchemaWithLLM({
       model,
       system,
       messages: [{ role: "user", content: userContent }],
-    }, { jsonOutput: true, jsonName: "ui_schema" });
+    }, {
+      jsonOutput: true,
+      jsonName: "ui_schema",
+      operation: "chat_json_generation",
+    });
 
     const firstSchema = extractSchemaFromText(first.text);
     if (schemaMatchesIntent(firstSchema, intent)) return { schema: firstSchema };
@@ -321,7 +336,12 @@ async function generateSchemaWithLLM({
           ].join("\n"),
         },
       ],
-    }, { jsonOutput: true, jsonName: "ui_schema" });
+    }, {
+      jsonOutput: true,
+      jsonName: "ui_schema",
+      operation: "chat_json_repair",
+      repair: true,
+    });
 
     const repairedSchema = extractSchemaFromText(repair.text);
     if (schemaMatchesIntent(repairedSchema, intent)) return { schema: repairedSchema };
@@ -544,6 +564,61 @@ export async function POST(req: Request) {
     );
   }
 
+  let modelContext: ModelAccessContext | null = null;
+  let modelBlockedReason: DynamicAccessCode | undefined;
+  try {
+    const inviteCode = typeof body.inviteCode === "string" ? body.inviteCode : undefined;
+    let access = await inspectDynamicAccess({ req, body, inviteCode });
+    if (access.allowed) access = await consumeDynamicAccess(access);
+    if (access.allowed) {
+      modelContext = createModelAccessContext({
+        requestId: crypto.randomUUID(),
+        callType: "chat",
+        anonymousUserId: access.identity.anonymousUserId,
+        sessionId: access.identity.sessionId,
+        allowed: true,
+      });
+    } else {
+      modelBlockedReason = access.code;
+      const events: Array<'dynamic_generation_blocked' | 'rate_limited' | 'budget_exhausted'> = [
+        'dynamic_generation_blocked',
+      ];
+      if (access.code === 'request_limit' || access.code === 'client_limit') {
+        events.push('rate_limited');
+      }
+      if (access.code === 'token_budget') events.push('budget_exhausted');
+      await Promise.allSettled(events.map((eventName) => recordAccessAnalyticsEvent({
+        req,
+        decision: access,
+        eventName,
+        route: '/api/chat',
+        errorCategory: access.code,
+      })));
+    }
+  } catch {
+    modelBlockedReason = "storage_unavailable";
+  }
+
+  const executeChat = (emit?: EmitChatEvent) => {
+    const operation = () => processChatRequest({
+      input,
+      userId: normalizedUserId,
+      depth,
+      recentMessages,
+      disableToolCalling,
+      emit,
+    });
+    return modelContext ? runWithModelAccess(modelContext, operation) : operation();
+  };
+
+  const withPublicBetaState = <T extends Record<string, unknown>>(payload: T) => ({
+    ...payload,
+    public_beta: {
+      dynamic_allowed: Boolean(modelContext) && !modelContext?.budgetExhausted,
+      blocked_reason: modelContext?.budgetExhausted ? "token_budget" : modelBlockedReason,
+    },
+  });
+
   if (stream === true) {
     const encoder = new TextEncoder();
     const readable = new ReadableStream({
@@ -553,15 +628,8 @@ export async function POST(req: Request) {
         };
 
         try {
-          const payload = await processChatRequest({
-            input,
-            userId: normalizedUserId,
-            depth,
-            recentMessages,
-            disableToolCalling,
-            emit: send,
-          });
-          send({ type: "final", payload });
+          const payload = await executeChat(send);
+          send({ type: "final", payload: withPublicBetaState(payload) });
         } catch {
           send({ type: "error", message: "生成失败，请稍后重试。" });
         } finally {
@@ -579,8 +647,8 @@ export async function POST(req: Request) {
   }
 
   try {
-    const payload = await processChatRequest({ input, userId: normalizedUserId, depth, recentMessages, disableToolCalling });
-    return NextResponse.json(payload, {
+    const payload = await executeChat();
+    return NextResponse.json(withPublicBetaState(payload), {
       headers: {
         "X-RateLimit-Remaining": String(rateLimit.remaining),
       },

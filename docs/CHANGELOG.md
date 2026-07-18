@@ -3,6 +3,26 @@
 > 文档定位：归档已经完成的开发任务、验收记录和重要修复。新的增量规划先放入 `docs/input-docs/`，整合后再开发。
 
 ---
+## 2026-07-18
+### Public beta verification closeout
+- Expanded public-beta regression coverage from 7 to 14 checks: server-side static rejection, zero-call invite failures, separate request/token ceilings, static fallback after exhaustion, real Schema/QualityGate cache revalidation, analytics size/privacy, feedback deduplication, admin authorization, and full metrics calculation.
+- Added explicit flow-exit tracking and per-step exit rates; protected reports now include unique-user funnel rates, per-Flow completion/feedback, provider-model call counts, and authoritative limit events without client/server double counting.
+- Propagated invite authorization to generated follow-up Flow requests without persistent plaintext server storage.
+- Added actual UTF-8 body limits and separate persistent rate limits for Analytics and feedback.
+- Completed the public-beta environment reference, cleanup instructions, privacy boundary, release checklist, rollback, and unresolved-risk documentation.
+- Cleared the remaining React effect lint debt without changing interaction completion criteria. Lint, typecheck, all 14 public-beta checks, and the production build now pass.
+
+## 2026-07-17
+### Public beta foundation
+- Added fail-closed `static / invite / open` runtime modes. Production dynamic generation now requires an explicit switch and persistent Upstash storage.
+- Made all showcase Flow GET requests static, so the five public examples perform zero model calls.
+- Added persistent invitation, client-window, daily request and token budgets, successful Flow cache, and per-call usage/cost records.
+- Guarded Flow and Chat model access with AsyncLocalStorage context; initial calls, retries and repairs share one metered path.
+- Added strict anonymous Analytics, non-blocking understanding feedback, and a Secret-protected metrics export.
+- Added a local invitation/admin script, environment template, public-beta runbook and release audit.
+- Added `test:public-beta`; current result is 14/14 passing.
+- Did not modify production environment variables or deploy this change.
+
 ## 2026-07-17
 ### V6 MVP production release audit
 - Walked the production path at https://www.krie.me in one browser context: Explore, live compound-interest generation, four-step Flow, completion branches, and Hub persistence.
