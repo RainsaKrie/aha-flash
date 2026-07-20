@@ -1,7 +1,7 @@
 "use client";
 
 import { Columns2, Eye, Lightbulb } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import type { ComparisonSplitConfig, InteractionEvent } from "@/types/schema";
 import { ChoiceButton, ComponentFrame, FeedbackPanel, Panel } from "./shared";
 
@@ -26,9 +26,9 @@ export function ComparisonSplit({
 }) {
   const [focus, setFocus] = useState<FocusMode>("both");
   const [dimensionIndex, setDimensionIndex] = useState(0);
-  const [visitedDimensions, setVisitedDimensions] = useState<Record<number, boolean>>({});
-  const [visitedFocus, setVisitedFocus] = useState<Record<FocusMode, boolean>>({ both: false, left: false, right: false });
-  const [completed, setCompleted] = useState(false);
+  const visitedDimensionsRef = useRef<Record<number, boolean>>({});
+  const visitedFocusRef = useRef<Record<FocusMode, boolean>>({ both: false, left: false, right: false });
+  const completedRef = useRef(false);
   const dimensions = config.dimensions || [];
   const activeDimension = dimensions[dimensionIndex];
   const subjectA = config.subject_a || config.left.label;
@@ -36,34 +36,48 @@ export function ComparisonSplit({
   const leftPoints = splitPoints(config.left.content);
   const rightPoints = splitPoints(config.right.content);
 
-  useEffect(() => {
-    if (completed) return;
+  function completeIfReady(
+    visitedDimensions: Record<number, boolean>,
+    visitedFocus: Record<FocusMode, boolean>,
+  ) {
+    if (completedRef.current) return;
+
     const visitedEveryDimension = dimensions.length > 0 && dimensions.every((_, index) => visitedDimensions[index]);
     const visitedEveryFocus = dimensions.length === 0 && visitedFocus.both && visitedFocus.left && visitedFocus.right;
     if (!visitedEveryDimension && !visitedEveryFocus) return;
-    setCompleted(true);
+    completedRef.current = true;
     onComplete?.({
       type: "comparison_completed",
       payload: { dimensions: dimensions.length, left: subjectA, right: subjectB },
     });
-  }, [completed, dimensions, onComplete, subjectA, subjectB, visitedDimensions, visitedFocus]);
+  }
 
   function updateFocus(nextFocus: FocusMode) {
+    const nextVisitedFocus = {
+      ...visitedFocusRef.current,
+      [nextFocus]: true,
+    };
+    visitedFocusRef.current = nextVisitedFocus;
     setFocus(nextFocus);
-    setVisitedFocus((value) => ({ ...value, [nextFocus]: true }));
     onInteraction?.({
       type: "comparison_focus_changed",
       payload: { focus: nextFocus, left: config.left.label, right: config.right.label },
     });
+    completeIfReady(visitedDimensionsRef.current, nextVisitedFocus);
   }
 
   function selectDimension(index: number) {
+    const nextVisitedDimensions = {
+      ...visitedDimensionsRef.current,
+      [index]: true,
+    };
+    visitedDimensionsRef.current = nextVisitedDimensions;
     setDimensionIndex(index);
-    setVisitedDimensions((value) => ({ ...value, [index]: true }));
     onInteraction?.({
       type: "comparison_dimension_selected",
       payload: { index, label: dimensions[index]?.label, left: subjectA, right: subjectB },
     });
+    completeIfReady(nextVisitedDimensions, visitedFocusRef.current);
   }
 
   return (

@@ -4,6 +4,7 @@ import { generateDynamicFlow, type DynamicFlowGenerationStage, type RepairAction
 import type { FlowPatternPreference } from "../../src/lib/content/flow-pattern-options.ts";
 import type { KnowledgeStructurePreference, KnowledgeStructureType, TeachingMetrics } from "../../src/lib/content/knowledge-blueprint.ts";
 import { hasSpecificPlayTitle } from "../../src/lib/content/knowledge-blueprint.ts";
+import { createModelAccessContext, runWithModelAccess } from "../../src/lib/public-beta/model-context.ts";
 import { normalizeUISchema, type PatternType } from "../../src/types/schema.ts";
 
 interface LiveFlowEvalCase {
@@ -366,7 +367,16 @@ async function main() {
   if (overall < threshold) process.exit(1);
 }
 
-main().catch((error) => {
+const liveEvalContext = createModelAccessContext({
+  requestId: "internal-live-flow-eval",
+  callType: "flow",
+  anonymousUserId: "internal_live_eval",
+  sessionId: "internal_live_eval_session",
+  allowed: false,
+  internalBypass: true,
+});
+
+runWithModelAccess(liveEvalContext, main).catch((error) => {
   console.error(error);
   process.exit(1);
 });

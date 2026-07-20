@@ -1,84 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
 import { KnowledgeFlowPlayer } from "@/components/explore/knowledge-flow";
-import { SpiritHint } from "@/components/spirit-hint";
-import { isShowcaseFlowId, type KnowledgeFlow } from "@/lib/content/mock-flows";
+import type { KnowledgeFlow } from "@/lib/content/mock-flows";
 
-interface FlowApiResponse {
-  flow: KnowledgeFlow;
-  source: "llm" | "mock";
-  validation_error?: string;
-}
-
-export function FlowRouteClient({ flowId, fallbackFlow }: { flowId: string; fallbackFlow: KnowledgeFlow }) {
-  const [showDebug, setShowDebug] = useState(false);
-  const [flow, setFlow] = useState<KnowledgeFlow>(fallbackFlow);
-  const [source, setSource] = useState<"llm" | "mock">("mock");
-  const [error, setError] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(isShowcaseFlowId(flowId));
-
-  useEffect(() => {
-    setShowDebug(new URLSearchParams(window.location.search).get("debug") === "1");
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadGeneratedFlow() {
-      if (!isShowcaseFlowId(flowId)) return;
-      setIsGenerating(true);
-      setError(null);
-
-      try {
-        const response = await fetch(`/api/flow?flowId=${encodeURIComponent(flowId)}`, { cache: "no-store" });
-        if (!response.ok) throw new Error(`flow request failed: ${response.status}`);
-        const payload = (await response.json()) as FlowApiResponse;
-        if (cancelled) return;
-        setFlow(payload.flow || fallbackFlow);
-        setSource(payload.source || "mock");
-        setError(payload.validation_error || null);
-      } catch (nextError) {
-        if (cancelled) return;
-        setFlow(fallbackFlow);
-        setSource("mock");
-        setError(nextError instanceof Error ? nextError.message : String(nextError));
-      } finally {
-        if (!cancelled) setIsGenerating(false);
-      }
-    }
-
-    void loadGeneratedFlow();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [fallbackFlow, flowId]);
-
-  if (isGenerating) {
-    return (
-      <main className="v5-flow-loading">
-        <div className="v5-flow-loading__card">
-          <Loader2 size={26} className="animate-spin" />
-          <p>趣灵正在生成三关挑战</p>
-          <h1>先把问题变成能玩的路径</h1>
-          <SpiritHint tone="loading" compact title="趣灵">
-            我会先拆出几个小关卡：先试一下，再看机制，最后抓住关键差异。
-          </SpiritHint>
-        </div>
-      </main>
-    );
-  }
-
-  return (
-    <>
-      {showDebug && (source === "mock" || error) && (
-        <div className="v5-flow-dev-banner" role="status">
-          Flow source: {source}{error ? ` · ${error}` : ""}
-        </div>
-      )}
-      <KnowledgeFlowPlayer flow={flow} />
-    </>
-  );
+export function FlowRouteClient({
+  fallbackFlow,
+}: {
+  flowId: string;
+  fallbackFlow: KnowledgeFlow;
+}) {
+  return <KnowledgeFlowPlayer flow={fallbackFlow} flowSource="static" />;
 }

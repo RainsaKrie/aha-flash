@@ -4,6 +4,51 @@
 
 ## 1. 架构总览
 
+### 1.1 公开测试运行层
+
+```text
+Request
+  -> effective mode: static / invite / open
+  -> persistent invite + client + daily request checks
+  -> valid Flow cache
+  -> per-model-call token reservation
+  -> DeepSeek
+  -> actual token settlement + model/run metrics
+```
+
+- `GET /api/flow` 永远返回本地精选 Flow，不调用模型。
+- `POST /api/flow` 与 `POST /api/chat` 是公共模型入口，必须处在授权模型上下文中。
+- `getLLMProvider()` 在没有授权上下文时返回 `null`，阻断旁路模型调用。
+- 生产动态模式仅接受 Upstash 持久化；缺失时有效模式自动退回 `static`。
+- Analytics 与反馈使用严格字段 Schema；管理指标只通过服务端 Secret 访问。
+
+公开动态请求的实际顺序：
+
+~~~text
+mode / total switch / persistent store
+  -> daily token ceiling
+  -> invite validity
+  -> normalized successful-flow cache
+  -> client window + daily request + invite consumption
+  -> authorized model context
+  -> token reservation before every initial/retry/repair call
+  -> actual usage settlement + model/run record
+~~~
+
+缓存命中仍要求有效模式与有效邀请码，但不消耗邀请次数或生成请求额度。缓存读取时重新执行每个 play 的 Schema 校验和现有 QualityGate；失败缓存、调试原文、Prompt 和模型原文不会进入成功缓存。
+
+持久化通过 PublicBetaStore 适配器实现：
+
+| 实现 | 用途 | 生产动态模式 |
+|---|---|---|
+| LocalFilePublicBetaStore | 本地开发与自动测试 | 禁止；生产配置 local 会变为不可用 |
+| UpstashPublicBetaStore | Redis REST 原子额度、TTL、列表和缓存 | 必需 |
+
+事件入口为 POST /api/analytics，反馈入口为 POST /api/feedback，二者都校验实际 UTF-8 体积、严格 Schema 和持久化频率额度。管理员报告为 GET /api/admin/metrics，使用服务端 Bearer 或 x-admin-secret 验证，未授权统一返回 404。
+
+模型调用记录包含 provider、model、调用类型、操作、成功/失败、输入/输出/总 token、延迟、retry、repair、匿名会话哈希、Flow ID 和可配置价格得出的估算成本。记录不包含自由 topic、Prompt、模型原文、完整 IP、邀请码或任何 Secret。
+- 运行与回滚细节见 `PUBLIC_BETA.md`。
+
 ```text
 User
   |

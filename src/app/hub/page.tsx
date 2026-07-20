@@ -3,6 +3,7 @@
 import { BookOpen, BrainCircuit, CheckCircle2, Compass, Home, LibraryBig, RotateCcw, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { trackEvent } from "@/lib/analytics/client";
 import { readCompletedFlows, readUserId, writeUserId, type CompletedFlowRecord } from "@/lib/utils/storage";
 import type { KnowledgeAsset, UserState } from "@/types/state";
 
@@ -113,6 +114,7 @@ export default function HubPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    void trackEvent("hub_opened", { route: "/hub" });
     const timer = window.setTimeout(() => setCompletedFlows(readCompletedFlows()), 0);
 
     async function boot() {

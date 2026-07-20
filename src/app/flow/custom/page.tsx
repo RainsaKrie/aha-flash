@@ -33,8 +33,12 @@ function CustomFlowContent() {
   const [draft, setDraft] = useState<FlowDraftRecord | null>(null);
 
   useEffect(() => {
-    setDraft(readFlowDraftRecord(draftId));
-    setHasLoaded(true);
+    const timeoutId = window.setTimeout(() => {
+      setDraft(readFlowDraftRecord(draftId));
+      setHasLoaded(true);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [draftId]);
 
   if (!hasLoaded) return <CustomFlowFallback />;

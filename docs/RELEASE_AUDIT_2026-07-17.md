@@ -1,5 +1,7 @@
 # 趣灵 V6 MVP 线上发布审计
 
+> 2026-07-18 更新：本文保留 2026-07-17 已上线动态 Demo 的历史审计证据。当前源码已增加默认静态、邀请/开放放量、持久化预算、匿名指标与成本监控，但这批改动尚未部署；当前发布判断请同时阅读 PUBLIC_BETA_RELEASE_AUDIT_2026-07-17.md 和 PUBLIC_BETA.md。
+
 日期：2026-07-17
 
 审计地址：https://www.krie.me
@@ -111,7 +113,7 @@
 - 真实模型最小复验：compound interest 严格模式 1/1 通过；llm_success_rate、clean_schema_rate 和四项教学指标均为 1，repair_reliance_rate 为 0。
 - Playwright 本地生产版：完成贝叶斯三关后，手机视口可直接进入“查看我的图鉴”，Hub 正确显示完成记录。
 
-npm run lint 仍会命中仓库既有的 6 个 react-hooks/set-state-in-effect 错误和 3 个依赖警告；本次没有扩大这些位置。它不阻断 Next.js 生产构建，但在把仓库设为“所有命令全绿”前需要单独收口。
+2026-07-18 补充复验：剩余 React effect lint 债务已经收口；`npm run lint`、`npm run typecheck`、14 项公开测试检查与生产构建均通过。
 
 ## 下一道人工作业
 

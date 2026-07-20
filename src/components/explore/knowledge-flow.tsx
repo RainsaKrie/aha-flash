@@ -4,13 +4,25 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, CheckCircle2, GitBranch, Home, LibraryBig, Loader2, RotateCcw, Sparkles, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { renderBySchema } from "@/components/generative-ui/registry";
 import { SpiritHint } from "@/components/spirit-hint";
+import {
+  getAnalyticsHeaders,
+  markFlowCompletedForSession,
+  shouldTrackSecondFlow,
+  submitFeedback,
+  trackEvent,
+} from "@/lib/analytics/client";
 import { getFlowFollowUps, type FollowUpTopic, type KnowledgeFlow } from "@/lib/content/mock-flows";
 import { getVisualAsset } from "@/lib/content/visual-assets";
 import { recordCompletedFlow, writeFlowDraft, type FlowDraftDebug } from "@/lib/utils/storage";
 import { normalizeUISchema, type InteractionEvent } from "@/types/schema";
+
+import {
+  clearPublicBetaInviteCode,
+  readPublicBetaInviteCode,
+} from '@/lib/public-beta/client';
 
 const completionHints: Record<string, string> = {
   probability: "你已经把自己的判断和出现的结果放在一起看过了。",
@@ -30,7 +42,7 @@ function completionHint(pattern: string) {
 }
 interface FlowApiResponse {
   flow: KnowledgeFlow;
-  source: "llm" | "mock";
+  source: "llm" | "cache" | "fallback";
   validation_error?: string;
   raw_output?: string;
   raw_plan_output?: string;
@@ -40,7 +52,17 @@ interface FlowApiResponse {
   failure?: { message: string; title?: string; code?: string };
 }
 
-export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debug?: FlowDraftDebug }) {
+type PublicFlowSource = "static" | "llm" | "cache" | "fallback";
+
+export function KnowledgeFlowPlayer({
+  flow,
+  debug,
+  flowSource,
+}: {
+  flow: KnowledgeFlow;
+  debug?: FlowDraftDebug;
+  flowSource?: PublicFlowSource;
+}) {
   const router = useRouter();
   const [activeIndex, setActiveIndex] = useState(0);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
@@ -48,10 +70,27 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
   const [branchGeneratingId, setBranchGeneratingId] = useState<string | null>(null);
   const [branchError, setBranchError] = useState<string | null>(null);
   const [showDebugInspector, setShowDebugInspector] = useState(false);
+  const [publicMode, setPublicMode] = useState<"static" | "invite" | "open">("static");
+  const [feedbackRating, setFeedbackRating] = useState<"understood" | "mostly" | "confused" | null>(null);
+  const [feedbackComment, setFeedbackComment] = useState("");
+  const [feedbackStatus, setFeedbackStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const startedAtRef = useRef<number | null>(null);
+  const completedTrackedRef = useRef(false);
+  const exitTrackedRef = useRef(false);
 
   const activePlay = flow.plays[activeIndex] || flow.plays[0];
   const normalized = useMemo(() => normalizeUISchema(activePlay.schema), [activePlay.schema]);
   const followUps = useMemo(() => (flow.follow_ups?.length ? flow.follow_ups : getFlowFollowUps(flow.id)), [flow.follow_ups, flow.id]);
+  const visibleFollowUps = useMemo(
+    () => followUps.filter((topic) => Boolean(topic.target_flow_id) || publicMode !== "static"),
+    [followUps, publicMode],
+  );
+  const resolvedFlowSource: PublicFlowSource = flowSource
+    || (debug?.source === "llm" || debug?.source === "cache" || debug?.source === "fallback"
+      ? debug.source
+      : flow.id.startsWith("custom-")
+        ? "fallback"
+        : "static");
   const asset = getVisualAsset(normalized.pattern, normalized.visual_asset);
   const isCompleted = completedIds.includes(activePlay.id);
   const hasTouchedStage = isCompleted || touchedPlayIds.includes(activePlay.id);
@@ -77,6 +116,17 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
       ? (debug.quality_gate as { ok?: boolean; score?: number })
       : null;
 
+  const trackExit = useCallback(() => {
+    if (completedTrackedRef.current || exitTrackedRef.current) return;
+    exitTrackedRef.current = true;
+    void trackEvent('flow_exited', {
+      flow_id: flow.id,
+      flow_source: resolvedFlowSource,
+      step_index: activeIndex,
+      elapsed_ms: Date.now() - (startedAtRef.current || Date.now()),
+    });
+  }, [activeIndex, flow.id, resolvedFlowSource]);
+
   const persistCompletion = useCallback(() => {
     recordCompletedFlow({
       flow_id: flow.id,
@@ -91,21 +141,79 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
   }, [flow]);
 
   useEffect(() => {
+    // This client-only flag mirrors the debug query parameter after hydration.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setShowDebugInspector(new URLSearchParams(window.location.search).get("debug") === "1");
+    void fetch("/api/public-beta/config", { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : null)
+      .then((payload: { mode?: "static" | "invite" | "open" } | null) => {
+        if (payload?.mode) setPublicMode(payload.mode);
+      })
+      .catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    startedAtRef.current = Date.now();
+    void trackEvent("flow_started", {
+      flow_id: flow.id,
+      flow_source: resolvedFlowSource,
+    });
+    if (shouldTrackSecondFlow(flow.id)) {
+      void trackEvent("second_flow_started", {
+        flow_id: flow.id,
+        flow_source: resolvedFlowSource,
+      });
+    }
+  }, [flow.id, resolvedFlowSource]);
+
+  useEffect(() => {
+    const exitLink = document.querySelector('.v5-flow-exit');
+    const handleExit = () => trackExit();
+    exitLink?.addEventListener('click', handleExit);
+    window.addEventListener('pagehide', handleExit);
+    return () => {
+      exitLink?.removeEventListener('click', handleExit);
+      window.removeEventListener('pagehide', handleExit);
+    };
+  }, [trackExit]);
 
   useEffect(() => {
     if (!showBranches) return;
     persistCompletion();
-  }, [persistCompletion, showBranches]);
+    if (completedTrackedRef.current) return;
+    completedTrackedRef.current = true;
+    markFlowCompletedForSession(flow.id);
+    void trackEvent("flow_completed", {
+      flow_id: flow.id,
+      flow_source: resolvedFlowSource,
+      elapsed_ms: Date.now() - (startedAtRef.current || Date.now()),
+    });
+  }, [flow.id, persistCompletion, resolvedFlowSource, showBranches]);
 
   function touchStage() {
-    setTouchedPlayIds((ids) => (ids.includes(activePlay.id) ? ids : [...ids, activePlay.id]));
+    setTouchedPlayIds((ids) => {
+      if (ids.includes(activePlay.id)) return ids;
+      void trackEvent("step_interacted", {
+        flow_id: flow.id,
+        flow_source: resolvedFlowSource,
+        step_index: activeIndex,
+      });
+      return [...ids, activePlay.id];
+    });
   }
 
   function markComplete(_event?: InteractionEvent) {
     touchStage();
-    setCompletedIds((ids) => (ids.includes(activePlay.id) ? ids : [...ids, activePlay.id]));
+    setCompletedIds((ids) => {
+      if (ids.includes(activePlay.id)) return ids;
+      void trackEvent("step_completed", {
+        flow_id: flow.id,
+        flow_source: resolvedFlowSource,
+        step_index: activeIndex,
+        elapsed_ms: Date.now() - (startedAtRef.current || Date.now()),
+      });
+      return [...ids, activePlay.id];
+    });
   }
 
   function goNext() {
@@ -118,23 +226,52 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
     setCompletedIds([]);
     setTouchedPlayIds([]);
     setBranchError(null);
+    setFeedbackRating(null);
+    setFeedbackComment("");
+    setFeedbackStatus("idle");
+    completedTrackedRef.current = false;
+    exitTrackedRef.current = false;
+    startedAtRef.current = Date.now();
+  }
+
+  function trackNextTopic() {
+    persistCompletion();
+    void trackEvent("next_topic_clicked", {
+      flow_id: flow.id,
+      flow_source: resolvedFlowSource,
+    });
   }
 
   async function generateFollowUp(topic: FollowUpTopic) {
+    const inviteCode = readPublicBetaInviteCode();
+    if (publicMode === 'invite' && !inviteCode) {
+      setBranchError('本次邀请已经失效，请返回探索页重新输入邀请码。');
+      return;
+    }
     setBranchGeneratingId(topic.id);
     setBranchError(null);
-    persistCompletion();
+    trackNextTopic();
 
     try {
       const response = await fetch("/api/flow", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...getAnalyticsHeaders(),
+        },
         body: JSON.stringify({
+          inviteCode: publicMode === 'invite' ? inviteCode : undefined,
           topic: topic.concept || topic.title,
           preferredPattern: topic.suggestedPattern || "auto",
         }),
       });
-      if (!response.ok) throw new Error(`flow request failed: ${response.status}`);
+      if (!response.ok) {
+        if ((response.status === 401 || response.status === 403) && publicMode === 'invite') {
+          clearPublicBetaInviteCode();
+          throw new Error('邀请码已失效，请返回探索页重新验证。');
+        }
+        throw new Error(`flow request failed: ${response.status}`);
+      }
       const payload = (await response.json()) as FlowApiResponse;
       if (payload.failure) throw new Error(payload.failure.message);
       const nextFlow = payload.flow;
@@ -155,6 +292,18 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
     } finally {
       setBranchGeneratingId(null);
     }
+  }
+
+  async function sendFeedback() {
+    if (!feedbackRating || feedbackStatus === "sending" || feedbackStatus === "sent") return;
+    setFeedbackStatus("sending");
+    const accepted = await submitFeedback({
+      rating: feedbackRating,
+      comment: feedbackComment.trim() || undefined,
+      flow_id: flow.id,
+      flow_source: resolvedFlowSource,
+    });
+    setFeedbackStatus(accepted ? "sent" : "error");
   }
 
   return (
@@ -201,7 +350,7 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
               <h2>现在往哪里走？</h2>
               <strong>{flow.summary}</strong>
               <div className="v5-flow-branches" aria-label="下一步知识分支">
-                {followUps.map((topic) => {
+                {visibleFollowUps.map((topic) => {
                   const content = (
                     <>
                       <span><GitBranch size={16} /> {topic.kind === "ai_seed" ? "继续探索" : "精选路径"}</span>
@@ -214,7 +363,7 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
 
                   if (topic.target_flow_id) {
                     return (
-                      <Link key={topic.id} href={`/flow/${topic.target_flow_id}`} className="v5-flow-branch-card" onClick={persistCompletion}>
+                      <Link key={topic.id} href={`/flow/${topic.target_flow_id}`} className="v5-flow-branch-card" onClick={trackNextTopic}>
                         {content}
                       </Link>
                     );
@@ -234,6 +383,51 @@ export function KnowledgeFlowPlayer({ flow, debug }: { flow: KnowledgeFlow; debu
                 })}
               </div>
               {branchError && <p className="v5-flow-branch-error">延伸生成失败：{branchError}</p>}
+              <section className="v5-flow-feedback" aria-labelledby="flow-feedback-title">
+                <div>
+                  <p>快速反馈</p>
+                  <h3 id="flow-feedback-title">这次你感觉自己真的懂了吗？</h3>
+                </div>
+                <div className="v5-flow-feedback__choices">
+                  {([
+                    ["understood", "懂了"],
+                    ["mostly", "大概懂了"],
+                    ["confused", "还是有点懵"],
+                  ] as const).map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      aria-pressed={feedbackRating === value}
+                      onClick={() => {
+                        setFeedbackRating(value);
+                        if (feedbackStatus === "error") setFeedbackStatus("idle");
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {feedbackRating && feedbackStatus !== "sent" && (
+                  <>
+                    <textarea
+                      value={feedbackComment}
+                      maxLength={240}
+                      onChange={(event) => setFeedbackComment(event.target.value)}
+                      placeholder="哪里最清楚，或哪里还没讲明白？（可选）"
+                    />
+                    <button
+                      type="button"
+                      className="v5-flow-feedback__submit"
+                      disabled={feedbackStatus === "sending"}
+                      onClick={() => void sendFeedback()}
+                    >
+                      {feedbackStatus === "sending" ? "正在提交" : "提交反馈"}
+                    </button>
+                  </>
+                )}
+                {feedbackStatus === "sent" && <small>收到，谢谢你帮趣灵讲得更清楚。</small>}
+                {feedbackStatus === "error" && <small>反馈暂时没送达，但不影响本次完成。</small>}
+              </section>
             </motion.div>
           ) : (
             <motion.div
