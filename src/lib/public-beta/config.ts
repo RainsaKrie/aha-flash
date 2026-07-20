@@ -56,8 +56,10 @@ export function getPublicBetaConfig(
   const isProduction = env.NODE_ENV === "production";
   const requestedMode = normalizeMode(env.PUBLIC_FLOW_MODE);
   const storageDriver = normalizeStorageDriver(env.PUBLIC_BETA_STORAGE, isProduction);
-  const upstashUrl = env.UPSTASH_REDIS_REST_URL?.trim();
-  const upstashToken = env.UPSTASH_REDIS_REST_TOKEN?.trim();
+  const upstashUrl = env.UPSTASH_REDIS_REST_URL?.trim()
+    || env.UPSTASH_REDIS_REST_KV_REST_API_URL?.trim();
+  const upstashToken = env.UPSTASH_REDIS_REST_TOKEN?.trim()
+    || env.UPSTASH_REDIS_REST_KV_REST_API_TOKEN?.trim();
   const storageAvailable =
     storageDriver === "local" ||
     (storageDriver === "upstash" && Boolean(upstashUrl && upstashToken));

@@ -91,6 +91,17 @@ async function main() {
       } as NodeJS.ProcessEnv);
       assert(config.effectiveMode === "static", "production must fall back to static");
       assert(!config.dynamicEnabled, "dynamic generation must be disabled");
+
+      const integratedStorage = getPublicBetaConfig({
+        NODE_ENV: "production",
+        PUBLIC_FLOW_MODE: "static",
+        PUBLIC_BETA_STORAGE: "upstash",
+        UPSTASH_REDIS_REST_KV_REST_API_URL: "https://example.upstash.io",
+        UPSTASH_REDIS_REST_KV_REST_API_TOKEN: "integration-token",
+      } as NodeJS.ProcessEnv);
+      assert(integratedStorage.storageAvailable, "Vercel Upstash integration variables must enable storage");
+      assert(integratedStorage.upstashUrl === "https://example.upstash.io", "integration URL must be selected");
+      assert(integratedStorage.upstashToken === "integration-token", "integration token must be selected");
     });
 
     await check("five showcase flows need zero model invocations", () => {
